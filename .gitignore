@@ -54,4 +54,7 @@ Mkfile.old
 dkms.conf
 
 #disk images
-disk.img
+Longhorn.iso
+
+#build files
+build

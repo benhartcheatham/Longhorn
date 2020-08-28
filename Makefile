@@ -1,24 +1,20 @@
 C_SOURCES = $(wildcard libc/*.c kernel/*.c drivers/*.c)
 HEADERS = $(wildcard libc/*.h kernel/*.h drivers/*.h)
 ASM_SOURCES = $(wildcard kernel/*.asm)
-BOOT_SOURCES = boot/boot.asm boot/loader.asm
+BOOT_SOURCES = boot/boot.asm
 
 OBJ = ${C_SOURCES:.c=.o}
 ASM = ${ASM_SOURCES:.asm=.o}
 BOOT = ${BOOT_SOURCES:.asm=.o}
 
-CC = i386-elf-gcc
-CFLAGS = -g -ffreestanding -Wall -Wextra -fno-exceptions -m32
+CC = i686-elf-gcc
+CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 
-all: os-binary
+all: os-img
 
 #default is to run os-binary
 run: all
-	qemu-system-i386 -fda os-binary
-
-#runs a floppy img instead of a binary
-run-img: os-img disk.img
-	qemu-system-i386 -fda disk.img
+	qemu-system-i386 -cdrom Longhorn.iso
 
 #runs a flat binary with no restart on crash
 run-no-reboot: all
@@ -31,21 +27,17 @@ run-no-reboot: all
 	${CC} ${CFLAGS} -c $< -o $@
 
 %.o: %.asm
-	nasm $< -f elf -o $@
+	nasm $< -f elf32 -i "./boot/" -o $@
 
 #Update to use linker.ld instead of -Ttext
-kernel/kernel.bin: boot/kernel_entry.o ${OBJ} ${ASM}
-	i386-elf-ld -Ttext 0x20000 -o $@ $^ --oformat binary
+kernel/kernel.bin: ${BOOT} ${OBJ} ${ASM}
+	${CC} -T linker.ld -o os-binary -ffreestanding -O2 -nostdlib $^ -lgcc
 
-#builds a flat binary of the image
-os-binary: boot/boot.bin boot/loader.bin kernel/kernel.bin
-	cat boot/boot.bin boot/loader.bin > $@
-
-#Builds a floppy img of the os
-os-img: boot/boot.bin boot/loader.bin
-	dd if=/dev/zero of=disk.img bs=1024 count=720
-	dd if=boot/boot.bin of=disk.img conv=notrunc
-	dd if=boot/loader.bin of=disk.img bs=512 seek=1 conv=notrunc
+#Builds a disk img of the os
+os-img: kernel/kernel.bin
+	cp os-binary build/boot/os-binary
+	grub-mkrescue -o Longhorn.iso build
+	
 
 #cleans all directories of compiled files
 clean:
