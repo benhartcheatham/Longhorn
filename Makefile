@@ -12,12 +12,15 @@ CFLAGS = -g -ffreestanding -Wall -Wextra -fno-exceptions -m32
 
 all: os-binary
 
+#default is to run os-binary
 run: all
 	qemu-system-i386 -fda os-binary
 
+#runs a floppy img instead of a binary
 run-img: os-img disk.img
 	qemu-system-i386 -fda disk.img
 
+#runs a flat binary with no restart on crash
 run-no-reboot: all
 	qemu-system-i386 -fda os-binary -no-reboot -no-shutdown
 
@@ -34,6 +37,7 @@ run-no-reboot: all
 kernel/kernel.bin: boot/kernel_entry.o ${OBJ} ${ASM}
 	i386-elf-ld -Ttext 0x20000 -o $@ $^ --oformat binary
 
+#builds a flat binary of the image
 os-binary: boot/boot.bin boot/loader.bin kernel/kernel.bin
 	cat boot/boot.bin boot/loader.bin > $@
 
@@ -42,8 +46,8 @@ os-img: boot/boot.bin boot/loader.bin
 	dd if=/dev/zero of=disk.img bs=1024 count=720
 	dd if=boot/boot.bin of=disk.img conv=notrunc
 	dd if=boot/loader.bin of=disk.img bs=512 seek=1 conv=notrunc
-	dd if=
 
+#cleans all directories of compiled files
 clean:
 	rm -rf *.bin *.o
 	rm -rf ./*/*.bin ./*/*.o

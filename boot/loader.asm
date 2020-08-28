@@ -17,7 +17,7 @@ load:
     call load_kernel            ;load the kernel into memory
     call load_gdt               ;load the gdt into the gdt register
 
-    jmp switch_pm              ;switch to protected mode and start kernel
+    ;jmp switch_pm              ;switch to protected mode and start kernel
 
     ret
 
