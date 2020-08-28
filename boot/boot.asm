@@ -1,6 +1,10 @@
 [bits 16]
 [org 0x7c00]
 
+xor ax, ax              ;set our data segment
+mov ds, ax
+mov ss, ax              ;set our stack segment
+
 mov [BOOT_DRIVE], dl    ;save boot drive at BOOT_DRIVE
 
 mov bp, 0x7000          ;setup a temporary stack
@@ -21,7 +25,11 @@ boot:
 
     mov bx, BOOT_DRIVE          ;put BOOT_DRIVE in bx for 2nd stage of loader
     mov cx, KERNEL_START_SECTOR ;put KERNEL_START_SECTOR in cx for 2nd stage of loader
+    mov dx, SHOULDNT_REACH
     call 0:LOADER_OFFSET
+    
+    mov bx, SHOULDNT_REACH
+    call print_16
 
     jmp $
 .read_failure:
@@ -44,6 +52,7 @@ KERNEL_START_SECTOR equ 2 + SECOND_STAGE_SIZE
 ;variables
 BOOT_DRIVE: db 0
 FAILURE: db "FAILED TO READ DRIVE. CODE: ", 0
+SHOULDNT_REACH: db "SHOULDN'T HAVE REACHED THIS POINT", 0
 
 times 510 - ($ - $$) db 0
 dw 0xaa55

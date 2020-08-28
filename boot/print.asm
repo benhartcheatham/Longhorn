@@ -45,4 +45,44 @@ print_int:
         pop cx
         pop ax
         ret
-    
+
+;the address of the hex should be stored in ax
+print_hex:
+    push ax
+    push cx
+    push bx
+
+    mov bx, hex_string
+    add bx, 5
+    .loop2:
+        mov cx, 0x000f          ;lookup hex char
+        and cx, ax
+        call bin_to_hex
+        mov [bx], cl            ;write char to string
+        shr ax, 4               ;move to next hex char
+        dec bx
+        mov cx, bx
+        cmp cx, hex_string + 1  ;if we are at x, stop
+        jne .loop2
+
+    mov bx, hex_string
+    call print_16
+
+    pop bx
+    pop cx
+    pop ax
+    ret
+
+;helper for print_hex. cx should store the hex char to print
+bin_to_hex:
+    push bx
+    mov bx, cx
+    add bx, hex_table
+    mov cl, [bx]
+    pop bx
+    ret
+
+
+hex_table: db "0123456789abcdef"
+;print the string, then a new line and carriage return
+hex_string: db "0x0000",0

@@ -1,6 +1,9 @@
 [bits 16]
 [org 0x7e00]
 
+xor ax, ax
+mov ds, ax
+
 ;requires the drive to load kernel from be in bx, and sector kernel is at on disk in cx
 ;sets up kernel environment and loads/executes the kernel
 load:
@@ -8,16 +11,16 @@ load:
     mov bx, cx
     mov [KERNEL_SECTOR], bx
 
-    ;call do_e820                ;scan/save memory map
-    ;call enable_a20             ;enable the a20 line
+    call do_e820                ;scan/save memory map
+    call enable_a20             ;enable the a20 line
 
-    ;call load_kernel            ;load the kernel into memory
-    ;call load_gdt               ;load the gdt into the gdt register
+    call load_kernel            ;load the kernel into memory
+    call load_gdt               ;load the gdt into the gdt register
 
-    ;jmp switch_pm              ;switch to protected mode and start kernel
-    mov bx, HELLO
-    call print_16
-    jmp $
+    jmp switch_pm              ;switch to protected mode and start kernel
+
+    ret
+
 
 ;loads kernel into memory at offset KERNEL_OFFSET_32
 load_kernel:
