@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include "../libc/memset.h"
+#include "../libc/mem.h"
 
 void *memset(void *dest, int c, size_t n) {
     unsigned char *d = (unsigned char *) dest;

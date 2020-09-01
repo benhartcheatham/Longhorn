@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "vga.h"
 #include "../kernel/port_io.h"
-#include "../libc/memcpy.h"
+#include "../libc/mem.h"
 
 void scroll();
 

@@ -1,6 +1,5 @@
 #include <stddef.h>
-#include "../libc/memmove.h"
-#include "../libc/memcpy.h"
+#include "../libc/mem.h"
 
 void *memmove(void *dest, const void *src, size_t n) {
 
