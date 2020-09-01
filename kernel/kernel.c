@@ -9,10 +9,9 @@ void kmain() {
     vga_println("Hello, World!");
     
     init_irqs();
-    enable_interrupts();
-    //asm volatile("int 0x0");
+    //enable_interrupts();
+    //asm volatile("int $0");
     for(;;) {
-        //asm volatile("cli");
         asm volatile("hlt");
     }
 }

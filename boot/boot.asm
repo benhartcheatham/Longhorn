@@ -50,11 +50,6 @@ _start:
 	; itself. It has absolute and complete power over the
 	; machine.
  
-	; To set up a stack, we set the esp register to point to the top of our
-	; stack (as it grows downwards on x86 systems). This is necessarily done
-	; in assembly as languages such as C cannot function without a stack.
-	mov esp, stack_top
- 
 	; This is a good place to initialize crucial processor state before the
 	; high-level kernel is entered. It's best to minimize the early
 	; environment where crucial features are offline. Note that the
@@ -65,6 +60,20 @@ _start:
 	; runtime support to work as well.
 	cli 
 	lgdt [gdt_descriptor]
+	jmp 0x08:.load_cs
+.load_cs
+	mov ax, 0x10
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	mov ss, ax
+
+	; To set up a stack, we set the esp register to point to the top of our
+	; stack (as it grows downwards on x86 systems). This is necessarily done
+	; in assembly as languages such as C cannot function without a stack.
+	mov esp, stack_top
+	
 	; Enter the high-level kernel. The ABI requires the stack is 16-byte
 	; aligned at the time of the call instruction (which afterwards pushes
 	; the return pointer of size 4 bytes). The stack was originally 16-byte
