@@ -86,6 +86,7 @@ struct register_frame {
 
 typedef void (*isr_frame)(struct register_frame *);
 
+void init_idt();
 void install_isrs();
 void install_irqs();
 void isr_handler(struct register_frame *r);

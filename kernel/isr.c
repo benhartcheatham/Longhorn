@@ -65,7 +65,7 @@ void remap_pics() {
 }
 
 /* sets up IA-32 reserved interrupt service routine gates*/
-void isr_install() {
+void install_isrs() {
     set_idt_gate(0, (uint32_t) isr00);
     set_idt_gate(1, (uint32_t) isr01);
     set_idt_gate(2, (uint32_t) isr02);
@@ -101,7 +101,7 @@ void isr_install() {
 }
 
 /* sets up hardware interrupt gates */
-void irq_install() {
+void install_irqs() {
     set_idt_gate(32, (uint32_t)irq00);
     set_idt_gate(33, (uint32_t)irq01);
     set_idt_gate(34, (uint32_t)irq02);
@@ -150,9 +150,9 @@ void init_irqs() {
 }
 
 void init_idt() {
-    isr_install();
+    install_isrs();
     remap_pics();
-    irq_install();
+    install_irqs();
     init_irqs();
 
     load_idt();

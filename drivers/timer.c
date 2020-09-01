@@ -25,5 +25,4 @@ void init_timer(uint32_t freq) {
    Should be fast because this code will run a lot */
 void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) {
     //TODO: Implement with something useful
-    println("timer interrupt");
 }
