@@ -1,6 +1,7 @@
 #include "isr.h"
 #include "port_io.h"
 #include "../drivers/timer.h"
+#include "../drivers/keyboard.h"
 #include "../libc/stdio.h"
 
 /* IDT structs */
@@ -147,6 +148,7 @@ void register_interrupt_handler(uint8_t n, isr_frame handler) {
 /* Initializes Hardware Interrupt handlers */
 void init_irqs() {
     init_timer(R_FREQ);
+    init_keyboard();
 }
 
 void init_idt() {

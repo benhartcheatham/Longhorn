@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include "../drivers/vga.h"
 
-#define TERMINAL_LIMIT 256
-
 /* functions for printing to the screen */
 void print(char *string);
 void println(char *string);

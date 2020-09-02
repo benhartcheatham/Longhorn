@@ -10,6 +10,5 @@ void kmain() {
     
     init_idt();
     enable_interrupts();
-    asm volatile("int $0");
 
 }
