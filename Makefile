@@ -1,6 +1,7 @@
 ### GROUPS ###
-C_SOURCES = $(wildcard libc/*.c kernel/*.c drivers/*.c)
-HEADERS = $(wildcard libc/*.h kernel/*.h drivers/*.h)
+SUBDIRS = kernel/data_types
+C_SOURCES = $(wildcard drivers/*.c kernel/*.c libc/*.c libk/*.c)
+HEADERS = $(wildcard libc/*.h kernel/*.h drivers/*.h libk/*.h)
 ASM_SOURCES = $(wildcard kernel/*.asm)
 BOOT_SOURCES = boot/boot.asm
 
