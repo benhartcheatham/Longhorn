@@ -1,3 +1,10 @@
+/* 
+ * A bitmap implementation
+ * The bitmap consists of an array of ELEM_TYPE values
+ * bits are modified in the array to represent a bitmap
+ * 
+ */ 
+
 #include "bitmap.h"
 
 /* BIT UTILITY FUNCTIONS */
