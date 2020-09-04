@@ -2,6 +2,7 @@ This file is for planning out new features.
 
 Processes:
     - Should have a stdin, stdout, and stderror stream
+        - Might be better suited as files on the system
     - Array of threads owned by Process
     - Active thread in Process
     - Way to kill Processes
@@ -11,7 +12,7 @@ Processes:
     - Parental Hierarchy between Processes?
     - Idle Process
     - List of Processes
-    
+
     When File I/O is Added:
     - Pointer to the stack segment
         - Each thread should have it's own stack in this segment
