@@ -9,7 +9,7 @@ OBJ = ${C_SOURCES:.c=.o}
 ASM = ${ASM_SOURCES:.asm=.o}
 BOOT = ${BOOT_SOURCES:.asm=.o}
 
-### COMPILER GOURPS/RULES ###
+### COMPILER GROUPS/RULES ###
 CC = i386-elf-gcc
 CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 

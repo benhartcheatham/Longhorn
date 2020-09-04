@@ -1,8 +1,17 @@
 #ifndef _STDIO_H
 #define _STDIO_H
 
+/* includes */
 #include <stdint.h>
 #include "../drivers/vga.h"
+
+/* defines */
+
+/* structs */
+
+/* typedefs */
+
+/* functions */
 
 /* functions for printing to the screen */
 void print(char *string);

@@ -1,0 +1,20 @@
+This file is for planning out new features.
+
+Processes:
+    - Should have a stdin, stdout, and stderror stream
+    - Array of threads owned by Process
+    - Active thread in Process
+    - Way to kill Processes
+        - Way to kill threads within Process
+            - If thread isn't in process, kills the entire process
+            - Can't kill init Process?
+    - Parental Hierarchy between Processes?
+    - Idle Process
+    - List of Processes
+    
+    When File I/O is Added:
+    - Pointer to the stack segment
+        - Each thread should have it's own stack in this segment
+        - Each thread saves state when swapping
+    - Pointer to the text segment
+    - Pointer to the data segment

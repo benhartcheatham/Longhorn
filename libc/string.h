@@ -1,6 +1,15 @@
 #ifndef _STRING_H
 #define _STRING_H
 
+/* includes */
+
+/* defines */
+
+/* structs */
+
+/* typedefs */
+
+/* functions */
 char *int_to_string(int n);
 char *int_to_hexstring(int n);
 void reverse(char *src);
