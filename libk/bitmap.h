@@ -33,8 +33,11 @@ void bitmap_set_val(bitmap_t *m, size_t idx, bool val);
 
 /* bitmap-wide functions */
 void bitmap_set_all(bitmap_t *m, bool val);
-void bitmap_set_range(bitmap_t *m, size_t start, size_t len, bool val);
+size_t bitmap_set_range(bitmap_t *m, size_t start, size_t len, bool val);
 size_t bitmap_count_range(bitmap_t *m, size_t start, size_t len);
 size_t bitmap_find_range(bitmap_t *m, size_t start, size_t len, size_t count, bool val);
+
+/* bitmap_t functions */
+size_t bitmap_get_size(bitmap_t *m);
 
 #endif

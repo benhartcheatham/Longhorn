@@ -80,11 +80,13 @@ void bitmap_set_all(bitmap_t *m, bool val) {
     
 }
 
-/* sets the range [start, start + len) to val */
-void bitmap_set_range(bitmap_t *m, size_t start, size_t len, bool val) {
+/* sets the range [start, start + len) to val, returns num bits set to val*/
+size_t bitmap_set_range(bitmap_t *m, size_t start, size_t len, bool val) {
     size_t i;
     for (i = start; i < start + len; i++)
         bitmap_set_val(m, i, val);
+    
+    return i;
 }
 
 /* counts the number of bits set to true in the range [start, start + len) */
@@ -111,7 +113,7 @@ size_t bitmap_find_range(bitmap_t *m, size_t start, size_t len, size_t count, bo
             cnt++;
         else {
             cnt = 0;
-            begin = i;
+            begin = i + 1;
         }
 
         if (cnt == count)
@@ -119,4 +121,9 @@ size_t bitmap_find_range(bitmap_t *m, size_t start, size_t len, size_t count, bo
     }
 
     return m->bits + 1;
+}
+
+/* Returns the number of bits in the bitmap */
+size_t bitmap_get_size(bitmap_t *m) {
+    return m->bits;
 }

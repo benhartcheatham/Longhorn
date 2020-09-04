@@ -58,4 +58,6 @@ int append_err(struct process *proc, char c);
 //don't include a shrink_err right now because i want other processes to not be able to only erase certain parts of the stream
 int shrink_in(struct process *proc, uint32_t size);
 int shrink_out(struct process *proc, uint32_t size);
+
+void print_names();
 #endif

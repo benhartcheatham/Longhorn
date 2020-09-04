@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "proc.h"
+#include "kalloc.h"
 #include "../libc/mem.h"
 #include "../libc/string.h"
 #include "../libk/list.h"
@@ -24,9 +25,9 @@ void init_processes() {
 /* process state functions */
 
 int proc_create(char *name, proc_function init_func) {
-    struct process *p = (struct process *) 0x200000;
+    struct process *p = (struct process *) palloc();
     set_name(p, name);
-    node_set_struct(&p->node, (void *) p);
+    p->node._struct = (void *) p;
 
     if (!pid_count)
         pid_count = 1;
@@ -107,6 +108,16 @@ static void set_name(struct process *proc, char *name) {
     if (strlen(name) < MAX_NAME_LENGTH) {
         memcpy(proc->name, name, strlen(name));
         proc->name[strlen(name) + 1] = '\0';
+    }
+}
+
+void print_names() {
+    struct list_node *t = ready_procs.head.next;
+
+    while(list_hasNext(t)) {
+        struct process *s = (struct process *) t->_struct;
+        printf("process (%d) addr: %x\n", s->pid, s);
+        t = t->next;
     }
 }
 
