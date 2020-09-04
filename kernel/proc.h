@@ -4,6 +4,7 @@
 /* includes */
 #include <stddef.h>
 #include <stdint.h>
+#include "thread.h"
 #include "../libk/list.h"
 #include "../libk/stream.h"
 
@@ -12,14 +13,13 @@
 #define MAX_NAME_LENGTH 12
 
 /* structs */
-enum proc_states {PROCESS_READY, PROCESS_BLOCKED, PROCESS_DYING, 
-                            PROCESS_TERMINATED, PROCESS_SUSPENDED};
+enum proc_states {PROCESS_READY, PROCESS_BLOCKED, PROCESS_DYING, PROCESS_TERMINATED};
 
 struct process {
     uint32_t pid;
     enum proc_states state;
     char name[MAX_NAME_LENGTH + 1];
-    //struct thread *active_thread;
+    struct thread *active_thread;
     //struct thread threads[MAX_NUM_THREADS];
 
     //might want to make these FILE structs later on
