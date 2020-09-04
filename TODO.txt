@@ -1,3 +1,11 @@
 1. Memory allocation
-    - Page level then malloc
-2. Threads
+    - kmalloc
+    - test kmalloc
+    - figure out what is living at 2MB?
+2. Processes
+    - Set active thread
+    - Way to kill processes
+    - Way to gracefully exit when a process has no live threads
+    - Idle Process
+3. Threads
+    - Implement threads

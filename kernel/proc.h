@@ -39,6 +39,7 @@ void init_processes();
 
 /* process state functions */
 int proc_create(char *name, proc_function init_func);
+void proc_exit(struct process *proc);
 void proc_kill_k(struct process *proc);
 void proc_block(struct process *proc);
 void proc_unblock(struct process *proc);

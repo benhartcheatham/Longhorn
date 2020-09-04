@@ -10,6 +10,7 @@
 /* static data */
 static struct list ready_procs;
 static struct list all_procs;
+static struct process *current;
 static uint32_t pid_count;
 
 /* static functions */
@@ -36,6 +37,10 @@ int proc_create(char *name, proc_function init_func) {
 
     list_insert_end(&ready_procs.tail, &p->node);
     return p->pid;
+}
+
+void proc_exit(struct process *proc) {
+    proc->state = PROCESS_DYING;
 }
 
 void proc_kill_k(struct process *proc) {
