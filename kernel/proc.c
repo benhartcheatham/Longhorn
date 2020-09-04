@@ -2,18 +2,40 @@
 #include <stdint.h>
 #include "proc.h"
 #include "../libc/mem.h"
+#include "../libc/string.h"
 #include "../libk/list.h"
 
+/* static data */
 static struct list ready_procs;
-static struct list non_ready_procs;
-uint32_t pid_count;
+static struct list all_procs;
+static uint32_t pid_count;
 
+/* static functions */
+static void set_name(struct process *proc, char *name);
+
+/* initialization functions */
 void init_processes() {
+    list_init(&ready_procs);
+    list_init(&all_procs);
 
+    pid_count = 0;
 }
 
+/* process state functions */
+
 int proc_create(char *name, proc_function init_func) {
-    return -1;
+    struct process *p = (struct process *) 0x200000;
+    set_name(p, name);
+    node_set_struct(&p->node, (void *) p);
+
+    if (!pid_count)
+        pid_count = 1;
+    
+    p->pid = pid_count++;
+    p->state = PROCESS_READY;
+
+    list_insert(&ready_procs, &p->node);
+    return p->pid;
 }
 
 void proc_kill_k(struct process *proc) {
@@ -28,6 +50,7 @@ void proc_unblocked(struct process *proc) {
     proc->state = PROCESS_READY;
 }
 
+/* process stream functions */
 char *get_in(struct process *proc) {
     return get_copy_std(&proc->in);
 }
@@ -52,24 +75,39 @@ void flush_err(struct process *proc) {
     flush_std(&proc->err);
 }
 
-void append_in(struct process *proc, char c) {
-    append_std(&proc->in, c);
+/* tries to append c to the in stream of a proc, returns num chars appended*/
+int append_in(struct process *proc, char c) {
+    return append_std(&proc->in, c);
 }
 
-void append_out(struct process *proc, char c) {
-    append_std(&proc->out, c);
+/* tries to append c to the out stream of a proc, returns num chars appended*/
+int append_out(struct process *proc, char c) {
+    return append_std(&proc->out, c);
 }
 
-void append_err(struct process *proc, char c) {
-    append_std(&proc->err, c);
+/* tries to append c to the err stream of a proc, returns num chars appended*/
+int append_err(struct process *proc, char c) {
+    return append_std(&proc->err, c);
 }
 
-void shrink_in(struct process *proc, uint32_t size) {
-    shrink_std(&proc->in, size);
+/* tries to delete size chars from a process' in stream, returns num chars deleted */
+int shrink_in(struct process *proc, uint32_t size) {
+    return shrink_std(&proc->in, size);
 }
 
-void shrink_out(struct process *proc, uint32_t size) {
-    shrink_std(&proc->out, size);
+/* tries to delete size chars from a process' out stream, returns num chars deleted */
+int shrink_out(struct process *proc, uint32_t size) {
+    return shrink_std(&proc->out, size);
+}
+
+/* static functions */
+
+/* sets the name of a process */
+static void set_name(struct process *proc, char *name) {
+    if (strlen(name) < MAX_NAME_LENGTH) {
+        memcpy(proc->name, name, strlen(name));
+        proc->name[strlen(name) + 1] = '\0';
+    }
 }
 
 

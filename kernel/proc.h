@@ -10,6 +10,7 @@
 /* defines */
 #define MAX_NUM_THREADS 8
 #define STD_STREAM_SIZE 256
+#define MAX_NAME_LENGTH 12
 
 /* structs */
 enum proc_states {PROCESS_READY, PROCESS_BLOCKED, PROCESS_DYING, 
@@ -18,12 +19,15 @@ enum proc_states {PROCESS_READY, PROCESS_BLOCKED, PROCESS_DYING,
 struct process {
     uint32_t pid;
     enum proc_states state;
+    char name[MAX_NAME_LENGTH + 1];
     //struct thread *active_thread;
     //struct thread threads[MAX_NUM_THREADS];
 
     //might want to make these FILE structs later on
     //shouldn't be accessed directly
     std_stream in, out, err;
+
+    list_node_t node;
 };
 
 /* typedefs */
@@ -48,10 +52,10 @@ char *get_err(struct process *proc);
 void flush_in(struct process *proc);
 void flush_out(struct process *proc);
 void flush_err(struct process *proc);
-void append_in(struct process *proc, char c);
-void append_out(struct process *proc, char c);
-void append_err(struct process *proc, char c);
+int append_in(struct process *proc, char c);
+int append_out(struct process *proc, char c);
+int append_err(struct process *proc, char c);
 //don't include a shrink_err right now because i want other processes to not be able to only erase certain parts of the stream
-void shrink_in(struct process *proc, uint32_t size);
-void shrink_out(struct process *proc, uint32_t size);
+int shrink_in(struct process *proc, uint32_t size);
+int shrink_out(struct process *proc, uint32_t size);
 #endif

@@ -10,10 +10,13 @@ void flush_c(char_stream *stream) {
     stream->index = 0;
 }
 
-void append_c(char_stream *stream, char c) {
+int append_c(char_stream *stream, char c) {
     if (stream->index < stream->size) {
         stream->stream[stream->index++] = c;
+        return 1;
     }
+
+    return 0;
 }
 
 //not implemented until malloc
@@ -21,15 +24,17 @@ char *get_copy_c(char_stream *stream __attribute__ ((unused))) {
     return NULL;
 }
 
-void shrink_c(char_stream *stream, size_t size) {
+int shrink_c(char_stream *stream, size_t size) {
     if (size > stream->index)
         size = stream->index;
     
     stream->index = stream->index - size;
+
+    return size;
 }
 
 //not implemented until malloc
-void resize_c(char_stream *stream, size_t size) {
+void resize_c(char_stream *stream __attribute__ ((unused)), size_t size __attribute__ ((unused))) {
     return;
 }
 
@@ -41,10 +46,13 @@ void flush_std(std_stream *stream) {
     stream->index = 0;
 }
 
-void append_std(std_stream *stream, char c) {
+int append_std(std_stream *stream, char c) {
     if (stream->index < stream->size) {
         stream->stream[stream->index++] = c;
+        return 1;
     }
+
+    return 0;
 }
 
 char *get_copy_std(std_stream *stream) {
@@ -53,9 +61,11 @@ char *get_copy_std(std_stream *stream) {
     return cp;
 }
 
-void shrink_std(std_stream *stream, size_t size) {
+int shrink_std(std_stream *stream, size_t size) {
     if (size > stream->index)
         size = stream->index;
     
     stream->index = stream->index - size;
+
+    return size;
 }

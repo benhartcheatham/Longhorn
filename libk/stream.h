@@ -28,15 +28,15 @@ typedef struct CHAR_STREAM char_stream;
 
 /* char_stream functions */
 void flush_c(char_stream *stream);
-void append_c(char_stream *stream, char c);
+int append_c(char_stream *stream, char c);
 char *get_copy_c(char_stream *stream);
-void shrink_c(char_stream *stream, size_t size);
+int shrink_c(char_stream *stream, size_t size);
 void resize_c(char_stream *stream, size_t size);
 
 /* std_stream functions */
 void flush_std(std_stream *stream);
-void append_std(std_stream *stream, char c);
+int append_std(std_stream *stream, char c);
 char *get_copy_std(std_stream *stream);
-void shrink_std(std_stream *stream, size_t size);
+int shrink_std(std_stream *stream, size_t size);
 
 #endif
