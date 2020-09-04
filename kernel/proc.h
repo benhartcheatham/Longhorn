@@ -9,7 +9,6 @@
 
 /* defines */
 #define MAX_NUM_THREADS 8
-#define STD_STREAM_SIZE 256
 #define MAX_NAME_LENGTH 12
 
 /* structs */
@@ -59,5 +58,4 @@ int append_err(struct process *proc, char c);
 int shrink_in(struct process *proc, uint32_t size);
 int shrink_out(struct process *proc, uint32_t size);
 
-void print_names();
 #endif

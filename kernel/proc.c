@@ -4,6 +4,7 @@
 #include "kalloc.h"
 #include "../libc/mem.h"
 #include "../libc/string.h"
+#include "../libc/stdio.h"
 #include "../libk/list.h"
 
 /* static data */
@@ -19,23 +20,21 @@ void init_processes() {
     list_init(&ready_procs);
     list_init(&all_procs);
 
-    pid_count = 0;
+    pid_count = 1;
 }
 
 /* process state functions */
 
 int proc_create(char *name, proc_function init_func) {
+    //change this to just use kmalloc
     struct process *p = (struct process *) palloc();
     set_name(p, name);
     p->node._struct = (void *) p;
 
-    if (!pid_count)
-        pid_count = 1;
-    
     p->pid = pid_count++;
     p->state = PROCESS_READY;
 
-    list_insert(&ready_procs, &p->node);
+    list_insert_end(&ready_procs.tail, &p->node);
     return p->pid;
 }
 
@@ -111,14 +110,5 @@ static void set_name(struct process *proc, char *name) {
     }
 }
 
-void print_names() {
-    struct list_node *t = ready_procs.head.next;
-
-    while(list_hasNext(t)) {
-        struct process *s = (struct process *) t->_struct;
-        printf("process (%d) addr: %x\n", s->pid, s);
-        t = t->next;
-    }
-}
 
 

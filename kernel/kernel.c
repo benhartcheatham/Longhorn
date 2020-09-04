@@ -20,7 +20,6 @@
 
 /* testing functions */
 void test(bool expected, bool expression, int num);
-void test_procs();
 
 void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
     clear_screen();
@@ -28,7 +27,6 @@ void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
     init_idt();
     init_alloc(mb);
     init_processes();
-    test_procs();
 
 
     enable_interrupts();
@@ -40,13 +38,4 @@ void test(bool expected, bool expression, int num) {
         printf("TEST (%d) PASSED: EXPECTED %d, GOT: %d\n", num, expected, expression);
     else
         printf("TEST (%d) FAILED: EXPECTED %d, GOT: %d\n", num, expected, expression);
-}
-
-void test_procs() {
-    int i = 0;
-    for (i = 0; i < 10; i++) {
-        proc_create("test", NULL);
-    }
-
-    print_names();
 }
