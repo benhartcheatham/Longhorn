@@ -1,14 +1,21 @@
 /* Drivers */
-#include "../drivers/vga.h"
+
+/* libc */
+#include "../libc/stdio.h"
+
+/* Processes/Threads */
+#include "proc.h"
 
 /* Interrupts */
 #include "isr.h"
 
 void kmain() {
-    vga_clear_screen();
-    vga_println("Hello, World!");
+    clear_screen();
+    println("Hello, World!");
     
     init_idt();
+    init_processes();
     enable_interrupts();
 
 }
+

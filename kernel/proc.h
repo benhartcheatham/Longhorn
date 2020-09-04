@@ -31,7 +31,7 @@ struct process {
 };
 
 /* typedefs */
-typedef void (*proc_function) (void *aux);
+typedef int (proc_function) (void *aux);
 
 /* functions */
 
