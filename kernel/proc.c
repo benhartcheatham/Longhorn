@@ -15,18 +15,46 @@ static uint32_t pid_count;
 
 /* static functions */
 static void set_name(struct process *proc, char *name);
+static struct thread *proc_get_free_thread(struct process *proc);
 
 /* initialization functions */
 void init_processes() {
     list_init(&ready_procs);
     list_init(&all_procs);
 
-    pid_count = 1;
+    //create init process
+    struct process *p = (struct process *) palloc();
+    set_name(p, "init");
+    p->node._struct = (void *) p;
+    pid_count = 0;
+    p->pid = pid_count++;
+    p->state = PROCESS_READY;
+
+    int i;
+    for (i = 0; i < MAX_NUM_THREADS; i++) {
+        p->threads[i].state = THREAD_TERMINATED;
+        p->threads[i].child_num = i;
+    }
+
+    //create init thread
+    struct thread *init_t = &p->threads[0];
+    init_t->parent = &p->node;
+    init_t->state = THREAD_READY;
+    init_t->tid = 0;
+    char *init_tname = "init_t";
+    memcpy(init_t->name, init_tname, strlen(init_tname));
+    asm volatile("mov %%esp, %0" : "=g" (init_t->regs.esp));
+    init_t->regs.esp = (uint32_t *) ((uint32_t) init_t->regs.esp);
+    init_threads(p);
+
+    list_insert_end(&ready_procs.tail, &p->node);
+    current = p;
+
 }
 
 /* process state functions */
 
-int proc_create(char *name, proc_function init_func) {
+int proc_create(char *name, proc_function init_func, void *aux) {
     //change this to just use kmalloc
     struct process *p = (struct process *) palloc();
     set_name(p, name);
@@ -35,8 +63,22 @@ int proc_create(char *name, proc_function init_func) {
     p->pid = pid_count++;
     p->state = PROCESS_READY;
 
+    int i;
+    for (i = 0; i < MAX_NUM_THREADS; i++) {
+        p->threads[i].state = THREAD_TERMINATED;
+        p->threads[i].child_num = i;
+    }
+    
+    thread_create(0, name, &p->threads[0], (thread_function *) init_func, aux);
+    p->active_thread = &p->threads[0];
+
     list_insert_end(&ready_procs.tail, &p->node);
     return p->pid;
+}
+
+int proc_create_thread(uint8_t priority, char *name, thread_function func, void *aux) {
+    struct thread *t = proc_get_free_thread(proc_get_running());
+    return thread_create(priority, name, t, func, aux);
 }
 
 void proc_exit(struct process *proc) {
@@ -53,6 +95,12 @@ void proc_block(struct process *proc) {
 
 void proc_unblocked(struct process *proc) {
     proc->state = PROCESS_READY;
+}
+
+/* process "getter" functions */
+
+struct process *proc_get_running() {
+    return current;
 }
 
 /* process stream functions */
@@ -113,6 +161,15 @@ static void set_name(struct process *proc, char *name) {
         memcpy(proc->name, name, strlen(name));
         proc->name[strlen(name) + 1] = '\0';
     }
+}
+
+/* gets the next free slot in the threads array if there is one */
+static struct thread *proc_get_free_thread(struct process *proc) {
+    int i;
+    for (i = 0; i < MAX_NUM_THREADS; i++)
+        if (proc->threads[i].state == THREAD_TERMINATED)
+            return &proc->threads[i];
+    return NULL;
 }
 
 

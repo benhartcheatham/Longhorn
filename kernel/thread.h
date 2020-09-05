@@ -3,7 +3,6 @@
 
 /* includes */
 #include <stdint.h>
-#include "proc.h"
 #include "../libk/list.h"
 
 /* defines */
@@ -27,21 +26,25 @@ struct thread {
     char name[MAX_TNAME_LENGTH + 1];
     enum thread_states state;
 
-    struct process *parent;
+    //have to use a list_node * instead of a process * because of recursive includes that I couldn't see an
+    //easy fix to. Probably want to come back and fix this
+    struct list_node *parent;
     uint32_t child_num;
 
     struct list_node node;
 };
 
+
 /* typedefs */
 typedef void (thread_function) (void *aux);
+
 /* functions */
 
 /* initialization functions */
-void init_threads(struct process *init);
+void init_threads();
 
 /* thread state functions */
-int thread_create(uint32_t priority, char *name, thread_function func, void *aux);
+int thread_create(uint8_t priority, char *name, struct thread *thread, thread_function func, void *aux);
 void thread_block(struct thread *thread);
 void thread_unblock(struct thread *thread);
 void thread_exit();

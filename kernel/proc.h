@@ -20,7 +20,7 @@ struct process {
     enum proc_states state;
     char name[MAX_NAME_LENGTH + 1];
     struct thread *active_thread;
-    //struct thread threads[MAX_NUM_THREADS];
+    struct thread threads[MAX_NUM_THREADS];
 
     //might want to make these FILE structs later on
     //shouldn't be accessed directly
@@ -38,12 +38,14 @@ typedef int (proc_function) (void *aux);
 void init_processes();
 
 /* process state functions */
-int proc_create(char *name, proc_function init_func);
+int proc_create(char *name, proc_function , void *aux);
 void proc_exit(struct process *proc);
 void proc_kill_k(struct process *proc);
 void proc_block(struct process *proc);
 void proc_unblock(struct process *proc);
 
+/* process "getter" functions */
+struct process *proc_get_running();
 
 /* process stream functions */
 char *get_in(struct process *proc);
