@@ -7,7 +7,9 @@
 #include "../libk/list.h"
 
 /* defines */
-#define MAX_TNAME_LENGTH 25
+#define MAX_TNAME_LENGTH 24
+#define MAX_TID 512
+
 /* structs */
 struct state_regs {
     //registers in the order of a pushad
@@ -22,7 +24,7 @@ struct thread {
     struct state_regs regs;
     uint32_t tid;
     uint8_t priority;
-    char name[MAX_TNAME_LENGTH];
+    char name[MAX_TNAME_LENGTH + 1];
     enum thread_states state;
 
     struct process *parent;

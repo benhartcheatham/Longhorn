@@ -1,16 +1,20 @@
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "thread.h"
 #include "kalloc.h"
+#include "../libc/string.h"
+#include "../libc/mem.h"
 
 /* static data */
 static struct list ready_threads;
+static bool tids[MAX_TID];
 
 /* data */
 struct thread *init_t;
 struct thread *current;
 struct thread *dying;
-uint32_t current_tid;
+
 
 /* structs */
 struct thread_func_frame {
@@ -19,34 +23,25 @@ struct thread_func_frame {
     void *aux;
 };
 
-struct stack_frame {
-    uint32_t ebp;
-    uint32_t ebx;
-    uint32_t edi;
-    uint32_t esi;
-    void (*eip) (void);
-};
-
 struct tail_frame {
     void (*eip) (void);
 };
 
 /* static functions */
 static uint32_t allocate_tid();
+static void set_thread_name(struct thread *t, char *name);
 static void thread_execute(thread_function *func, void *aux);
 static void schedule();
 
 /* external functions */
 extern void switch_thread(struct thread *current_thread, struct thread *next_thread);
-extern void switch_entry();
 
 void init_threads(struct process *init) {
-    current_tid = 0;
     //init_t = &init->threads[0];
     init_t->child_num = 0;
     init_t->parent = init;
     init_t->state = THREAD_READY;
-    init_t->tid = current_tid;
+    init_t->tid = allocate_tid();
     asm volatile("mov %%esp, %0" : "=g" (init_t->regs.esp));
     init_t->regs.esp = (uint32_t *) ((uint32_t) init_t->regs.esp / PG_SIZE);
 }
@@ -74,12 +69,6 @@ int thread_create(uint32_t priority, char *name, thread_function func, void *aux
     struct tail_frame *tf = (void *) t;
     tf->eip = (void (*) (void)) thread_execute;
 
-    t -= sizeof(struct stack_frame);
-    struct stack_frame *sf = (void *) t;
-    sf->eip = switch_entry;
-    sf->ebp = 0;
-
-    
     thread->regs.esp = (uint32_t *) t;
 
     list_insert(&ready_threads, &thread->node);
@@ -105,6 +94,26 @@ static void thread_execute(thread_function *func, void *aux) {
     thread_exit();
 }
 
+/* static functions */
+
 static void schedule() {
 
+}
+
+static uint32_t allocate_tid() {
+    int i;
+    for (i = 0; i < MAX_TID; i++)
+        if (tids[i] == false) {
+            tids[i] = true;
+            return i;
+        }
+    
+    return MAX_TID + 1;
+}
+
+static void set_thread_name(struct thread *t, char *name) {
+    if (strlen(name) < MAX_TNAME_LENGTH) {
+        memcpy(t->name, name, MAX_TNAME_LENGTH);
+        t->name[strlen(name) + 1] = '\0';
+    }
 }
