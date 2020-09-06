@@ -36,7 +36,7 @@ struct tail_frame {
 };
 
 struct stack_frame {
-    uint32_t edi, esi, ebp, ebx, edx, ecx, eax;
+    uint32_t edi, esi, ebp, zero, ebx, edx, ecx, eax;
     void (*eip) (void);
 };
 

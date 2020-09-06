@@ -6,6 +6,7 @@
  */ 
 
 #include "bitmap.h"
+#include "../kernel/kalloc.h"
 
 /* BIT UTILITY FUNCTIONS */
 
@@ -32,12 +33,13 @@ static inline size_t num_bytes(size_t num_bits) {
 
 /* INITIALIZATION FUNCTIONS */
 
-//TODO: implement
-void bitmap_init(bitmap_t *m __attribute__ ((unused)), size_t bits __attribute__ ((unused))) {
-    return;
+/* Initializes a bitmap m of size bits at a memory address given by palloc */
+void bitmap_init(bitmap_t *m , size_t bits) {
+    m->bits = bits;
+    m->map_p = (ELEM_TYPE *) palloc();
 }
 
-/* Initializes a bitmap at m that corresponds to the area at map_p */
+/* Initializes a bitmap of size bits at m that corresponds to the area at map_p */
 void bitmap_init_s(bitmap_t *m, size_t bits, void *map_p) {
     m->bits = bits;
     m->map_p = (ELEM_TYPE *) map_p;

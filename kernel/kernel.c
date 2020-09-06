@@ -28,7 +28,7 @@ void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
     init_idt();
     init_alloc(mb);
     init_processes();
-    proc_create("test", dummy, NULL);
+
     enable_interrupts();
 
 }
