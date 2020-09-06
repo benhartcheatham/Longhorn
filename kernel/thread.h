@@ -9,6 +9,7 @@
 /* defines */
 #define MAX_TNAME_LENGTH 24
 #define MAX_TID 512
+#define THREAD_MAGIC 0x5f5f5f5fu
 
 /* structs */
 enum thread_states {THREAD_READY, THREAD_BLOCKED, THREAD_DYING, 
@@ -46,4 +47,6 @@ void thread_exit();
 
 /* scheduling functions */
 void timer_interrupt_handler(struct register_frame *r);
+void finish_schedule();
+
 #endif

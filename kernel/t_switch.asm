@@ -12,7 +12,11 @@ switch_threads:
     mov ebx, [ebp + 12] ;access the next thread struct
     mov [esp], ebx      ;update esp to the current thread esp
 
-    popad               ;pop thread state
-    pop ebp             ;pop stack frame
+    popad               ;pop thread state and stack frame
     ret
 
+global first_switch_entry
+first_switch_entry:
+    extern finish_schedule
+    call finish_schedule
+    ret

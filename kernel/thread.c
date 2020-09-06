@@ -4,6 +4,7 @@
 #include "thread.h"
 #include "proc.h"
 #include "kalloc.h"
+#include "port_io.h"
 #include "../libc/string.h"
 #include "../libc/mem.h"
 
@@ -34,11 +35,17 @@ struct tail_frame {
     void (*eip) (void);
 };
 
+struct stack_frame {
+    uint32_t edi, esi, ebp, ebx, edx, ecx, eax;
+    void (*eip) (void);
+};
+
 /* static functions */
 static uint32_t allocate_tid();
 static void set_thread_name(struct thread *t, char *name);
 static void thread_execute(thread_function *func, void *aux);
 static void schedule();
+extern void first_switch_entry();
 
 /* external functions */
 extern void switch_threads(struct thread *current_thread, struct thread *next_thread);
@@ -71,20 +78,27 @@ int thread_create(uint8_t priority, char *name, struct thread *thread, thread_fu
 
     s += PG_SIZE;
 
+    //setup for thread function
     s -= sizeof(struct thread_func_frame);
     struct thread_func_frame *f = (void *) s;
     f->eip = NULL;
     f->function = func;
     f->aux = (void *) aux;
 
+    //setup to call thread_execute
     s -= sizeof(struct tail_frame);
     struct tail_frame *tf = (void *) s;
     tf->eip = (void (*) (void)) thread_execute;
 
+    //setup for the first switch of a thread
+    s -= sizeof(struct stack_frame);
+    struct stack_frame *sf = (void *) s;
+    sf->eip = first_switch_entry;
+
     thread->esp = (uint32_t *) s;
 
-    list_insert(&ready_threads, &thread->node);
     thread->state = THREAD_READY;
+    list_insert(&ready_threads, &thread->node);
 
     return thread->tid;
 }
@@ -99,9 +113,12 @@ void thread_unblock(struct thread *thread) {
 
 void thread_exit() {
     current->state = THREAD_DYING;
+    list_delete(&ready_threads, &current->node);
 }
 
 static void thread_execute(thread_function *func, void *aux) {
+    //have to reenable interrupts since there isn't a guaruntee we returned to the irq handler
+    asm volatile("sti");
     func(aux);
     thread_exit();
 }
@@ -116,6 +133,14 @@ void timer_interrupt_handler(struct register_frame *r) {
     }
 }
 
+void finish_schedule() {
+    //finish the part after we switch threads in schedule()
+    current = switch_temp;
+    switch_temp = NULL;
+    printf("in finish_schedule\n");
+    return;
+}
+
 /* static functions */
 
 static void schedule() {
@@ -126,7 +151,9 @@ static void schedule() {
     list_insert_end(&ready_threads.tail, list_delete(&ready_threads, &current->node));
 
     switch_temp = (struct thread *) next->_struct;
+    print("switching threads\n");
     switch_threads(current, (struct thread *) next->_struct);
+    print("finished\n");
     current = switch_temp;
     switch_temp = NULL;
 }
