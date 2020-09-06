@@ -2,9 +2,8 @@
 #include "timer.h"
 #include "../kernel/isr.h"
 #include "../kernel/port_io.h"
+#include "../kernel/thread.h"
 #include "../libc/stdio.h"
-
-void timer_interrupt_handler(struct register_frame *r);
 
 /* Initializes timer interrupt */
 void init_timer(uint32_t freq) {
@@ -19,10 +18,4 @@ void init_timer(uint32_t freq) {
     outb(0x43, 0x36); /* Command port */
     outb(0x40, low);
     outb(0x40, high);
-}
-
-/* Interrupt Handler for timer interrupt (IRQ00)
-   Should be fast because this code will run a lot */
-void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) {
-    //TODO: Implement with something useful
 }

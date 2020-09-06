@@ -3,6 +3,7 @@
 
 /* includes */
 #include <stdint.h>
+#include "isr.h"
 #include "../libk/list.h"
 
 /* defines */
@@ -10,17 +11,11 @@
 #define MAX_TID 512
 
 /* structs */
-struct state_regs {
-    //registers in the order of a pushad
-    uint32_t eax, ecx, edx, ebx;
-    uint32_t *esp, ebp, esi, edi;
-};
-
 enum thread_states {THREAD_READY, THREAD_BLOCKED, THREAD_DYING, 
                             THREAD_SUSPENDED, THREAD_TERMINATED};
 
 struct thread {
-    struct state_regs regs;
+    uint32_t *esp;
     uint32_t tid;
     uint8_t priority;
     char name[MAX_TNAME_LENGTH + 1];
@@ -49,4 +44,6 @@ void thread_block(struct thread *thread);
 void thread_unblock(struct thread *thread);
 void thread_exit();
 
+/* scheduling functions */
+void timer_interrupt_handler(struct register_frame *r);
 #endif

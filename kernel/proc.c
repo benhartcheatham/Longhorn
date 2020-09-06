@@ -42,20 +42,21 @@ void init_processes() {
         p->threads[i].child_num = i;
     }
 
+    current = p;
+    
     //create init thread
     struct thread *init_t = &p->threads[0];
     init_t->parent = &p->node;
     init_t->state = THREAD_READY;
     init_t->tid = 0;
     char *init_tname = "init_t";
-    memcpy(init_t->name, init_tname, strlen(init_tname));
-    asm volatile("mov %%esp, %0" : "=g" (init_t->regs.esp));
-    init_t->regs.esp = (uint32_t *) ((uint32_t) init_t->regs.esp);
+    memcpy(init_t->name, init_tname, strlen(init_tname) + 1);
+    asm volatile("mov %%esp, %0" : "=g" (init_t->esp));
+    init_t->esp = (uint32_t *) ((uint32_t) init_t->esp);
     init_threads(p);
 
     p->active_thread = &p->threads[0];
     list_insert(&ready_procs, &p->node);
-    current = p;
 }
 
 /* process state functions */
