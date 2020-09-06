@@ -24,6 +24,12 @@ void init_processes() {
 
     //create init process
     struct process *p = (struct process *) palloc();
+    if (p == NULL) {
+        println("CRITICAL ERROR: NO MEMORY FOR INIT PROCESS.\nHALTING...");
+        asm volatile("cli");
+        asm volatile("hlt");
+    }
+
     set_name(p, "init");
     p->node._struct = (void *) p;
     pid_count = 0;
@@ -47,16 +53,19 @@ void init_processes() {
     init_t->regs.esp = (uint32_t *) ((uint32_t) init_t->regs.esp);
     init_threads(p);
 
-    list_insert_end(&ready_procs.tail, &p->node);
+    p->active_thread = &p->threads[0];
+    list_insert(&ready_procs, &p->node);
     current = p;
-
 }
 
 /* process state functions */
 
-int proc_create(char *name, proc_function init_func, void *aux) {
+int proc_create(char *name, proc_function func, void *aux) {
     //change this to just use kmalloc
     struct process *p = (struct process *) palloc();
+    if (p == NULL)
+        return -1;
+    
     set_name(p, name);
     p->node._struct = (void *) p;
 
@@ -68,8 +77,8 @@ int proc_create(char *name, proc_function init_func, void *aux) {
         p->threads[i].state = THREAD_TERMINATED;
         p->threads[i].child_num = i;
     }
-    
-    thread_create(0, name, &p->threads[0], (thread_function *) init_func, aux);
+
+    thread_create(0, "main_t", &p->threads[0], func, aux);
     p->active_thread = &p->threads[0];
 
     list_insert_end(&ready_procs.tail, &p->node);
@@ -99,8 +108,15 @@ void proc_unblocked(struct process *proc) {
 
 /* process "getter" functions */
 
+/* returns a pointer to the current process */
 struct process *proc_get_running() {
     return current;
+}
+
+/* returns the ready_list of processes 
+   should return a copy of the list but I can't do that right now */
+list_t *get_ready_list() {
+    return &ready_procs;
 }
 
 /* process stream functions */

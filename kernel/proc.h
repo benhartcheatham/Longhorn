@@ -30,7 +30,7 @@ struct process {
 };
 
 /* typedefs */
-typedef int (proc_function) (void *aux);
+typedef void (proc_function) (void *aux);
 
 /* functions */
 
@@ -46,6 +46,7 @@ void proc_unblock(struct process *proc);
 
 /* process "getter" functions */
 struct process *proc_get_running();
+list_t *get_ready_list();
 
 /* process stream functions */
 char *get_in(struct process *proc);

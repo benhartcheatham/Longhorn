@@ -12,6 +12,7 @@ static char *start_addr = (char *) (2*MB);
 void init_alloc(multiboot_info_t *mb) {
     size_t num_pages = (size_t) (((mb->mem_upper * 1024) - 2*MB) / PG_SIZE);
     bitmap_init_s(&free_map, num_pages, start_addr);
+    bitmap_set_range(&free_map, 0, num_pages / PG_SIZE + 1, true);
 }
 
 void *palloc() {

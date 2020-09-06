@@ -42,6 +42,20 @@ void vga_print_char(char c) {
         set_cursor(cursor_x, cursor_y);
         scroll();
         return;
+    } else if (c == '\t') {
+        int i;
+        for (i = 0; i < 5 && cursor_x < MAX_COLS; i++) {
+            uint16_t offset = get_offset();
+            uint16_t *videomem = (uint16_t *) VIDEO_ADDRESS;
+
+            videomem += offset;
+            *videomem = (color << 8) | ' ';
+
+            cursor_x++;
+            set_cursor(cursor_x, cursor_y);
+        }
+
+        return;
     }
 
     uint16_t offset = get_offset();
