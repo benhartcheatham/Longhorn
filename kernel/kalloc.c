@@ -100,14 +100,15 @@ void *kmalloc(size_t size) {
        if that size has no space left */
     int i;
     for (i = size; i <= MAX_ARENA_UNIT; i *= 2) {
-        size_t m_idx = power_2(size) - power_2(MIN_ARENA_UNIT);
+        size_t m_idx = power_2(i) - power_2(MIN_ARENA_UNIT);
         size_t unit = malloc_g.arenas[m_idx].unit;
         size_t idx = bitmap_find_range(&malloc_g.map, m_idx * MEM_ARENA_SIZE, MEM_ARENA_SIZE, unit, false);
 
         if (idx != bitmap_get_size(&malloc_g.map) + 1) {
             bitmap_set_range(&malloc_g.map, idx, unit, true);
-            return (void *) malloc_g.arenas[m_idx].mem + (idx * unit);
+            return (void *) malloc_g.arenas[m_idx].mem + (idx - (m_idx * MEM_ARENA_SIZE));
         }
+
     }
 
     return NULL;
