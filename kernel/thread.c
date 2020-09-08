@@ -5,6 +5,7 @@
 #include "proc.h"
 #include "kalloc.h"
 #include "port_io.h"
+#include "../libc/stdio.h"
 #include "../libc/string.h"
 #include "../libc/mem.h"
 
@@ -125,7 +126,7 @@ static void thread_execute(thread_function *func, void *aux) {
 
 /* scheduling functions */
 
-void timer_interrupt_handler(struct register_frame *r) {
+void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) {
     thread_ticks++;
 
     if (thread_ticks >= MAX_THREAD_TICKS) {

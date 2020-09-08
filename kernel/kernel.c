@@ -40,7 +40,7 @@ void test(bool expected, bool expression, int num) {
         printf("TEST (%d) FAILED: EXPECTED %d, GOT: %d\n", num, expected, expression);
 }
 
-void dummy(void *aux) {
+void dummy(void *aux __attribute__ ((unused))) {
     print("dummy\n");
     for (;;)
         asm volatile ("hlt");
