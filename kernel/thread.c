@@ -37,7 +37,7 @@ struct tail_frame {
 };
 
 struct stack_frame {
-    uint32_t edi, esi, ebp, zero, ebx, edx, ecx, eax;
+    uint32_t ebp, ebx, edi, esi;
     void (*eip) (void);
 };
 
@@ -79,22 +79,23 @@ int thread_create(uint8_t priority, char *name, struct thread *thread, thread_fu
 
     s += PG_SIZE;
 
-    //setup for thread function
+    //setup arguments thread_execute
     s -= sizeof(struct thread_func_frame);
-    struct thread_func_frame *f = (void *) s;
+    struct thread_func_frame *f = (struct thread_func_frame *) s;
     f->eip = NULL;
     f->function = func;
     f->aux = (void *) aux;
 
     //setup to call thread_execute
     s -= sizeof(struct tail_frame);
-    struct tail_frame *tf = (void *) s;
+    struct tail_frame *tf = (struct tail_frame *) s;
     tf->eip = (void (*) (void)) thread_execute;
 
     //setup for the first switch of a thread
     s -= sizeof(struct stack_frame);
-    struct stack_frame *sf = (void *) s;
+    struct stack_frame *sf = (struct stack_frame *) s;
     sf->eip = first_switch_entry;
+    sf->ebp = 0;
 
     thread->esp = (uint32_t *) s;
 
@@ -115,11 +116,13 @@ void thread_unblock(struct thread *thread) {
 void thread_exit() {
     current->state = THREAD_DYING;
     list_delete(&ready_threads, &current->node);
+
+    schedule();
 }
 
-static void thread_execute(thread_function *func, void *aux) {
+static void thread_execute(thread_function func, void *aux) {
     //have to reenable interrupts since there isn't a guaruntee we returned to the irq handler
-    asm volatile("sti");
+    enable_interrupts();
     func(aux);
     thread_exit();
 }
@@ -138,23 +141,20 @@ void finish_schedule() {
     //finish the part after we switch threads in schedule()
     current = switch_temp;
     switch_temp = NULL;
-    printf("in finish_schedule\n");
     return;
 }
 
 /* static functions */
 
 static void schedule() {
-    struct list_node *next = ready_threads.head.next;
+    struct list_node *next = list_pop(&ready_threads);
     if (next == NULL || next->_struct == NULL || current == (struct thread *) next->_struct)
         return;
 
-    list_insert_end(&ready_threads.tail, list_delete(&ready_threads, &current->node));
+    list_insert_end(&ready_threads.tail, next);
 
     switch_temp = (struct thread *) next->_struct;
-    print("switching threads\n");
     switch_threads(current, (struct thread *) next->_struct);
-    print("finished\n");
     current = switch_temp;
     switch_temp = NULL;
 }
