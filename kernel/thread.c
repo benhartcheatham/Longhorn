@@ -138,11 +138,10 @@ int thread_kill(struct thread *thread) {
     return temp->tid;
 }
 
-static void thread_execute(thread_function func, void *aux) {
-    //have to reenable interrupts since there isn't a guaruntee we returned to the irq handler
-    enable_interrupts();
-    func(aux);
-    thread_exit();
+/* thread "getter" functions */
+
+struct thread *thread_get_running() {
+    return current;
 }
 
 /* scheduling functions */
@@ -159,10 +158,18 @@ void finish_schedule() {
     //finish the part after we switch threads in schedule()
     current = switch_temp;
     switch_temp = NULL;
+    proc_set_running();
     return;
 }
 
 /* static functions */
+
+static void thread_execute(thread_function func, void *aux) {
+    //have to reenable interrupts since there isn't a guaruntee we returned to the irq handler
+    enable_interrupts();
+    func(aux);
+    thread_exit();
+}
 
 static void schedule() {
     struct list_node *next = list_pop(&ready_threads);
@@ -173,8 +180,8 @@ static void schedule() {
 
     switch_temp = (struct thread *) next->_struct;
     switch_threads(current, (struct thread *) next->_struct);
-    current = switch_temp;
-    switch_temp = NULL;
+    
+    finish_schedule();
 }
 
 static uint32_t allocate_tid() {

@@ -133,6 +133,14 @@ void proc_unblocked(struct process *proc) {
     proc->state = PROCESS_READY;
 }
 
+/* process "setter" functions */
+
+/* sets the current process to the parent of the current thread */
+void proc_set_running() {
+    current = (struct process *) thread_get_running()->parent->_struct;
+    current->active_thread = thread_get_running();
+}
+
 /* process "getter" functions */
 
 /* returns a pointer to the current process */

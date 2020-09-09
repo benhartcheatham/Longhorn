@@ -45,6 +45,9 @@ int proc_kill(struct process *proc);
 void proc_block(struct process *proc);
 void proc_unblock(struct process *proc);
 
+/* process "setter" functions */
+void proc_set_running();
+
 /* process "getter" functions */
 struct process *proc_get_running();
 uint8_t get_live_t_count(struct process *proc);

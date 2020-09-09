@@ -46,6 +46,9 @@ void thread_unblock(struct thread *thread);
 void thread_exit();
 int thread_kill(struct thread *thread);
 
+/* thread "getter" functions */
+struct thread *thread_get_running();
+
 /* scheduling functions */
 void timer_interrupt_handler(struct register_frame *r);
 void finish_schedule();
