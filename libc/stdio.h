@@ -4,10 +4,14 @@
 /* includes */
 #include <stdint.h>
 #include "../drivers/vga.h"
+#include "../libk/stream.h"
 
 /* defines */
 
 /* structs */
+std_stream *stdin;
+std_stream *stdout;
+std_stream *stderr;
 
 /* typedefs */
 

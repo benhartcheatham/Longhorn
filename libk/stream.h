@@ -27,6 +27,7 @@ typedef struct CHAR_STREAM char_stream;
 /* functions */
 
 /* char_stream functions */
+char_stream *init_c(char_stream *stream, size_t size);
 void flush_c(char_stream *stream);
 int append_c(char_stream *stream, char c);
 char *get_copy_c(char_stream *stream);
@@ -34,6 +35,7 @@ int shrink_c(char_stream *stream, size_t size);
 void resize_c(char_stream *stream, size_t size);
 
 /* std_stream functions */
+std_stream *init_std(std_stream *stream);
 void flush_std(std_stream *stream);
 int append_std(std_stream *stream, char c);
 char *get_copy_std(std_stream *stream);

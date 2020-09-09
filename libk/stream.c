@@ -1,7 +1,15 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "stream.h"
+#include "../kernel/kalloc.h"
 #include "../libc/mem.h"
+
+
+char_stream *init_c(char_stream *stream, size_t size) {
+    stream = (char *) kcalloc(size, sizeof(char));
+    stream->size = size;
+    stream->index = 0;
+}
 
 void flush_c(char_stream *stream) {
     size_t i;
@@ -39,6 +47,12 @@ void resize_c(char_stream *stream __attribute__ ((unused)), size_t size __attrib
 }
 
 /* std_stream functions */
+
+std_stream *init_std(std_stream *stream) {
+    stream->size = STD_STREAM_SIZE;
+    stream->index = 0;
+}
+
 void flush_std(std_stream *stream) {
     size_t i;
     for (i = 0; i < stream->size; i++)
@@ -48,7 +62,8 @@ void flush_std(std_stream *stream) {
 
 int append_std(std_stream *stream, char c) {
     if (stream->index < stream->size) {
-        stream->stream[stream->index++] = c;
+        stream->stream[stream->index] = c;
+        stream->index++;
         return 1;
     }
 
@@ -66,6 +81,6 @@ int shrink_std(std_stream *stream, size_t size) {
         size = stream->index;
     
     stream->index = stream->index - size;
-
+    
     return size;
 }

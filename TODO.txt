@@ -7,3 +7,10 @@
     - Idle Process
 3. Threads
     - Test threads
+4. Standard Streams
+    - Add in features from Planning.txt
+    - Rework for stdio.h functions to use stdout/stdin streams
+    - Rework vga driver to use stdout stream
+5. Housekeeping
+    - format all .c files according to Planning.txt
+    - format all .h files according to Planning.txt

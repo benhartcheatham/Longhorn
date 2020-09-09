@@ -40,6 +40,13 @@ Threads:
     - List of all threads for scheduling
     - Timer interrupt in thread.c? (Probably)
 
+Standard Streams:
+    - Have keyboard write to stdin
+    - Have stdin and stdout be directed to the active process
+    - Active process should print stdout to the screen
+    - Maybe have a boolean flag in std streams that allows immediate response from active process?
+        - If enabled, writes to the stream will jump to a function given by the active process
+        - If disabled, active process has to write/read from streams when in it's timeslice
 
 
     
