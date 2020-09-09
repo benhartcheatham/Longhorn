@@ -44,6 +44,7 @@ int thread_create(uint8_t priority, char *name, struct thread *thread, thread_fu
 void thread_block(struct thread *thread);
 void thread_unblock(struct thread *thread);
 void thread_exit();
+int thread_kill(struct thread *thread);
 
 /* scheduling functions */
 void timer_interrupt_handler(struct register_frame *r);

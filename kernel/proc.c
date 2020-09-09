@@ -8,7 +8,6 @@
 #include "../libk/list.h"
 
 /* static data */
-static struct list ready_procs;
 static struct list all_procs;
 static struct process *current;
 static uint32_t pid_count;
@@ -19,7 +18,6 @@ static struct thread *proc_get_free_thread(struct process *proc);
 
 /* initialization functions */
 void init_processes() {
-    list_init(&ready_procs);
     list_init(&all_procs);
 
     //create init process
@@ -56,7 +54,7 @@ void init_processes() {
     init_threads(p);
 
     p->active_thread = &p->threads[0];
-    list_insert(&ready_procs, &p->node);
+    list_insert(&all_procs, &p->node);
 }
 
 /* process state functions */
@@ -79,24 +77,52 @@ int proc_create(char *name, proc_function func, void *aux) {
         p->threads[i].child_num = i;
     }
 
-    thread_create(0, "main_t", &p->threads[0], func, aux);
+    if (thread_create(0, "main_t", &p->threads[0], func, aux) > -1)
+        p->num_live_threads = 1;
+    else {
+        proc_kill(p);
+        return -1;
+    }
+    
     p->active_thread = &p->threads[0];
 
-    list_insert_end(&ready_procs.tail, &p->node);
+    list_insert_end(&all_procs.tail, &p->node);
     return p->pid;
 }
 
 int proc_create_thread(uint8_t priority, char *name, thread_function func, void *aux) {
     struct thread *t = proc_get_free_thread(proc_get_running());
-    return thread_create(priority, name, t, func, aux);
+    int tid = thread_create(priority, name, t, func, aux);
+
+    if (tid > -1)
+        proc_get_running()->num_live_threads++;
+    
+    return tid;
 }
 
-void proc_exit(struct process *proc) {
-    proc->state = PROCESS_DYING;
+/* intended for a graceful exit */
+int proc_exit(struct process *proc) {
+    proc_kill(proc);
+    return 0;
 }
 
-void proc_kill_k(struct process *proc) {
+int proc_kill(struct process *proc) {
+    int i;
+    for (i = 0; i < MAX_NUM_THREADS && proc->num_live_threads != 0; i++) {
+        if (thread_kill(&proc->threads[i]) != (int) proc->threads[i].tid)
+            printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i].name, proc->threads[i].tid);
+        
+        proc->num_live_threads--;
+        if (proc->num_live_threads <= 0)
+            break; 
+        
+    }
+
     proc->state = PROCESS_DYING;
+    list_delete(&all_procs, &proc->node);
+    pfree(proc);
+
+    return (int) proc_get_running()->pid;
 }
 
 void proc_block(struct process *proc) {
@@ -114,10 +140,9 @@ struct process *proc_get_running() {
     return current;
 }
 
-/* returns the ready_list of processes 
-   should return a copy of the list but I can't do that right now */
-list_t *get_ready_list() {
-    return &ready_procs;
+/* gets the amount of live threads process proc owns */
+uint8_t get_live_t_count(struct process *proc) {
+    return proc->num_live_threads;
 }
 
 /* process stream functions */

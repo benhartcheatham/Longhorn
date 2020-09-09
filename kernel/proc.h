@@ -21,6 +21,7 @@ struct process {
     char name[MAX_NAME_LENGTH + 1];
     struct thread *active_thread;
     struct thread threads[MAX_NUM_THREADS];
+    uint8_t num_live_threads;
 
     //might want to make these FILE structs later on
     //shouldn't be accessed directly
@@ -39,14 +40,14 @@ void init_processes();
 
 /* process state functions */
 int proc_create(char *name, proc_function , void *aux);
-void proc_exit(struct process *proc);
-void proc_kill_k(struct process *proc);
+int proc_exit(struct process *proc);
+int proc_kill(struct process *proc);
 void proc_block(struct process *proc);
 void proc_unblock(struct process *proc);
 
 /* process "getter" functions */
 struct process *proc_get_running();
-list_t *get_ready_list();
+uint8_t get_live_t_count(struct process *proc);
 
 /* process stream functions */
 char *get_in(struct process *proc);

@@ -120,6 +120,24 @@ void thread_exit() {
     schedule();
 }
 
+/* kills thread thread if owned by current process
+   returns the tid of the killed thread if successful, -1 otherwise */
+int thread_kill(struct thread *thread) {
+    //only the parent process of the thread can kill it
+    if (proc_get_running() != (struct process *) thread->parent->_struct)
+        return -1;
+    
+    struct thread *temp = &((struct process *) thread->parent->_struct)->threads[thread->child_num];
+
+    if (temp->state == THREAD_READY)
+        list_delete(&ready_threads, &temp->node);
+        
+    temp->state = THREAD_TERMINATED;
+    pfree(temp->esp);
+    
+    return temp->tid;
+}
+
 static void thread_execute(thread_function func, void *aux) {
     //have to reenable interrupts since there isn't a guaruntee we returned to the irq handler
     enable_interrupts();
