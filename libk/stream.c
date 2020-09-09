@@ -6,9 +6,11 @@
 
 
 char_stream *init_c(char_stream *stream, size_t size) {
-    stream = (char *) kcalloc(size, sizeof(char));
+    stream->stream = (char *) kcalloc(size, sizeof(char));
     stream->size = size;
     stream->index = 0;
+
+    return stream;
 }
 
 void flush_c(char_stream *stream) {
@@ -51,6 +53,8 @@ void resize_c(char_stream *stream __attribute__ ((unused)), size_t size __attrib
 std_stream *init_std(std_stream *stream) {
     stream->size = STD_STREAM_SIZE;
     stream->index = 0;
+
+    return stream;
 }
 
 void flush_std(std_stream *stream) {
