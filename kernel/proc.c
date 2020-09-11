@@ -77,7 +77,7 @@ int proc_create(char *name, proc_function func, void *aux) {
         p->threads[i].child_num = i;
     }
 
-    if (thread_create(0, "main_t", &p->threads[0], func, aux) > -1)
+    if (thread_create(0, "main_t", &p->node, &p->threads[0], func, aux) > -1)
         p->num_live_threads = 1;
     else {
         proc_kill(p);
@@ -92,7 +92,7 @@ int proc_create(char *name, proc_function func, void *aux) {
 
 int proc_create_thread(uint8_t priority, char *name, thread_function func, void *aux) {
     struct thread *t = proc_get_free_thread(proc_get_running());
-    int tid = thread_create(priority, name, t, func, aux);
+    int tid = thread_create(priority, name, &proc_get_running()->node, t, func, aux);
 
     if (tid > -1)
         proc_get_running()->num_live_threads++;

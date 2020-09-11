@@ -40,7 +40,7 @@ typedef void (thread_function) (void *aux);
 void init_threads();
 
 /* thread state functions */
-int thread_create(uint8_t priority, char *name, struct thread *thread, thread_function func, void *aux);
+int thread_create(uint8_t priority, char *name, struct list_node *parent, struct thread *thread, thread_function func, void *aux);
 void thread_block(struct thread *thread);
 void thread_unblock(struct thread *thread);
 void thread_exit();

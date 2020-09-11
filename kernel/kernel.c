@@ -35,7 +35,7 @@ void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
     init_idt();
     init_alloc(mb);
     init_processes();
-    
+
     enable_interrupts();
 
 }
@@ -49,5 +49,6 @@ void test(bool expected, bool expression, int num) {
 
 void dummy(void *aux __attribute__ ((unused))) {
     print("dummy\n");
+    asm volatile ("hlt");
     return;
 }
