@@ -25,7 +25,7 @@ struct process {
 
     //might want to make these FILE structs later on
     //shouldn't be accessed directly
-    std_stream in, out, err;
+    std_stream stdin, stdout, stderr;
 
     list_node_t node;
 };
@@ -47,23 +47,25 @@ void proc_unblock(struct process *proc);
 
 /* process "setter" functions */
 void proc_set_running();
+void proc_set_active(uint32_t pid);
 
 /* process "getter" functions */
 struct process *proc_get_running();
+struct process *proc_get_active();
 uint8_t get_live_t_count(struct process *proc);
 
 /* process stream functions */
-char *get_in(struct process *proc);
-char *get_out(struct process *proc);
-char *get_err(struct process *proc);
-void flush_in(struct process *proc);
-void flush_out(struct process *proc);
-void flush_err(struct process *proc);
-int append_in(struct process *proc, char c);
-int append_out(struct process *proc, char c);
-int append_err(struct process *proc, char c);
+char *proc_get_in(struct process *proc);
+char *proc_get_out(struct process *proc);
+char *proc_get_err(struct process *proc);
+void proc_flush_in(struct process *proc);
+void proc_flush_out(struct process *proc);
+void proc_flush_err(struct process *proc);
+int proc_append_in(struct process *proc, char c);
+int proc_append_out(struct process *proc, char c);
+int proc_append_err(struct process *proc, char c);
 //don't include a shrink_err right now because i want other processes to not be able to only erase certain parts of the stream
-int shrink_in(struct process *proc, uint32_t size);
-int shrink_out(struct process *proc, uint32_t size);
+int proc_shrink_in(struct process *proc, uint32_t size);
+int proc_shrink_out(struct process *proc, uint32_t size);
 
 #endif

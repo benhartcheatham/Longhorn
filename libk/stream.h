@@ -39,6 +39,7 @@ std_stream *init_std(std_stream *stream);
 void flush_std(std_stream *stream);
 int append_std(std_stream *stream, char c);
 char *get_copy_std(std_stream *stream);
+size_t get_index_std(std_stream *stream);
 int shrink_std(std_stream *stream, size_t size);
 
 #endif

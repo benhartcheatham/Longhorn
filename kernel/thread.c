@@ -160,9 +160,7 @@ void finish_schedule() {
     switch_temp = NULL;
     proc_set_running();
     
-    //send an EOI
     outb(0x20,0x20);
-    return;
 }
 
 /* static functions */

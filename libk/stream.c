@@ -80,6 +80,10 @@ char *get_copy_std(std_stream *stream) {
     return cp;
 }
 
+size_t get_index_std(std_stream *stream) {
+    return stream->index;
+}
+
 int shrink_std(std_stream *stream, size_t size) {
     if (size > stream->index)
         size = stream->index;

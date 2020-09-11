@@ -35,17 +35,14 @@ static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) 
     uint8_t keycode = inb(0x60);
 
     if (keycode == ENTER) {
-        vga_print("\n");
+        append_std(stdin, '\n');
         keyboard_flush_key_buffer();
-        read_stdin(NULL);
 
     } else if (keycode == BACKSPACE) {
 
         if (buffer_index > 0) {
             shrink_buffer(1);
-            shrink_std(stdin, 1);
-            append_std(stdin, '\0');
-            print_backspace();
+            append_std(stdin, BACKSPACE);
         }
 
     } else if (keycode == SHIFT_PRESSED || keycode == SHIFT_RELEASED || keycode == CAPS_LOCK_PRESSED) {
@@ -55,11 +52,9 @@ static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) 
         if (capitalize == -1) {
             append_to_buffer(kc_ascii[keycode]);
             append_std(stdin, kc_ascii[keycode]);
-            vga_print_char(kc_ascii[keycode]);
         } else {
             append_to_buffer(kc_ascii_cap[keycode]);
             append_std(stdin, kc_ascii_cap[keycode]);
-            vga_print_char(kc_ascii_cap[keycode]);
         }
         
     }
