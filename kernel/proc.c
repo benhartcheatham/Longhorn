@@ -10,6 +10,7 @@
 /* static data */
 static struct list all_procs;
 static struct process *current;
+static struct process *active;
 static uint32_t pid_count;
 
 /* static functions */
@@ -141,6 +142,26 @@ void proc_set_running() {
     current->active_thread = thread_get_running();
 }
 
+/* sets the active process to proc */
+void proc_set_active(uint32_t pid) {
+    list_node_t *node = all_procs.head.next;
+    struct process *proc = (struct process *) node->_struct;
+
+    while (list_hasNext(node)) {
+        if (proc != NULL && proc->pid == pid) {
+            active = proc;
+            break;
+        }
+
+        node = node->next;
+        proc = (struct process *) node->_struct;
+    }
+
+    active->in = stdin;
+    active->out = stdout;
+    active->err = stderr;
+}
+
 /* process "getter" functions */
 
 /* returns a pointer to the current process */
@@ -154,53 +175,54 @@ uint8_t get_live_t_count(struct process *proc) {
 }
 
 /* process stream functions */
-char *get_in(struct process *proc) {
-    return get_copy_std(&proc->in);
+
+char *proc_get_in(struct process *proc) {
+    return get_copy_std(proc->in);
 }
 
-char *get_out(struct process *proc) {
-    return get_copy_std(&proc->out);
+char *proc_get_out(struct process *proc) {
+    return get_copy_std(proc->out);
 }  
 
-char *get_err(struct process *proc) {
-    return get_copy_std(&proc->err);
+char *proc_get_err(struct process *proc) {
+    return get_copy_std(proc->err);
 }
 
-void flush_in(struct process *proc) {
-    flush_std(&proc->in);
+void proc_flush_in(struct process *proc) {
+    flush_std(proc->in);
 }
 
-void flush_out(struct process *proc) {
-    flush_std(&proc->out);
+void proc_flush_out(struct process *proc) {
+    flush_std(proc->out);
 }
 
-void flush_err(struct process *proc) {
-    flush_std(&proc->err);
+void proc_flush_err(struct process *proc) {
+    flush_std(proc->err);
 }
 
 /* tries to append c to the in stream of a proc, returns num chars appended*/
-int append_in(struct process *proc, char c) {
-    return append_std(&proc->in, c);
+int proc_append_in(struct process *proc, char c) {
+    return append_std(proc->in, c);
 }
 
 /* tries to append c to the out stream of a proc, returns num chars appended*/
-int append_out(struct process *proc, char c) {
-    return append_std(&proc->out, c);
+int proc_append_out(struct process *proc, char c) {
+    return append_std(proc->out, c);
 }
 
 /* tries to append c to the err stream of a proc, returns num chars appended*/
-int append_err(struct process *proc, char c) {
-    return append_std(&proc->err, c);
+int proc_append_err(struct process *proc, char c) {
+    return append_std(proc->err, c);
 }
 
 /* tries to delete size chars from a process' in stream, returns num chars deleted */
-int shrink_in(struct process *proc, uint32_t size) {
-    return shrink_std(&proc->in, size);
+int proc_shrink_in(struct process *proc, uint32_t size) {
+    return shrink_std(proc->in, size);
 }
 
 /* tries to delete size chars from a process' out stream, returns num chars deleted */
-int shrink_out(struct process *proc, uint32_t size) {
-    return shrink_std(&proc->out, size);
+int proc_shrink_out(struct process *proc, uint32_t size) {
+    return shrink_std(proc->out, size);
 }
 
 /* static functions */

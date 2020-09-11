@@ -36,8 +36,8 @@ static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) 
 
     if (keycode == ENTER) {
         vga_print("\n");
+        append_std(stdin, '\n');
         keyboard_flush_key_buffer();
-        read_stdin(NULL);
 
     } else if (keycode == BACKSPACE) {
 

@@ -4,10 +4,12 @@
 /* includes */
 
 /* defines */
+#define NUM_COMMANDS 1
 
 /* structs */
 
 /* typedefs */
+typedef void (*terminal_command) (void *aux);
 
 /* functions */
 void terminal_init();
