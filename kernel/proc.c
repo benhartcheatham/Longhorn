@@ -72,6 +72,9 @@ int proc_create(char *name, proc_function func, void *aux) {
     p->pid = pid_count++;
     p->state = PROCESS_READY;
 
+    init_std(&p->stdin);
+    init_std(&p->stdout);
+    init_std(&p->stderr);
     flush_std(&p->stdin);
     flush_std(&p->stdout);
     flush_std(&p->stderr);

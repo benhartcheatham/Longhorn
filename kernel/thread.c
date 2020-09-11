@@ -159,7 +159,8 @@ void finish_schedule() {
     current = switch_temp;
     switch_temp = NULL;
     proc_set_running();
-
+    
+    outb(0x20,0x20);
 }
 
 /* static functions */

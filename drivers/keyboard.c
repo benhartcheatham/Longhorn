@@ -35,7 +35,6 @@ static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) 
     uint8_t keycode = inb(0x60);
 
     if (keycode == ENTER) {
-        //vga_print("\n");
         append_std(stdin, '\n');
         keyboard_flush_key_buffer();
 
@@ -51,7 +50,6 @@ static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) 
 
     } else if (keycode <= KC_MAX && keycode > 0) {
         if (capitalize == -1) {
-            printf("appending...\n");
             append_to_buffer(kc_ascii[keycode]);
             append_std(stdin, kc_ascii[keycode]);
         } else {

@@ -33,7 +33,6 @@ void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
     stdin = &proc_get_active()->stdin;
     stdout = &proc_get_active()->stdout;
     stderr = &proc_get_active()->stderr;
-    printf("hello");
     enable_interrupts();
 
 }
