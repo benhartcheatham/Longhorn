@@ -29,10 +29,12 @@ void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
     init_alloc(mb);
     init_processes();
 
+
     terminal_init();
     stdin = &proc_get_active()->stdin;
     stdout = &proc_get_active()->stdout;
     stderr = &proc_get_active()->stderr;
+
     enable_interrupts();
 
 }
@@ -46,5 +48,6 @@ void test(bool expected, bool expression, int num) {
 
 void dummy(void *aux __attribute__ ((unused))) {
     print("dummy\n");
+    asm volatile ("hlt");
     return;
 }

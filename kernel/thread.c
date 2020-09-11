@@ -160,6 +160,7 @@ void finish_schedule() {
     switch_temp = NULL;
     proc_set_running();
     
+    //send an EOI so we can recieve more interrupts
     outb(0x20,0x20);
 }
 
@@ -167,7 +168,7 @@ void finish_schedule() {
 
 static void thread_execute(thread_function func, void *aux) {
     //have to reenable interrupts since there isn't a guaruntee we returned to the irq handler
-    enable_interrupts();
+    asm volatile("sti");
     func(aux);
     thread_exit();
 }
