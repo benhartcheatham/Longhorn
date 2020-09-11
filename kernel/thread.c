@@ -66,7 +66,7 @@ void init_threads() {
 
 /* thread state functions */
 
-int thread_create(uint8_t priority, char *name, struct thread *thread, thread_function func, void *aux) {
+int thread_create(uint8_t priority, char *name, struct list_node *parent, struct thread *thread, thread_function func, void *aux) {
     uint8_t *s = (uint8_t *) palloc();
 
     //setup the thread struct at the top of the page
@@ -75,7 +75,7 @@ int thread_create(uint8_t priority, char *name, struct thread *thread, thread_fu
     set_thread_name(thread, name);
     thread->priority = priority;
     thread->node._struct = (void *) thread;
-    thread->parent = &proc_get_running()->node;
+    thread->parent = parent;
 
     s += PG_SIZE;
 

@@ -72,13 +72,17 @@ int proc_create(char *name, proc_function func, void *aux) {
     p->pid = pid_count++;
     p->state = PROCESS_READY;
 
+    flush_std(&p->stdin);
+    flush_std(&p->stdout);
+    flush_std(&p->stderr);
+
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++) {
         p->threads[i].state = THREAD_TERMINATED;
         p->threads[i].child_num = i;
     }
 
-    if (thread_create(0, "main_t", &p->threads[0], func, aux) > -1)
+    if (thread_create(0, "main_t", &p->node, &p->threads[0], func, aux) > -1)
         p->num_live_threads = 1;
     else {
         proc_kill(p);
@@ -86,14 +90,13 @@ int proc_create(char *name, proc_function func, void *aux) {
     }
     
     p->active_thread = &p->threads[0];
-
     list_insert_end(&all_procs.tail, &p->node);
     return p->pid;
 }
 
 int proc_create_thread(uint8_t priority, char *name, thread_function func, void *aux) {
     struct thread *t = proc_get_free_thread(proc_get_running());
-    int tid = thread_create(priority, name, t, func, aux);
+    int tid = thread_create(priority, name, &proc_get_running()->node, t, func, aux);
 
     if (tid > -1)
         proc_get_running()->num_live_threads++;
@@ -156,10 +159,6 @@ void proc_set_active(uint32_t pid) {
         node = node->next;
         proc = (struct process *) node->_struct;
     }
-
-    active->in = stdin;
-    active->out = stdout;
-    active->err = stderr;
 }
 
 /* process "getter" functions */
@@ -167,6 +166,10 @@ void proc_set_active(uint32_t pid) {
 /* returns a pointer to the current process */
 struct process *proc_get_running() {
     return current;
+}
+
+struct process *proc_get_active() {
+    return active;
 }
 
 /* gets the amount of live threads process proc owns */
@@ -177,52 +180,52 @@ uint8_t get_live_t_count(struct process *proc) {
 /* process stream functions */
 
 char *proc_get_in(struct process *proc) {
-    return get_copy_std(proc->in);
+    return get_copy_std(&proc->stdin);
 }
 
 char *proc_get_out(struct process *proc) {
-    return get_copy_std(proc->out);
+    return get_copy_std(&proc->stdout);
 }  
 
 char *proc_get_err(struct process *proc) {
-    return get_copy_std(proc->err);
+    return get_copy_std(&proc->stderr);
 }
 
 void proc_flush_in(struct process *proc) {
-    flush_std(proc->in);
+    flush_std(&proc->stdin);
 }
 
 void proc_flush_out(struct process *proc) {
-    flush_std(proc->out);
+    flush_std(&proc->stdout);
 }
 
 void proc_flush_err(struct process *proc) {
-    flush_std(proc->err);
+    flush_std(&proc->stderr);
 }
 
 /* tries to append c to the in stream of a proc, returns num chars appended*/
 int proc_append_in(struct process *proc, char c) {
-    return append_std(proc->in, c);
+    return append_std(&proc->stdin, c);
 }
 
 /* tries to append c to the out stream of a proc, returns num chars appended*/
 int proc_append_out(struct process *proc, char c) {
-    return append_std(proc->out, c);
+    return append_std(&proc->stdout, c);
 }
 
 /* tries to append c to the err stream of a proc, returns num chars appended*/
 int proc_append_err(struct process *proc, char c) {
-    return append_std(proc->err, c);
+    return append_std(&proc->stderr, c);
 }
 
 /* tries to delete size chars from a process' in stream, returns num chars deleted */
 int proc_shrink_in(struct process *proc, uint32_t size) {
-    return shrink_std(proc->in, size);
+    return shrink_std(&proc->stdin, size);
 }
 
 /* tries to delete size chars from a process' out stream, returns num chars deleted */
 int proc_shrink_out(struct process *proc, uint32_t size) {
-    return shrink_std(proc->out, size);
+    return shrink_std(&proc->stdout, size);
 }
 
 /* static functions */

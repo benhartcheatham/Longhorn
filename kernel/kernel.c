@@ -10,6 +10,7 @@
 
 /* Processes/Threads */
 #include "proc.h"
+#include "terminal.h"
 
 /* Memory Management */
 #include "kalloc.h"
@@ -17,26 +18,22 @@
 /* Interrupts */
 #include "isr.h"
 
-/* Standard Streams */
-static std_stream STDIN;
-static std_stream STDOUT;
-static std_stream STDERR;
-
 /* testing functions */
 void test(bool expected, bool expression, int num);
 void dummy(void *aux);
 
 void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
-    stdin = init_std(&STDIN);
-    stdout = init_std(&STDOUT);
-    stderr = init_std(&STDERR);
     clear_screen();
     
     init_idt();
     init_alloc(mb);
     init_processes();
-    terminal_init();
 
+    terminal_init();
+    stdin = &proc_get_active()->stdin;
+    stdout = &proc_get_active()->stdout;
+    stderr = &proc_get_active()->stderr;
+    printf("hello");
     enable_interrupts();
 
 }

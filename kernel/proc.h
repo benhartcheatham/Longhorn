@@ -25,7 +25,7 @@ struct process {
 
     //might want to make these FILE structs later on
     //shouldn't be accessed directly
-    std_stream *in, *out, *err;
+    std_stream stdin, stdout, stderr;
 
     list_node_t node;
 };
@@ -51,6 +51,7 @@ void proc_set_active(uint32_t pid);
 
 /* process "getter" functions */
 struct process *proc_get_running();
+struct process *proc_get_active();
 uint8_t get_live_t_count(struct process *proc);
 
 /* process stream functions */
