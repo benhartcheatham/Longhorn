@@ -160,6 +160,7 @@ void finish_schedule() {
     switch_temp = NULL;
     proc_set_running();
     
+    //Send an EOI to tell the CPU we're ok with more interrupts
     outb(0x20,0x20);
 }
 
