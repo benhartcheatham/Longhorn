@@ -7,7 +7,7 @@
 #include "../drivers/keyboard.h"
 
 size_t last_index = 0;
-char *commands[NUM_COMMANDS] = {"shutdown"};
+char *commands[NUM_COMMANDS] = {"shutdown", "ps", "grub", "moon"};
 uint32_t terminal_pid;
 
 static char key_buffer[TERMINAL_LIMIT + 1];
@@ -19,9 +19,14 @@ static void read_stdin();
 static void append_to_buffer(char c);
 static void shrink_buffer();
 static void flush_buffer();
-static void shutdown();
 
-terminal_command command_functions[NUM_COMMANDS] = {shutdown};
+/* command functions */
+static void shutdown(void *aux);
+static void ps(void *aux);
+static void grub(void *aux);
+static void moon(void *aux);
+
+terminal_command command_functions[NUM_COMMANDS] = {shutdown, ps, grub, moon};
 
 void terminal_init() {
     terminal_pid = proc_create("terminal", terminal_waiter, NULL);
@@ -99,4 +104,35 @@ static void flush_buffer() {
 /* shutsdown the machine gracefully (only works for qemu) */
 static void shutdown(void *aux __attribute__ ((unused))) {
     outw(0x604, 0x2000);
+}
+
+static void ps(void *aux __attribute__ ((unused))) {
+    //shouldn't be using the list directly, should be using an iterator with const nodes
+    list_node_t *node = proc_get_all_list()->head.next;
+    
+    printf("name");
+    print_align("pid", 2);
+    print_align("state", 3);
+    print_align("active thread\n", 4);
+    while (list_hasNext(node)) {
+        struct process *proc = (struct process *) node->_struct;
+        printf("%s", proc->name);
+        print_align(int_to_string(proc->pid), 2);
+        print_align(int_to_string(proc->state), 3);
+        print_align(proc->active_thread->name, 4);
+        printf("\n");
+
+        node = node->next;
+    }
+}
+
+static void grub(void *aux __attribute__ ((unused))) {
+    printf("GRUB is ok\n\n\n\ni guess...\n");
+}
+
+static void moon(void *aux __attribute__ ((unused))) {
+    printf("did you mean: ");
+    set_fg_color(VGA_COLOR_RED);
+    printf("\"GAMER GOD MOONMOON\"?\n");
+    set_default_color();
 }

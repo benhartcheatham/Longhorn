@@ -4,7 +4,7 @@
 /* includes */
 
 /* defines */
-#define NUM_COMMANDS 1
+#define NUM_COMMANDS 4
 
 /* structs */
 

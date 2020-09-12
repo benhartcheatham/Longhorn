@@ -182,6 +182,13 @@ struct process *proc_get_active() {
     return active;
 }
 
+/* returns a pointer to the all list for processes
+   don't use this unless necessary, should be using a list
+   iterator that doesn't allow for modification */
+struct list *proc_get_all_list() {
+    return &all_procs;
+}
+
 /* gets the amount of live threads process proc owns */
 uint8_t get_live_t_count(struct process *proc) {
     return proc->num_live_threads;
@@ -205,6 +212,8 @@ static struct thread *proc_get_free_thread(struct process *proc) {
             return &proc->threads[i];
     return NULL;
 }
+
+
 
 
 
