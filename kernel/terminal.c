@@ -55,7 +55,7 @@ static void read_stdin() {
     for (i = last_index; i < STD_STREAM_SIZE && stdin[i] != '\0'; i++) {
         if (stdin[i] == ENTER) {
             //print the enter
-            printf("\n");
+            printf("\nstdin: %s\n", stdin);
 
             //remove the enter from the string and replace with a terminator
             stdin[i] = '\0';
@@ -67,17 +67,7 @@ static void read_stdin() {
             
             flush_std(&active->stdin);
         } else if (stdin[i] == BACKSPACE) {
-            if (active->stdin.index > 1) {
-                active->stdin.stream[i] = '\0';
-                active->stdin.stream[i - 1] = '\0';
-                active->stdin.index -= 2;
-            } else if (active->stdin.index == 1) {
-                active->stdin.stream[i] = '\0';
-                active->stdin.index--;
-            } else
-                active->stdin.stream[i] = '\0';
             
-            print_backspace();
         } else {
             vga_print_char(stdin[i]);
         }
