@@ -29,6 +29,13 @@ void init_processes() {
         asm volatile("hlt");
     }
 
+    init_std(&p->stdin);
+    init_std(&p->stdout);
+    init_std(&p->stderr);
+    flush_std(&p->stdin);
+    flush_std(&p->stdout);
+    flush_std(&p->stderr);
+
     set_name(p, "init");
     p->node._struct = (void *) p;
     pid_count = 0;
@@ -178,57 +185,6 @@ struct process *proc_get_active() {
 /* gets the amount of live threads process proc owns */
 uint8_t get_live_t_count(struct process *proc) {
     return proc->num_live_threads;
-}
-
-/* process stream functions */
-
-char *proc_get_in(struct process *proc) {
-    return get_copy_std(&proc->stdin);
-}
-
-char *proc_get_out(struct process *proc) {
-    return get_copy_std(&proc->stdout);
-}  
-
-char *proc_get_err(struct process *proc) {
-    return get_copy_std(&proc->stderr);
-}
-
-void proc_flush_in(struct process *proc) {
-    flush_std(&proc->stdin);
-}
-
-void proc_flush_out(struct process *proc) {
-    flush_std(&proc->stdout);
-}
-
-void proc_flush_err(struct process *proc) {
-    flush_std(&proc->stderr);
-}
-
-/* tries to append c to the in stream of a proc, returns num chars appended*/
-int proc_append_in(struct process *proc, char c) {
-    return append_std(&proc->stdin, c);
-}
-
-/* tries to append c to the out stream of a proc, returns num chars appended*/
-int proc_append_out(struct process *proc, char c) {
-    return append_std(&proc->stdout, c);
-}
-
-/* tries to append c to the err stream of a proc, returns num chars appended*/
-int proc_append_err(struct process *proc, char c) {
-    return append_std(&proc->stderr, c);
-}
-
-/* tries to delete size chars from a process' in stream, returns num chars deleted */
-int proc_shrink_in(struct process *proc, uint32_t size) {
-    return shrink_std(&proc->stdin, size);
-}
-
-/* tries to delete size chars from a process' out stream, returns num chars deleted */
-int proc_shrink_out(struct process *proc, uint32_t size) {
-    return shrink_std(&proc->stdout, size);
 }
 
 /* static functions */

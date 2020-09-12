@@ -11,13 +11,13 @@
 struct CHAR_STREAM {
     char *stream;
     size_t size;
-    size_t index;
+    size_t in, out;
 };
 
 struct STD_STREAM {
     char stream[STD_STREAM_SIZE];
     size_t size;
-    size_t index;
+    size_t in, out;
 };
 
 /* typedefs */
@@ -29,17 +29,18 @@ typedef struct CHAR_STREAM char_stream;
 /* char_stream functions */
 char_stream *init_c(char_stream *stream, size_t size);
 void flush_c(char_stream *stream);
-int append_c(char_stream *stream, char c);
+int put_c(char_stream *stream, char c);
 char *get_copy_c(char_stream *stream);
-int shrink_c(char_stream *stream, size_t size);
+char get_c(char_stream *stream);
+char peek_c(char_stream *stream);
 void resize_c(char_stream *stream, size_t size);
 
 /* std_stream functions */
 std_stream *init_std(std_stream *stream);
 void flush_std(std_stream *stream);
-int append_std(std_stream *stream, char c);
+int put_std(std_stream *stream, char c);
 char *get_copy_std(std_stream *stream);
-size_t get_index_std(std_stream *stream);
-int shrink_std(std_stream *stream, size_t size);
+char get_std(std_stream *stream);
+char peek_std(std_stream *stream);
 
 #endif

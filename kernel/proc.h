@@ -54,18 +54,4 @@ struct process *proc_get_running();
 struct process *proc_get_active();
 uint8_t get_live_t_count(struct process *proc);
 
-/* process stream functions */
-char *proc_get_in(struct process *proc);
-char *proc_get_out(struct process *proc);
-char *proc_get_err(struct process *proc);
-void proc_flush_in(struct process *proc);
-void proc_flush_out(struct process *proc);
-void proc_flush_err(struct process *proc);
-int proc_append_in(struct process *proc, char c);
-int proc_append_out(struct process *proc, char c);
-int proc_append_err(struct process *proc, char c);
-//don't include a shrink_err right now because i want other processes to not be able to only erase certain parts of the stream
-int proc_shrink_in(struct process *proc, uint32_t size);
-int proc_shrink_out(struct process *proc, uint32_t size);
-
 #endif

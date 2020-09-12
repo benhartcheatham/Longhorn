@@ -4,17 +4,21 @@
 #include "../libc/stdio.h"
 #include "../libc/string.h"
 #include "../drivers/vga.h"
+#include "../drivers/keyboard.h"
 
-#define BACKSPACE 0x0E
-#define ENTER '\n'
-
-uint16_t last_index = 0;
+size_t last_index = 0;
 char *commands[NUM_COMMANDS] = {"shutdown"};
 uint32_t terminal_pid;
+
+static char key_buffer[TERMINAL_LIMIT + 1];
+static uint32_t key_buf_i = 0;
 
 /* static functions */
 static void terminal_waiter(void *aux);
 static void read_stdin();
+static void append_to_buffer(char c);
+static void shrink_buffer();
+static void flush_buffer();
 static void shutdown();
 
 terminal_command command_functions[NUM_COMMANDS] = {shutdown};
@@ -22,6 +26,7 @@ terminal_command command_functions[NUM_COMMANDS] = {shutdown};
 void terminal_init() {
     terminal_pid = proc_create("terminal", terminal_waiter, NULL);
     proc_set_active(terminal_pid);
+    flush_buffer();
 
 }
 
@@ -35,45 +40,60 @@ static void terminal_waiter(void *aux __attribute__ ((unused))) {
 }
 
 static void read_stdin() {
-    if (last_index == &proc_get_active()->stdin.index)
-        return;
-    
     struct process *active = proc_get_active();
-    char *stdin = active->stdin.stream;
+    std_stream *stdin = &active->stdin;
 
-    /* This implementation is prone to errors but gets the job done for now.
-     * Specifically, it assumes that the enter is the last character in the stream
-     * characters after the ENTER are truncated and lost. Backspaces may also delete
-     * the wrong character if backspace is pressed and then a character is input
-     * before this function finishes. Come back to this to iron this stuff out
-     * 
-     * Also, it doesn't use the proc functions for stream io because they are too slow in this 
-     * context
-     */
+    char c = get_std(stdin);
+    while (c != -1) {
+        if (c == '\n') {
+            vga_print_char('\n');
 
-    int i;
-    for (i = last_index; i < STD_STREAM_SIZE && stdin[i] != '\0'; i++) {
-        if (stdin[i] == ENTER) {
-            //print the enter
-            printf("\nstdin: %s\n", stdin);
-
-            //remove the enter from the string and replace with a terminator
-            stdin[i] = '\0';
-            //find command and execute it if it exists
-            int j;
-            for (j = 0; j < NUM_COMMANDS; j++)
-                if (strcmp(stdin, commands[j]) == 0)
-                    command_functions[j](NULL);
+            int i;
+            for (i = 0; i < NUM_COMMANDS; i++)
+                if (strcmp(key_buffer, commands[i]) == 0)
+                    command_functions[i](NULL);
             
-            flush_std(&active->stdin);
-        } else if (stdin[i] == BACKSPACE) {
-            
+            flush_buffer();
+
+        } else if (c == '\b') {
+            if (key_buf_i > 0) {
+                //get rid of character the backspace is upposed to get rid of
+                get_std(stdin);
+                shrink_buffer(1);
+                print_backspace();
+            }
         } else {
-            vga_print_char(stdin[i]);
+            append_to_buffer(c);
+            vga_print_char(c);
         }
 
-        last_index = active->stdin.index;
+        c = get_std(stdin);
     }
+}
+
+/* adds char c to the key buffer */
+static void append_to_buffer(char c) {
+    if (key_buf_i < TERMINAL_LIMIT)
+        key_buffer[key_buf_i++] = c;
+}
+
+/* deletes the last size characters from the buffer
+   size must be less than or equal to the current index of the buffer and greater
+   than 0 */
+static void shrink_buffer() {
+    if (key_buf_i > 0)
+        key_buffer[--key_buf_i] = '\0';
+    else
+        key_buffer[key_buf_i] = '\0';
+}
+
+/* flushes/clears the key buffer */
+static void flush_buffer() {
+    key_buf_i = 0;
+
+    int i;
+    for (i = 0; i < TERMINAL_LIMIT + 1; i++)
+        key_buffer[i] = 0;
 }
 
 /* shutsdown the machine gracefully (only works for qemu) */

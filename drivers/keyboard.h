@@ -19,7 +19,5 @@
 
 /* functions */
 void init_keyboard();
-void keyboard_flush_key_buffer();
-char *keyboard_get_key_buffer();
 
 #endif
