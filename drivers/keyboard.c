@@ -2,9 +2,9 @@
 #include "keyboard.h"
 #include "vga.h"
 #include "../kernel/isr.h"
+#include "../kernel/proc.h"
 #include "../kernel/port_io.h"
-#include "../kernel/terminal.h"
-#include "../libc/stdio.h"
+
 
 char *keyboard_get_key_buffer();
 void keyboard_flush_key_buffer();
@@ -35,14 +35,14 @@ static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) 
     uint8_t keycode = inb(0x60);
 
     if (keycode == ENTER) {
-        append_std(stdin, '\n');
+        proc_append_in(proc_get_active(), '\n');
         keyboard_flush_key_buffer();
 
     } else if (keycode == BACKSPACE) {
 
         if (buffer_index > 0) {
             shrink_buffer(1);
-            append_std(stdin, BACKSPACE);
+            proc_append_in(proc_get_active(), BACKSPACE);
         }
 
     } else if (keycode == SHIFT_PRESSED || keycode == SHIFT_RELEASED || keycode == CAPS_LOCK_PRESSED) {
@@ -51,10 +51,10 @@ static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) 
     } else if (keycode <= KC_MAX && keycode > 0) {
         if (capitalize == -1) {
             append_to_buffer(kc_ascii[keycode]);
-            append_std(stdin, kc_ascii[keycode]);
+            proc_append_in(proc_get_active(), kc_ascii[keycode]);
         } else {
             append_to_buffer(kc_ascii_cap[keycode]);
-            append_std(stdin, kc_ascii_cap[keycode]);
+            proc_append_in(proc_get_active(), kc_ascii_cap[keycode]);
         }
         
     }
