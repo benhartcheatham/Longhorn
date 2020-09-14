@@ -1,5 +1,9 @@
 These should all probably be github issues but here we are...
 
+0. Testing/Makefile
+    - Figure out how to just add/redefine the C_SOURCES/HEADER variables to include test.c/test.h properly
+      for the make test rule
+    - Figure out why the #ifdef directives didn't work properly in kernel.c
 1. Memory allocation
     - test kmalloc
     - use the GRUB mem map to mark off non-usuable areas of memory
