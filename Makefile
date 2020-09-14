@@ -1,13 +1,13 @@
 ### GROUPS ###
-SUBDIRS = kernel/data_types
-C_SOURCES = $(wildcard drivers/*.c kernel/*.c libc/*.c libk/*.c)
-HEADERS = $(wildcard libc/*.h kernel/*.h drivers/*.h libk/*.h)
+SUBDIRS = drivers kernel libc libk
+C_SOURCES = $(filter-out test.c, $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.c)))
+HEADERS = $(filter-out test.h, $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.h)))
 ASM_SOURCES = $(wildcard kernel/*.asm)
 BOOT_SOURCES = boot/boot.asm
 
-OBJ = ${C_SOURCES:.c=.o}
-ASM = ${ASM_SOURCES:.asm=.o}
-BOOT = ${BOOT_SOURCES:.asm=.o}
+OBJ = $(C_SOURCES:.c=.o)
+ASM = $(ASM_SOURCES:.asm=.o)
+BOOT = $(BOOT_SOURCES:.asm=.o)
 
 ### COMPILER GROUPS/RULES ###
 CC = i386-elf-gcc
@@ -24,6 +24,12 @@ run: all
 run-no-reboot: all
 	qemu-system-i386 -cdrom Longhorn.iso -no-reboot -no-shutdown
 
+#runs a version of the kernel that has testing enables
+# test: 
+# 	@-$(C_SOURCES) := $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.c))
+# 	@-$(HEADERS) := $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.h))
+# 	make run
+
 #cleans all directories of compiled files (except build)
 clean:
 	rm -rf *.bin *.o *.iso
@@ -34,15 +40,15 @@ clean:
 boot/boot.o: boot/boot.asm
 	nasm $< -f elf32 -i "./boot/" -o $@
 
-os-binary: ${BOOT} ${OBJ} ${ASM}
-	${CC} -T linker.ld -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
+os-binary: $(BOOT)  $(OBJ) $(ASM)
+	$(CC) -T linker.ld -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
 
 ### FILE EXTENSION RULES ###
 %.bin: %.asm
 	nasm $< -f bin -i -o $@
 
-%.o: %.c ${HEADERS}
-	${CC} ${CFLAGS} -c $< -o $@
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 %.o: %.asm
 	nasm $< -f elf32 -o $@

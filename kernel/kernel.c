@@ -18,9 +18,11 @@
 /* Interrupts */
 #include "isr.h"
 
-/* testing functions */
-void test(bool expected, bool expression, int num);
-void dummy(void *aux);
+/* Testing */
+#ifdef _TEST_H
+    #include "test.h"
+#endif
+
 
 void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
     clear_screen();
@@ -28,24 +30,9 @@ void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
     init_idt();
     init_alloc(mb);
     init_processes();
-
     terminal_init();
-    stdin = &proc_get_active()->stdin;
-    stdout = &proc_get_active()->stdout;
-    stderr = &proc_get_active()->stderr;
+
+
     enable_interrupts();
 
-}
-
-void test(bool expected, bool expression, int num) {
-    if (expression == expected)
-        printf("TEST (%d) PASSED: EXPECTED %d, GOT: %d\n", num, expected, expression);
-    else
-        printf("TEST (%d) FAILED: EXPECTED %d, GOT: %d\n", num, expected, expression);
-}
-
-void dummy(void *aux __attribute__ ((unused))) {
-    print("dummy\n");
-    asm volatile ("hlt");
-    return;
 }
