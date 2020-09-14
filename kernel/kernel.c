@@ -19,7 +19,7 @@
 #include "isr.h"
 
 /* Testing */
-#ifdef _TEST_H
+#ifdef TESTS
     #include "test.h"
 #endif
 
@@ -32,6 +32,10 @@ void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
     init_processes();
     terminal_init();
 
+    #ifdef TESTS
+        init_testing(true);
+        RUN_ALL_TESTS();
+    #endif
 
     enable_interrupts();
 

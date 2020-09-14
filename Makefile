@@ -1,7 +1,7 @@
 ### GROUPS ###
 SUBDIRS = drivers kernel libc libk
-C_SOURCES = $(filter-out test.c, $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.c)))
-HEADERS = $(filter-out test.h, $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.h)))
+C_SOURCES = $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.c))
+HEADERS = $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.h))
 ASM_SOURCES = $(wildcard kernel/*.asm)
 BOOT_SOURCES = boot/boot.asm
 
@@ -12,9 +12,10 @@ BOOT = $(BOOT_SOURCES:.asm=.o)
 ### COMPILER GROUPS/RULES ###
 CC = i386-elf-gcc
 CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+DEFINES = 
 
 ### MAKEFILE RULES ###
-all: os-img
+all: os-binary os-img
 
 #default is to run iso
 run: all
@@ -24,11 +25,9 @@ run: all
 run-no-reboot: all
 	qemu-system-i386 -cdrom Longhorn.iso -no-reboot -no-shutdown
 
-#runs a version of the kernel that has testing enables
-# test: 
-# 	@-$(C_SOURCES) := $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.c))
-# 	@-$(HEADERS) := $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.h))
-# 	make run
+#runs a version of the kernel that has testing enabled
+test: DEFINES += -DTESTS		#look at https://www.gnu.org/software/make/manual/make.html#Target_002dspecific for how this works
+test: run
 
 #cleans all directories of compiled files (except build)
 clean:
@@ -41,14 +40,14 @@ boot/boot.o: boot/boot.asm
 	nasm $< -f elf32 -i "./boot/" -o $@
 
 os-binary: $(BOOT)  $(OBJ) $(ASM)
-	$(CC) -T linker.ld -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
+	$(CC) $(CFLAGS) $(DEFINES) -T linker.ld -o $@ $^ -nostdlib -lgcc
 
 ### FILE EXTENSION RULES ###
 %.bin: %.asm
 	nasm $< -f bin -i -o $@
 
 %.o: %.c $(HEADERS)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(DEFINES) -c $< -o $@
 
 %.o: %.asm
 	nasm $< -f elf32 -o $@
@@ -56,7 +55,7 @@ os-binary: $(BOOT)  $(OBJ) $(ASM)
 ### BUILD RULES ###
 
 #Builds a disk img of the os
-os-img: os-binary
+os-img:
 	mkdir -p build/boot/grub
 	cp grub.cfg build/boot/grub/grub.cfg
 	cp os-binary build/boot/os-binary

@@ -6,7 +6,6 @@
 #include <stdint.h>
 
 /* defines */
-#define TEST 1
 #define TESTS_PER_MODULE 20
 
 /* structs */
