@@ -120,7 +120,7 @@ static void read_stdin() {
             flush_buffer();
             printf("\n> ");
         } else if (c == '\b') {
-            if (key_buf_i > 2) {
+            if (key_buf_i > 0) {
                 //get rid of character the backspace is upposed to get rid of
                 get_std(stdin);
                 shrink_buffer(1);

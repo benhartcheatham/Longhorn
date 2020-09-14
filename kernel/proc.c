@@ -40,7 +40,7 @@ void init_processes() {
     p->node._struct = (void *) p;
     pid_count = 0;
     p->pid = pid_count++;
-    p->state = PROCESS_READY;
+    p->state = PROCESS_RUNNING;
 
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++) {
@@ -53,7 +53,7 @@ void init_processes() {
     //create init thread
     struct thread *init_t = &p->threads[0];
     init_t->parent = &p->node;
-    init_t->state = THREAD_READY;
+    init_t->state = THREAD_RUNNING;
     init_t->tid = 0;
     char *init_tname = "init_t";
     memcpy(init_t->name, init_tname, strlen(init_tname) + 1);
@@ -151,8 +151,11 @@ void proc_unblocked(struct process *proc) {
 
 /* sets the current process to the parent of the current thread */
 void proc_set_running() {
+    current->state = PROCESS_READY;
+
     current = (struct process *) thread_get_running()->parent->_struct;
     current->active_thread = thread_get_running();
+    current->state = PROCESS_RUNNING;
 }
 
 /* sets the active process to proc */

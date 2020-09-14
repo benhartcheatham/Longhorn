@@ -164,12 +164,18 @@ void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) 
 /* finishes up the scheduling process and updates thread state */
 void finish_schedule() {
     //finish the part after we switch threads in schedule()
+
+    //set old thread to ready
+    current->state = THREAD_READY;
+
+    //set current thread to running
     current = switch_temp;
     switch_temp = NULL;
+    current->state = THREAD_RUNNING;
+
+    //set running process
     proc_set_running();
     
-    //Send an EOI to tell the CPU we're ok with more interrupts
-    outb(0x20,0x20);
 }
 
 /* static functions */

@@ -25,4 +25,6 @@ first_switch_entry:
     ;add esp, 8              ;discard switch_threads args
     extern finish_schedule
     call finish_schedule
+    mov al, 0x20
+    out 0x20, al
     ret

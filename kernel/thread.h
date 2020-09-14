@@ -12,8 +12,7 @@
 #define THREAD_MAGIC 0x5f5f5f5fu
 
 /* structs */
-enum thread_states {THREAD_READY, THREAD_BLOCKED, THREAD_DYING, 
-                            THREAD_SUSPENDED, THREAD_TERMINATED};
+enum thread_states {THREAD_READY, THREAD_RUNNING, THREAD_BLOCKED, THREAD_DYING, THREAD_TERMINATED};
 
 struct thread {
     uint32_t *esp;
