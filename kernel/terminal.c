@@ -6,12 +6,52 @@
 #include "../drivers/vga.h"
 #include "../drivers/keyboard.h"
 
+#define NUM_COMMANDS 6
+#define NUM_HELP_COMMANDS (NUM_COMMANDS - 2)
+
 size_t last_index = 0;
-char *commands[NUM_COMMANDS] = {"shutdown", "ps", "grub", "moon"};
+char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "ps", "logo"};
+char *commands[NUM_COMMANDS] = {"help", "shutdown", "ps", "grub", "moon", "logo"};
 uint32_t terminal_pid;
 
 static char key_buffer[TERMINAL_LIMIT + 1];
 static uint32_t key_buf_i = 0;
+
+char *full_size_logo[20] = {
+    "dyyyyyhddm                                                           mdhhyyyyyh",
+    "     dhysssyhd                                                   dhssssyhd     ",
+    "         mhysssyhm                                            mhssssydm        ",
+    "            mhssssshm                                      dyssssyd            ",
+    "               mhsssssydm      mhhhhhhhhhhhhhhhdm      mhyssssshm              ",
+    "                  dysssssssssssssssssssssssssssssssssssssssshm                 ",
+    "                     mdysssssssssssssssssssssssssssssssshdm                    ",
+    "                     mdysssssssssssssssssssssssssssssssshdm                    ",
+    "                    dsssssssssssssssssssssssssssssssssssssym                   ",
+    "                       mddm   yssssssssssssssssssh  mmddm                      ",
+    "                              dssssssssssssssssssm                             ",
+    "                               hssssssssssssssssd                              ",
+    "                                hssssssssssssssd                               ",
+    "                                 hssssssssssssd                                ",
+    "                                  sssssssssssy                                 ",
+    "                                  sssssssssssy                                 ",
+    "                                 dssssssssssssm                                ",
+    "                                 yssssssssssssh                                ",
+    "                                  sssssssssssy                                 ",
+    "                                   dyyyyyyyyd                                  ",
+};
+
+char *half_size_logo[10] = {
+    "ddhhhhm                          mhhhhdm",
+    "      dyydm                  mhyyd      ",
+    "        mhsshhddhyyyyyyhddhysyh         ",
+    "           dyssssssssssssssyd           ",
+    "           dhhdhsssssssshdhhd           ",
+    "                yssssssy                ",
+    "                 yssssy                 ",
+    "                 dssssm                 ",
+    "                nysssshn                ",
+    "                 myssym                 ",
+};
 
 /* static functions */
 static void terminal_waiter(void *aux);
@@ -21,13 +61,16 @@ static void shrink_buffer();
 static void flush_buffer();
 
 /* command functions */
-static void shutdown(void *aux);
-static void ps(void *aux);
-static void grub(void *aux);
-static void moon(void *aux);
+static void help(char *line);
+static void shutdown(char *line);
+static void ps(char *line);
+static void grub(char *line);
+static void moon(char *line);
+static void logo(char *line);
 
-terminal_command command_functions[NUM_COMMANDS] = {shutdown, ps, grub, moon};
+terminal_command command_functions[NUM_COMMANDS] = {help, shutdown, ps, grub, moon, logo};
 
+/* initializes a terminal process */
 void terminal_init() {
     terminal_pid = proc_create("terminal", terminal_waiter, NULL);
     proc_set_active(terminal_pid);
@@ -35,6 +78,20 @@ void terminal_init() {
 
 }
 
+/* prints the logo of the correpsonding size to the screen
+   logo sizes are defined in terminal.h */
+void print_logo(int logo_size) {
+    int i;
+    if (logo_size == FULL_LOGO)
+       for (i = 0; i < 20; i++)
+            println(full_size_logo[i]);
+    else if (logo_size == HALF_LOGO) 
+        for (i = 0; i < 10; i++)
+            println(half_size_logo[i]);
+    
+}
+
+/* function for the terminal process to use, constantly scans input */
 static void terminal_waiter(void *aux __attribute__ ((unused))) {
 
     //the while loop breaks the keyboard entirely for some reason
@@ -44,6 +101,8 @@ static void terminal_waiter(void *aux __attribute__ ((unused))) {
 
 }
 
+/* reads the active process' stdin stream for input from the user
+   input is executed as a command, if available, when the ENTER key is pressed */ 
 static void read_stdin() {
     struct process *active = proc_get_active();
     std_stream *stdin = &active->stdin;
@@ -59,9 +118,9 @@ static void read_stdin() {
                     command_functions[i](NULL);
             
             flush_buffer();
-
+            printf("\n> ");
         } else if (c == '\b') {
-            if (key_buf_i > 0) {
+            if (key_buf_i > 2) {
                 //get rid of character the backspace is upposed to get rid of
                 get_std(stdin);
                 shrink_buffer(1);
@@ -101,12 +160,20 @@ static void flush_buffer() {
         key_buffer[i] = 0;
 }
 
+/* prints a list of available commands */
+static void help(char *line __attribute__ ((unused))) {
+    printf("Available Commands:\n");
+    int i;
+    for (i = 0; i < NUM_HELP_COMMANDS; i++) {
+        printf("\t%s\n", help_commands[i]);
+    }
+}
 /* shutsdown the machine gracefully (only works for qemu) */
-static void shutdown(void *aux __attribute__ ((unused))) {
+static void shutdown(char *line __attribute__ ((unused))) {
     outw(0x604, 0x2000);
 }
 
-static void ps(void *aux __attribute__ ((unused))) {
+static void ps(char *line __attribute__ ((unused))) {
     //shouldn't be using the list directly, should be using an iterator with const nodes
     list_node_t *node = proc_get_all_list()->head.next;
     
@@ -126,13 +193,20 @@ static void ps(void *aux __attribute__ ((unused))) {
     }
 }
 
-static void grub(void *aux __attribute__ ((unused))) {
+/* novelty command */
+static void grub(char *line __attribute__ ((unused))) {
     printf("GRUB is ok\n\n\n\ni guess...\n");
 }
 
-static void moon(void *aux __attribute__ ((unused))) {
+/* novelty command */
+static void moon(char *line __attribute__ ((unused))) {
     printf("did you mean: ");
     set_fg_color(VGA_COLOR_RED);
     printf("\"GAMER GOD MOONMOON\"?\n");
     set_default_color();
+}
+
+/* prints the OS logo to the screen */
+static void logo(char *line __attribute__ ((unused))) {
+    print_logo(HALF_LOGO);
 }

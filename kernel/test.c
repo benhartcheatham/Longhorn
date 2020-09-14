@@ -8,7 +8,8 @@ static bool test_prints = false;
 static bool num_modules_made = 0;
 struct test_module modules[NUM_MODULES];
 
-//put all tests in here
+/* initializes all tests for the testing module of the kernel
+   all tests should be in this function */
 void init_testing(bool enable_test_prints) {
     test_prints = enable_test_prints;
 
@@ -34,8 +35,9 @@ void init_testing(bool enable_test_prints) {
 
         num_modules_made++;
     */
-}
 
+}
+/* runs all tests in every module, called in kmain() if testing is enabled */
 void RUN_ALL_TESTS() {
     int i;
     for (i = 0; i < NUM_MODULES && i < num_modules_made; i++) {
@@ -43,6 +45,7 @@ void RUN_ALL_TESTS() {
     }
 }
 
+/* runs the tests in the given test_module */
 void test_module(struct test_module module) {
     int num_passed = 0;
     printf("TESTING MODULE: %s\n", module.name);
@@ -60,6 +63,7 @@ void test_module(struct test_module module) {
         printf("TESTS DONE FOR MODULE: %s\nNUM_PASSED: %d\nNUM_FAILED: %d\n\n", module.name, num_passed, module.num_tests - num_passed);
 }
 
+/* evaluates a test with the given inputs */
 bool test(bool expected, bool expression, int num) {
     bool result = expression == expected;
 

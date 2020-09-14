@@ -178,6 +178,7 @@ struct process *proc_get_running() {
     return current;
 }
 
+/* returns a pointer to the active process */
 struct process *proc_get_active() {
     return active;
 }

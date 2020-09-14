@@ -32,8 +32,8 @@ void flush_c(char_stream *stream);
 int put_c(char_stream *stream, char c);
 char *get_copy_c(char_stream *stream);
 char get_c(char_stream *stream);
-char peek_c(char_stream *stream);
 void resize_c(char_stream *stream, size_t size);
+void destroy_c(char_stream *stream);
 
 /* std_stream functions */
 std_stream *init_std(std_stream *stream);

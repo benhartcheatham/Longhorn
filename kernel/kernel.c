@@ -23,6 +23,10 @@
     #include "test.h"
 #endif
 
+/* Kernel data */
+char *major_version_no = "0";
+char *minor_version_no = "1";
+char *build_version_no = "x";
 
 void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
     clear_screen();
@@ -37,6 +41,9 @@ void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
         RUN_ALL_TESTS();
     #endif
 
+    print_logo(HALF_LOGO);
+    printf("\nWelcome to Longhorn!\nVersion no.: %s.%s.%s\nType <help> for a list of commands.\n> ", major_version_no, minor_version_no, build_version_no);
     enable_interrupts();
+
 
 }

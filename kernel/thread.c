@@ -53,6 +53,7 @@ extern void switch_threads(struct thread *current_thread, struct thread *next_th
 
 /* initialization functions */
 
+/* initializes threading */
 void init_threads() {
     list_init(&ready_threads);
 
@@ -66,6 +67,7 @@ void init_threads() {
 
 /* thread state functions */
 
+/* creates a thread under the given parent process */
 int thread_create(uint8_t priority, char *name, struct list_node *parent, struct thread *thread, thread_function func, void *aux) {
     uint8_t *s = (uint8_t *) palloc();
 
@@ -105,14 +107,17 @@ int thread_create(uint8_t priority, char *name, struct list_node *parent, struct
     return thread->tid;
 }
 
+/* blocks a thread */
 void thread_block(struct thread *thread) {
     thread->state = THREAD_BLOCKED;
 }
 
+/* unblocks a thread and sets it to ready to run */
 void thread_unblock(struct thread *thread) {
     thread->state = THREAD_READY;
 }
 
+/* function called at the end of the current thread's lifecycle */
 void thread_exit() {
     current->state = THREAD_DYING;
     list_delete(&ready_threads, &current->node);
@@ -140,12 +145,14 @@ int thread_kill(struct thread *thread) {
 
 /* thread "getter" functions */
 
+/* returns a pointer to the running thread struct*/
 struct thread *thread_get_running() {
     return current;
 }
 
 /* scheduling functions */
 
+/* interrupt handler for the timer interrupt, also starts scheduling periodically */
 void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) {
     thread_ticks++;
 
@@ -154,6 +161,7 @@ void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) 
     }
 }
 
+/* finishes up the scheduling process and updates thread state */
 void finish_schedule() {
     //finish the part after we switch threads in schedule()
     current = switch_temp;
@@ -166,6 +174,7 @@ void finish_schedule() {
 
 /* static functions */
 
+/* executes the function the thread is created to do and kills the thread when done */
 static void thread_execute(thread_function func, void *aux) {
     //have to reenable interrupts since there isn't a guaruntee we returned to the irq handler
     asm volatile("sti");
@@ -173,6 +182,7 @@ static void thread_execute(thread_function func, void *aux) {
     thread_exit();
 }
 
+/* schedules threads */
 static void schedule() {
     struct list_node *next = list_pop(&ready_threads);
     if (next == NULL || next->_struct == NULL || current == (struct thread *) next->_struct)
@@ -186,6 +196,7 @@ static void schedule() {
     finish_schedule();
 }
 
+/* allocates a thread id for when a thread is being created */
 static uint32_t allocate_tid() {
     int i;
     for (i = 0; i < MAX_TID; i++)
@@ -197,6 +208,7 @@ static uint32_t allocate_tid() {
     return MAX_TID + 1;
 }
 
+/* sets the name field of a thread struct */
 static void set_thread_name(struct thread *t, char *name) {
     if (strlen(name) < MAX_TNAME_LENGTH) {
         memcpy(t->name, name, MAX_TNAME_LENGTH);
