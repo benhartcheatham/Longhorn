@@ -36,8 +36,10 @@ list_node_t *list_delete(list_t *list, list_node_t *node);
 list_node_t *list_pop(list_t *list);
 
 /* "getter" functions */
-list_node_t *list_peek(list_t *list);
-int list_hasNext(list_node_t *node);
+const list_node_t *list_peek(list_t *list);
+const list_node_t *list_get_next(const list_node_t *node);
+const list_node_t *list_get_prev(const list_node_t *node);
+int list_hasNext(const list_node_t *node);
 int list_isEmpty(list_t *list);
 
 /* node functions */

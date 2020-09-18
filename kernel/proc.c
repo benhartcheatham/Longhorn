@@ -189,8 +189,8 @@ struct process *proc_get_active() {
 /* returns a pointer to the all list for processes
    don't use this unless necessary, should be using a list
    iterator that doesn't allow for modification */
-struct list *proc_get_all_list() {
-    return &all_procs;
+const list_node_t *proc_peek_all_list() {
+    return list_peek(&all_procs);
 }
 
 /* gets the amount of live threads process proc owns */

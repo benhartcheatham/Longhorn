@@ -175,7 +175,7 @@ static void shutdown(char *line __attribute__ ((unused))) {
 
 static void ps(char *line __attribute__ ((unused))) {
     //shouldn't be using the list directly, should be using an iterator with const nodes
-    list_node_t *node = proc_get_all_list()->head.next;
+    const list_node_t *node = proc_peek_all_list();
     
     printf("name");
     print_align("pid", 2);
@@ -189,7 +189,7 @@ static void ps(char *line __attribute__ ((unused))) {
         print_align(proc->active_thread->name, 4);
         printf("\n");
 
-        node = node->next;
+        node = list_get_next(node);
     }
 }
 

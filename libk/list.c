@@ -133,17 +133,30 @@ list_node_t *list_pop(list_t *list) {
 
 /* LIST "GETTER" FUNCTIONS */
 
-/* returns the node just after head, if there is any */
-list_node_t *list_peek(list_t *list) {
+/* returns a const pointer to the node just after head, if there is any *
+   should be used in conjunction with list_get_next/list_get_prev to iterate over a list */
+const list_node_t *list_peek(list_t *list) {
     if (!list_isEmpty(list))
         return list->head.next;
     
     return NULL;
 }
 
+/* returns a const pointer to the next node in the linked list
+   should be used in conjunction with list_peek/list_get_prev to iterate over a list */
+const list_node_t *list_get_next(const list_node_t *node) {
+    return node->next;
+}
+
+/* returns a const pointer to the previous node in the linked list
+   should be used in conjunction with list_peek/list_get_next to iterate over a list */
+const list_node_t *list_get_prev(const list_node_t *node) {
+    return node->prev;
+}
+
 /* checks if node has any node after it 
    only the list tail shouldn't have a node after it */
-int list_hasNext(list_node_t *node) {
+int list_hasNext(const list_node_t *node) {
     if (node->next != NULL )
         return 1;
     return 0;
