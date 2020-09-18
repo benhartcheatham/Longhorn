@@ -1,5 +1,7 @@
 #include "string.h"
 
+/* THIS FILE NEEDS TO BE REVISED TO CONFORM TO C99 */
+
 /* converts an int n into an ascii string str */
 char *int_to_string(int n) {
     int i = 0;

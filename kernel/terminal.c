@@ -114,7 +114,7 @@ static void read_stdin() {
 
             int i;
             for (i = 0; i < NUM_COMMANDS; i++)
-                if (strcmp(key_buffer, commands[i]) == 0)
+                if (strcmp(trim(key_buffer), commands[i]) == 0)
                     command_functions[i](NULL);
             
             flush_buffer();

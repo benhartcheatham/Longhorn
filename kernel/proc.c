@@ -194,7 +194,7 @@ const list_node_t *proc_peek_all_list() {
 }
 
 /* gets the amount of live threads process proc owns */
-uint8_t get_live_t_count(struct process *proc) {
+uint8_t proc_get_live_t_count(struct process *proc) {
     return proc->num_live_threads;
 }
 

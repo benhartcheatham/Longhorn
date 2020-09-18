@@ -53,6 +53,6 @@ void proc_set_active(uint32_t pid);
 struct process *proc_get_running();
 struct process *proc_get_active();
 const list_node_t *proc_peek_all_list();
-uint8_t get_live_t_count(struct process *proc);
+uint8_t proc_get_live_t_count(struct process *proc);
 
 #endif

@@ -4,24 +4,25 @@ These should all probably be github issues but here we are...
     - test kmalloc
     - use the GRUB mem map to mark off non-usuable areas of memory
 2. Processes
-    - Way to kill processes
+    - Way to create processes from terminal
+    - Way to kill processes from terminal
     - Way to gracefully exit when a process has no live threads
+        - Tied to thread cleanup
     - Idle Process
 3. Threads
     - Test threads
+    - Cleanup dead/dying threads
 5. Housekeeping
     - format all .c files according to Planning.txt
     - format all .h files according to Planning.txt
 6. Keyboard Driver
     - Decide if driver should write keycodes into the stdin of the process, or ascii as it is now.
-7. List
-    - Make a list iterator set of functions
-        - should only give const pointers so modification isn't possible
-8. Linking
+7. Linking
     - Don't let kernel images over 1MB be made
-9. libk
-    - semaphores (maybe should be in kernel subdir)
+8. libk
+    - semaphores (should probably be in kernel subdir)
     - should maybe move these files into a subdir of kernel (called like data_types or something)
-10. libc
-    - get rid of the mem.h file and put those functions in string.has
-    - move all functions out of string.h/stdio.h(?) and into their own files 
+9. libc
+    - get rid of the mem.h file and put those functions in string.h
+    - move all functions out of string.c/stdio.c(?) and into their own files 
+    - Implement string.h functions based on C99
