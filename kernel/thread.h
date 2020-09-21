@@ -7,6 +7,7 @@
 #include "../libk/list.h"
 
 /* defines */
+#define MAX_PNAME_LENGTH 12
 #define MAX_TNAME_LENGTH 24
 #define MAX_TID 512
 #define THREAD_MAGIC 0x5f5f5f5fu
@@ -18,7 +19,7 @@ struct thread {
     uint32_t *esp;
     uint32_t tid;
     uint8_t priority;
-    char name[MAX_TNAME_LENGTH + 1];
+    char name[MAX_PNAME_LENGTH + MAX_TNAME_LENGTH + 1];
     enum thread_states state;
 
     //have to use a list_node * instead of a process * because of recursive includes that I couldn't see an

@@ -43,7 +43,6 @@ struct stack_frame {
 
 /* static functions */
 static uint32_t allocate_tid();
-static void set_thread_name(struct thread *t, char *name);
 static void thread_execute(thread_function *func, void *aux);
 static void schedule();
 extern void first_switch_entry();
@@ -74,7 +73,7 @@ int thread_create(uint8_t priority, char *name, struct list_node *parent, struct
     //setup the thread struct at the top of the page
     thread->tid = allocate_tid();
     thread->state = THREAD_READY;
-    set_thread_name(thread, name);
+    sprintf(thread->name, "%s:%s", ((struct process *) parent->_struct)->name, name);
     thread->priority = priority;
     thread->node._struct = (void *) thread;
     thread->parent = parent;

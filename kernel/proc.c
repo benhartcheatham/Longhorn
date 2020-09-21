@@ -14,7 +14,6 @@ static struct process *active;
 static uint32_t pid_count;
 
 /* static functions */
-static void set_name(struct process *proc, char *name);
 static struct thread *proc_get_free_thread(struct process *proc);
 
 /* initialization functions */
@@ -36,7 +35,7 @@ void init_processes() {
     flush_std(&p->stdout);
     flush_std(&p->stderr);
 
-    set_name(p, "init");
+    sprintf(p->name, "init");
     p->node._struct = (void *) p;
     pid_count = 0;
     p->pid = pid_count++;
@@ -55,7 +54,7 @@ void init_processes() {
     init_t->parent = &p->node;
     init_t->state = THREAD_RUNNING;
     init_t->tid = 0;
-    char *init_tname = "init_t";
+    char *init_tname = "init:init_t";
     memcpy(init_t->name, init_tname, strlen(init_tname) + 1);
     asm volatile("mov %%esp, %0" : "=g" (init_t->esp));
     init_t->esp = (uint32_t *) ((uint32_t) init_t->esp);
@@ -73,7 +72,7 @@ int proc_create(char *name, proc_function func, void *aux) {
     if (p == NULL)
         return -1;
     
-    set_name(p, name);
+    sprintf(p->name, "%s", name);
     p->node._struct = (void *) p;
 
     p->pid = pid_count++;
@@ -199,14 +198,6 @@ uint8_t proc_get_live_t_count(struct process *proc) {
 }
 
 /* static functions */
-
-/* sets the name of a process */
-static void set_name(struct process *proc, char *name) {
-    if (strlen(name) < MAX_NAME_LENGTH) {
-        memcpy(proc->name, name, strlen(name));
-        proc->name[strlen(name) + 1] = '\0';
-    }
-}
 
 /* gets the next free slot in the threads array if there is one */
 static struct thread *proc_get_free_thread(struct process *proc) {
