@@ -1,3 +1,5 @@
+/* THIS IMPLEMENTATION ISN'T C99 COMPLIANT */
+
 #include <stdarg.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -11,38 +13,71 @@ void print(char *string) {
 }
 
 /* prints a formatted string to the screen */
-int printf(const char *string, ...) {
-    const char *curr = string;
-    
+int printf(const char *format, ...) {
     va_list args;
-    va_start(args, string);
+    va_start(args, format);
 
-    while (*curr != '\0') {
-        if (*curr == '%') {
-            curr++;
-            if (*curr == 'd') {
+    while (*format != '\0') {
+        if (*format == '%') {
+            format++;
+            if (*format == 'd') {
                 char *temp = int_to_string(va_arg(args, int));
                 print(temp);
-            } else if (*curr == 'x') {
+            } else if (*format == 'x') {
                 char *temp = int_to_hexstring(va_arg(args, int));
                 print(temp);
-            } else if (*curr == 's')
+            } else if (*format == 's')
                 print(va_arg(args, char *));
         } else
-            vga_print_char(*curr);
+            vga_print_char(*format);
 
-        curr++;
+        format++;
     }
 
     va_end(args);
     return 0;
 }
 
-/* THIS IS CURRENTLY UNIMPLEMENTED. DO NOT USE */
+/* composes a string with the same text that would be printed if format was used on printf, but instead of being printed, 
+   the content is stored as a C string in the buffer pointed by str. 
+   returns the number of characters written, excluding the null terminator */
+int sprintf(char *str, const char *format, ...) {
+    int chars_written = 0;
+    va_list args;
+    va_start(args, format);
 
-int sprintf(const char *string __attribute__ ((unused)), char *buffer __attribute__ ((unused)), ...) {
-    //TODO: Implement this function
-    return -1;
+    while (*format != '\0') {
+        if (*format == '%') {
+            format++;
+            const char *temp = NULL;
+
+            if (*format == 'd')
+                temp = int_to_string(va_arg(args, int));
+            else if (*format == 'x')
+                temp = int_to_hexstring(va_arg(args, int));
+            else if (*format == 's')
+                temp = va_arg(args, char *);
+            else {
+                format++;
+                continue;
+            }
+
+            int len = strlen(temp);
+            strncpy(str, temp, len);
+            str += len;
+            chars_written += len;
+        } else {
+            *str = *format;
+            str++;
+            chars_written++;
+        }
+
+        format++;
+    }
+
+    *str = '\0';
+
+    return chars_written;
 }
 
 /* prints a string with a newline to the screen */

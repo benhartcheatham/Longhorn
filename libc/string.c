@@ -51,11 +51,10 @@ void reverse(char *src) {
 }
 
 /* returns the length of a null-terminated string */
-int strlen(char *str) {
-    char *tmp = str;
+int strlen(const char *str) {
 
     int i = 0;
-    while (tmp[i] != 0)
+    while (str[i] != 0)
         i++;
     
     return i;
@@ -68,6 +67,24 @@ int strcmp(char *s1, char *s2) {
         if (s1[i] == '\0') return 0;
     }
     return s1[i] - s2[i];
+}
+
+/* copies num chars from source to destination
+   destination and source shouldn't overlap
+   if source is less than num, then destination is padded with 0s until num
+   chars have been copied */
+char *strncpy(char *destination, const char *source, size_t num) {
+    size_t i;
+    for (i = 0; i < num && source[i] != '\0'; i++) {
+        destination[i] = source[i];
+    }
+
+    /* pad with 0s until num chars have been copied */
+    for (; i < num; i++) {
+        destination[i] = '\0';
+    }
+
+    return destination;
 }
 
 /* appends a character to a string */

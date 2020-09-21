@@ -21,7 +21,7 @@ std_stream *stderr;
 void print(char *string);
 void println(char *string);
 int printf(const char *string, ...);
-int sprintf(const char *string, char *buffer, ...);
+int sprintf(char *str, const char *format, ...);
 void print_align(char *string, uint16_t alignment);
 
 /* shouldn't strictly be in this file 

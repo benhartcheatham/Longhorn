@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include "test.h"
 #include "../libc/stdio.h"
+#include "kalloc.h"
 
 #define NUM_MODULES 10
 
@@ -35,8 +36,8 @@ void init_testing(bool enable_test_prints) {
 
         num_modules_made++;
     */
-
 }
+
 /* runs all tests in every module, called in kmain() if testing is enabled */
 void RUN_ALL_TESTS() {
     int i;
