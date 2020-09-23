@@ -115,15 +115,21 @@ int proc_create_thread(uint8_t priority, char *name, thread_function func, void 
 
 /* intended for a graceful exit */
 int proc_exit(struct process *proc) {
-    proc_kill(proc);
+    if (proc_kill(proc) < 0)
+        return -1;
+    
     return 0;
 }
 
 int proc_kill(struct process *proc) {
     int i;
     for (i = 0; i < MAX_NUM_THREADS && proc->num_live_threads != 0; i++) {
-        if (thread_kill(&proc->threads[i]) != (int) proc->threads[i].tid)
+        int kill_return = thread_kill(&proc->threads[i]);
+        if (kill_return != (int) proc->threads[i].tid) {
             printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i].name, proc->threads[i].tid);
+            printf("THREAD TID: %d PROC->THREAD TID: %d\n", kill_return, proc->threads[i].tid);
+            return -1;
+        }
         
         proc->num_live_threads--;
         if (proc->num_live_threads <= 0)
@@ -133,9 +139,10 @@ int proc_kill(struct process *proc) {
 
     proc->state = PROCESS_DYING;
     list_delete(&all_procs, &proc->node);
+    int proc_pid = (int) proc->pid;
     pfree(proc);
 
-    return (int) proc_get_running()->pid;
+    return proc_pid;
 }
 
 void proc_block(struct process *proc) {

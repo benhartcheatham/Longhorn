@@ -9,7 +9,7 @@
 /* structs */
 
 /* typedefs */
-typedef void (*terminal_command) (char *line);
+typedef void (terminal_command) (void *line);
 
 /* functions */
 void terminal_init();

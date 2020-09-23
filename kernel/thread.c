@@ -119,27 +119,36 @@ void thread_unblock(struct thread *thread) {
 /* function called at the end of the current thread's lifecycle */
 void thread_exit() {
     current->state = THREAD_DYING;
+    dying = thread_get_running();
     list_delete(&ready_threads, &current->node);
 
+    schedule();
+}
+
+void thread_yield() {
     schedule();
 }
 
 /* kills thread thread if owned by current process
    returns the tid of the killed thread if successful, -1 otherwise */
 int thread_kill(struct thread *thread) {
-    //only the parent process of the thread can kill it
-    if (proc_get_running() != (struct process *) thread->parent->_struct)
-        return -1;
-    
-    struct thread *temp = &((struct process *) thread->parent->_struct)->threads[thread->child_num];
 
-    if (temp->state == THREAD_READY)
-        list_delete(&ready_threads, &temp->node);
-        
-    temp->state = THREAD_TERMINATED;
-    pfree(temp->esp);
+    struct process *thread_parent = (struct process *) thread->parent->_struct;
+
+    //only the parent process of the thread can kill it
+    //while i like this thought, scheduling kind of screws it up
+    //maybe only processes with a higher privilege can kill it?
+    // if (proc_get_running() != thread_parent)
+    //     return -1;
     
-    return temp->tid;
+    if (thread->state == THREAD_READY)
+        list_delete(&ready_threads, &thread->node);
+        
+    thread->state = THREAD_TERMINATED;
+    pfree(thread->esp);
+    
+    thread_parent->num_live_threads--;
+    return thread->tid;
 }
 
 /* thread "getter" functions */
@@ -175,6 +184,17 @@ void finish_schedule() {
     //set running process
     proc_set_running();
     
+    if (dying != NULL) {
+        struct process *dying_parent = (struct process *) dying->parent->_struct;
+
+        //only kill the parent process if this is its last thread
+        if (proc_get_live_t_count(dying_parent) != 1)
+            thread_kill(dying);
+        else
+            proc_exit(dying_parent);
+        
+        dying = NULL;
+    }
 }
 
 /* static functions */
@@ -190,13 +210,14 @@ static void thread_execute(thread_function func, void *aux) {
 /* schedules threads */
 static void schedule() {
     struct list_node *next = list_pop(&ready_threads);
-    if (next == NULL || next->_struct == NULL || current == (struct thread *) next->_struct)
+    struct thread *next_thread = (struct thread *) next->_struct;
+    if (next == NULL || next->_struct == NULL || current == next_thread || next_thread->state != THREAD_READY)
         return;
 
     list_insert_end(&ready_threads.tail, next);
 
-    switch_temp = (struct thread *) next->_struct;
-    switch_threads(current, (struct thread *) next->_struct);
+    switch_temp = next_thread;
+    switch_threads(current, next_thread);
     
     finish_schedule();
 }
@@ -211,12 +232,4 @@ static uint32_t allocate_tid() {
         }
     
     return MAX_TID + 1;
-}
-
-/* sets the name field of a thread struct */
-static void set_thread_name(struct thread *t, char *name) {
-    if (strlen(name) < MAX_TNAME_LENGTH) {
-        memcpy(t->name, name, MAX_TNAME_LENGTH);
-        t->name[strlen(name) + 1] = '\0';
-    }
 }
