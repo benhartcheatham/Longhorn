@@ -126,7 +126,7 @@ void thread_exit() {
 }
 
 void thread_yield() {
-    schedule();
+    //schedule();
 }
 
 /* kills thread thread if owned by current process
@@ -211,10 +211,11 @@ static void thread_execute(thread_function func, void *aux) {
 static void schedule() {
     struct list_node *next = list_pop(&ready_threads);
     struct thread *next_thread = (struct thread *) next->_struct;
+    
+    list_insert_end(&ready_threads.tail, next);
+    
     if (next == NULL || next->_struct == NULL || current == next_thread || next_thread->state != THREAD_READY)
         return;
-
-    list_insert_end(&ready_threads.tail, next);
 
     switch_temp = next_thread;
     switch_threads(current, next_thread);
