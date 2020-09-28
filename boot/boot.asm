@@ -1,16 +1,9 @@
 ; Declare constants for the multiboot header.
-MBALIGN   equ  1 << 0             		; align loaded modules on page boundaries
-MEMINFO   equ  1 << 1             		; provide memory map
-VIDEO     equ  1 << 2			  		; tell GRUB we want to set a video mode
-FLAGS     equ  MBALIGN | MEMINFO |VIDEO ; this is the Multiboot 'flag' field
-MAGIC     equ  0x1BADB002         		; 'magic number' lets bootloader find the header
-CHECKSUM  equ -(MAGIC + FLAGS)    		; checksum of above, to prove we are multiboot
-
-; get GRUB to setup our video mode
-VIDEO_MODE   equ 1						; 1 for text mode, 0 for graphical
-VIDEO_WIDTH  equ 80						; number of pixels in graphical mode, num chars in text. 0 if we just want what GRUB gives us
-VIDEO_HEIGHT equ 25						; number of pixels in graphical mode, num chars in text
-VIDEO_DEPTH  equ 0						; size of each pixel in graphical mode, 0 for text mode. 0 if we want what GRUB gives us
+MBALIGN  equ  1 << 0            ; align loaded modules on page boundaries
+MEMINFO  equ  1 << 1            ; provide memory map
+FLAGS    equ  MBALIGN | MEMINFO ; this is the Multiboot 'flag' field
+MAGIC    equ  0x1BADB002        ; 'magic number' lets bootloader find the header
+CHECKSUM equ -(MAGIC + FLAGS)   ; checksum of above, to prove we are multiboot
  
 ; Declare a multiboot header that marks the program as a kernel. These are magic
 ; values that are documented in the multiboot standard. The bootloader will
@@ -22,18 +15,7 @@ align 4
 	dd MAGIC
 	dd FLAGS
 	dd CHECKSUM
-
-	dd 0
-	dd 0
-	dd 0
-	dd 0
-
-	dd 0
-	dd VIDEO_MODE
-	dd VIDEO_WIDTH
-	dd VIDEO_HEIGHT
-	dd VIDEO_DEPTH
-
+ 
 ; The multiboot standard does not define the value of the stack pointer register
 ; (esp) and it is up to the kernel to provide a stack. This allocates room for a
 ; small stack by creating a symbol at the bottom of it, then allocating 16384
