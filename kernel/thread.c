@@ -212,11 +212,3 @@ static uint32_t allocate_tid() {
     
     return MAX_TID + 1;
 }
-
-/* sets the name field of a thread struct */
-static void set_thread_name(struct thread *t, char *name) {
-    if (strlen(name) < MAX_TNAME_LENGTH) {
-        memcpy(t->name, name, MAX_TNAME_LENGTH);
-        t->name[strlen(name) + 1] = '\0';
-    }
-}
