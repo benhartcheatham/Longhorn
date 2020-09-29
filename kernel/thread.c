@@ -10,7 +10,7 @@
 #include "../libc/mem.h"
 
 /* defines */
-#define MAX_THREAD_TICKS 24
+#define MAX_THREAD_TICKS 8
 
 /* static data */
 //may also need an all list but im not sure

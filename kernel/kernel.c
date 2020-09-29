@@ -4,7 +4,7 @@
 #include "../boot/multiboot.h"
 
 /* Drivers */
-#include "../drivers/graphics.h"
+#include "../drivers/vesa.h"
 
 /* libc */
 #include "../libc/stdio.h"
@@ -30,11 +30,13 @@ char *minor_version_no = "1";
 char *build_version_no = "x";
 
 void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
-    init_graphics(mbi);
     init_idt();
     init_alloc(mbi);
     init_processes();
-    terminal_init();
+    if (mbi->vbe_mode != 3)  {
+        init_vesa(mbi);
+        terminal_init();
+    }
 
     #ifdef TESTS
         init_testing(true);
@@ -47,4 +49,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     #endif
     enable_interrupts();
 
+    // while (1) {
+    //     thread_yield();
+    // }
 }

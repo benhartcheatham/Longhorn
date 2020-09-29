@@ -5,11 +5,11 @@
 #include <stddef.h>
 #include "stdio.h"
 #include "string.h"
-#include "../drivers/graphics.h"
+#include "../drivers/vesa.h"
 
 /* prints a string to the screen */
 void print(char *string) {
-    graphics_print(string);
+    vesa_print(string);
 }
 
 /* prints a formatted string to the screen */
@@ -22,14 +22,14 @@ int printf(const char *format, ...) {
             format++;
             if (*format == 'd') {
                 char *temp = int_to_string(va_arg(args, int));
-                graphics_print(temp);
+                vesa_print(temp);
             } else if (*format == 'x') {
                 char *temp = int_to_hexstring(va_arg(args, int));
-                graphics_print(temp);
+                vesa_print(temp);
             } else if (*format == 's')
-                graphics_print(va_arg(args, char *));
+                vesa_print(va_arg(args, char *));
         } else
-            graphics_print_char(*format);
+            vesa_print_char(*format);
 
         format++;
     }
@@ -82,42 +82,39 @@ int sprintf(char *str, const char *format, ...) {
 
 /* prints a string with a newline to the screen */
 void println(char *string) {
-    graphics_println(string);
+    vesa_println(string);
 }
 
 /* prints an aligned string to the screen*/
 void print_align(char *string, uint16_t alignment) {
-    graphics_print_align(string, alignment);
+    vesa_print_align(string, alignment);
 }
 
 /* clears the screen */
 void clear_screen() {
-    graphics_clear_screen();
+    vesa_clear_screen();
 }
 
 /* sets the cursor position */
 void set_cursor_offset(uint16_t x, uint16_t y) {
-    graphics_set_cursor(x,y);
+    vesa_set_cursor(x,y);
 }
 
 /* sets the color of text */
 void set_color(enum vga_color fg, enum vga_color bg) {
-    graphics_set_color(fg, bg);
+    vesa_set_color(fg, bg);
 }
 
 /* sets the foreground color of text */
 void set_fg_color(enum vga_color c) {
-    graphics_set_fg_color(c);
+    vesa_set_fg_color(c);
 }
 
 /*sets the background color of text */
 void set_bg_color(enum vga_color c) {
-    graphics_set_bg_color(c);
+    vesa_set_bg_color(c);
 }
 
 void set_default_color() {
-    if (get_graphics_mode() == GRAPHICS_MODE)
-        graphics_set_color(WHITE, BLACK);
-    else
-        graphics_set_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
+    vesa_set_color(WHITE, BLACK);
 }
