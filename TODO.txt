@@ -1,5 +1,10 @@
 These should all probably be github issues but here we are...
 
+0. Graphics Drivers
+    - Fix the scroll() function in the vesa driver
+    - Add a blinking cursor to the vesa driver
+    - maybe use a different font for vesa driver
+    - speed up the vesa driver (use double buffering)
 1. Memory allocation
     - test kmalloc
     - use the GRUB mem map to mark off non-usuable areas of memory
