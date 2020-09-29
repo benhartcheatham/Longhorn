@@ -134,10 +134,10 @@ void scroll() {
         uint16_t *videomem = (uint16_t *) VIDEO_ADDRESS;
 
         int i;
-        for (i = 0; i < (MAX_ROWS - 1)*MAX_COLS; i++)
+        for (i = 0; i < (MAX_ROWS - 1) * MAX_COLS; i++)
             videomem[i] = videomem[i + MAX_COLS];
         
-        for (i = (MAX_ROWS - 1)*MAX_COLS; i < MAX_ROWS*MAX_COLS; i++)
+        for (i = (MAX_ROWS - 1) * MAX_COLS; i < MAX_ROWS*MAX_COLS; i++)
             videomem[i] = space;
         
         set_cursor(0,24);
