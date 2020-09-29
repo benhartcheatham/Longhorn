@@ -3,6 +3,7 @@
 
 /* includes */
 #include <stdint.h>
+#include "graphics.h"
 
 /* defines */
 #define VIDEO_ADDRESS 0xb8000
@@ -16,24 +17,6 @@
 #define DEFAULT_BG VGA_COLOR_BLACK
 
 /* structs */
-enum vga_color {
-	VGA_COLOR_BLACK = 0,
-	VGA_COLOR_BLUE = 1,
-	VGA_COLOR_GREEN = 2,
-	VGA_COLOR_CYAN = 3,
-	VGA_COLOR_RED = 4,
-	VGA_COLOR_PURPLE = 5,
-	VGA_COLOR_BROWN = 6,
-	VGA_COLOR_GRAY = 7,
-	VGA_COLOR_DARK_GRAY = 8,
-	VGA_COLOR_LIGHT_BLUE = 9,
-	VGA_COLOR_LIGHT_GREEN = 10,
-	VGA_COLOR_LIGHT_CYAN = 11,
-	VGA_COLOR_LIGHT_RED = 12,
-	VGA_COLOR_LIGHT_PURPLE = 13,
-	VGA_COLOR_YELLOW = 14,
-	VGA_COLOR_WHITE = 15,
-};
 
 /* typedefs */
 
@@ -42,13 +25,13 @@ enum vga_color {
 /* printing functions */
 void vga_print_char(char c);
 uint16_t get_offset();
-void set_cursor(uint16_t x, uint16_t y);
+void vga_set_cursor(uint16_t x, uint16_t y);
 void vga_print(char *string);
 void vga_println(char *string);
 void vga_print_align(char *string, uint16_t alignment);
 void vga_clear_screen();
 void vga_copy_screen(char *buffer);
-void print_backspace();
+void vga_print_backspace();
 
 /* color functions */
 void vga_set_fg_color(enum vga_color c);

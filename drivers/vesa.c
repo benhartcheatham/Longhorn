@@ -13,10 +13,14 @@ static uint8_t red_mask, green_mask, blue_mask;
 
 static uint32_t num_rows;
 static uint32_t num_cols;
+
 static uint32_t cursor_x;
 static uint32_t cursor_y;
 static uint32_t current_x;
 static uint32_t current_y;
+
+static uint32_t bg_color;
+static uint32_t fg_color;
 
 static void scroll();
 
@@ -36,11 +40,14 @@ void init_vesa(multiboot_info_t *mbi) {
 
     num_cols = width / FONT_WIDTH;
     num_rows = height / FONT_HEIGHT;
+
     cursor_x = 0;
     cursor_y = 0;
     current_x = 0;
     current_y = 0;
 
+    bg_color = BLACK;
+    fg_color = WHITE;
 }
 
 void vesa_set_cursor(uint32_t x, uint32_t y) {
@@ -69,13 +76,13 @@ void vesa_print_char(char c) {
     uint32_t *pixel_pos = framebuffer_addr + (current_y * width) + current_x;
 
     int i;
-    for (i = 0; i < 16; i++) {
-        char c_font = (char) vga_font[(c * 16) + i];
+    for (i = 0; i < FONT_HEIGHT; i++) {
+        char c_font = (char) vga_font[(c * FONT_HEIGHT) + i];
 
         int j;
-        for (j = 0; j < 8; j++)
+        for (j = 0; j < FONT_WIDTH; j++)
             if (c_font & (1 << j))
-                pixel_pos[8 - j] = 0x00ffffff;
+                pixel_pos[FONT_WIDTH - j] = fg_color;
         
         pixel_pos += width;
     }
@@ -91,13 +98,11 @@ void vesa_print_backspace() {
     uint32_t *pixel_pos = framebuffer_addr + (current_y * width) + current_x;
 
     int i;
-    for (i = 0; i < 16; i++) {
-        char c_font = (char) vga_font[(' ' * 16) + i];
+    for (i = 0; i < FONT_HEIGHT; i++) {
 
         int j;
-        for (j = 0; j < 8; j++)
-            if (c_font & (1 << j))
-                pixel_pos[8 - j] = 0x00ffffff;
+        for (j = 0; j < FONT_WIDTH; j++)
+            pixel_pos[FONT_WIDTH - j] = bg_color;
         
         pixel_pos += width;
     }
@@ -118,12 +123,18 @@ void vesa_println(char *string) {
     vesa_print_char('\n');
 }
 
+void vesa_print_align(char *string, uint16_t alignment) {
+    alignment = alignment % 8;
+    vesa_set_cursor(alignment * (num_cols / 8), cursor_y);
+    vesa_print(string);
+}
+
 void vesa_clear_screen() {
     uint32_t x;
     uint32_t y;
     for (y = 0; y < height; y++)
         for (x = 0; x < width; x++)
-            framebuffer_addr[(y * height) + x] = BACKGROUND;
+            framebuffer_addr[(y * height) + x] = bg_color;
     
     vesa_set_cursor(0, 0);
 }
@@ -140,4 +151,21 @@ static void scroll() {
     }
 }
 
+void vesa_set_color(uint32_t fg, uint32_t bg) {
+    fg_color = fg;
+    bg_color = bg;
+}
+
+void vesa_set_fg_color(uint32_t fg) {
+    fg_color = fg;
+}
+
+void vesa_set_bg_color(uint32_t bg) {
+    fg_color = bg;
+}
+
+void vesa_set_default_color() {
+    fg_color = WHITE;
+    bg_color = BLACK;
+}
 

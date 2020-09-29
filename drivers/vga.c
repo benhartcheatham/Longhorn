@@ -10,7 +10,7 @@ static uint16_t cursor_y;
 static uint16_t color = DEFAULT_BACKGROUND;
 
 /* sets the cursor to x,y on the screen */
-void set_cursor(uint16_t x, uint16_t y) {
+void vga_set_cursor(uint16_t x, uint16_t y) {
 
     if (y <= MAX_ROWS && x <= MAX_COLS) {
         uint16_t location = y * 80 + x;
@@ -26,11 +26,11 @@ void set_cursor(uint16_t x, uint16_t y) {
 
 /* gets the offest of the cursor */
 uint16_t get_offset() {
-    uint16_t pos = 0;
+    uint32_t pos = 0;
     outb(0x3D4, 0x0F);
     pos |= inb(0x3D5);
     outb(0x3D4, 0x0E);
-    pos |= ((uint16_t) inb(0x3D5)) << 8;
+    pos |= ((uint32_t) inb(0x3D5)) << 8;
     return pos;
 }
 
@@ -39,7 +39,7 @@ void vga_print_char(char c) {
     if (c == '\n') {
         cursor_y++;
         cursor_x = 0;
-        set_cursor(cursor_x, cursor_y);
+        vga_set_cursor(cursor_x, cursor_y);
         scroll();
         return;
     } else if (c == '\t') {
@@ -52,7 +52,7 @@ void vga_print_char(char c) {
             *videomem = (color << 8) | ' ';
 
             cursor_x++;
-            set_cursor(cursor_x, cursor_y);
+            vga_set_cursor(cursor_x, cursor_y);
         }
 
         return;
@@ -65,14 +65,14 @@ void vga_print_char(char c) {
     *videomem = (color << 8) | c;
 
     cursor_x++;
-    set_cursor(cursor_x, cursor_y);
+    vga_set_cursor(cursor_x, cursor_y);
     scroll();
 }
 
 /* removes the char before the current cursor position and prints a space
    at the current position */
-void print_backspace() {
-    set_cursor(--cursor_x, cursor_y);
+void vga_print_backspace() {
+    vga_set_cursor(--cursor_x, cursor_y);
     
     uint16_t offset = get_offset();
     uint16_t *videomem = (uint16_t *) VIDEO_ADDRESS;
@@ -86,7 +86,7 @@ void print_backspace() {
 /* prints char c at position x,y */
 void print_at(char c, uint16_t x, uint16_t y) {
     if (x <= MAX_COLS && y < MAX_ROWS) {
-        set_cursor(x, y);
+        vga_set_cursor(x, y);
         vga_print_char(c);
     }
 }
@@ -109,7 +109,7 @@ void vga_println(char *string) {
 /* prints string to the position x,(alignment * 10) */
 void vga_print_align(char *string, uint16_t alignment) {
     alignment = alignment % 8;  //mod 8 so that we don't align off screen
-    set_cursor(alignment * 10, cursor_y);
+    vga_set_cursor(alignment * 10, cursor_y);
 
     vga_print(string);
 }
@@ -123,7 +123,7 @@ void vga_clear_screen() {
     for (i = 0; i < MAX_ROWS*MAX_COLS; i++)
         videomem[i] = space;
     
-    set_cursor(0,0);
+    vga_set_cursor(0,0);
 }
 
 /* scrolls the screen */
@@ -140,7 +140,7 @@ void scroll() {
         for (i = (MAX_ROWS - 1) * MAX_COLS; i < MAX_ROWS*MAX_COLS; i++)
             videomem[i] = space;
         
-        set_cursor(0,24);
+        vga_set_cursor(0,24);
     }
 }
 

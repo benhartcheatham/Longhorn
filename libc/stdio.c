@@ -5,11 +5,11 @@
 #include <stddef.h>
 #include "stdio.h"
 #include "string.h"
-#include "../drivers/vga.h"
+#include "../drivers/graphics.h"
 
 /* prints a string to the screen */
 void print(char *string) {
-    vga_print(string);
+    graphics_print(string);
 }
 
 /* prints a formatted string to the screen */
@@ -22,14 +22,14 @@ int printf(const char *format, ...) {
             format++;
             if (*format == 'd') {
                 char *temp = int_to_string(va_arg(args, int));
-                print(temp);
+                graphics_print(temp);
             } else if (*format == 'x') {
                 char *temp = int_to_hexstring(va_arg(args, int));
-                print(temp);
+                graphics_print(temp);
             } else if (*format == 's')
-                print(va_arg(args, char *));
+                graphics_print(va_arg(args, char *));
         } else
-            vga_print_char(*format);
+            graphics_print_char(*format);
 
         format++;
     }
@@ -82,55 +82,42 @@ int sprintf(char *str, const char *format, ...) {
 
 /* prints a string with a newline to the screen */
 void println(char *string) {
-    vga_println(string);
+    graphics_println(string);
 }
 
 /* prints an aligned string to the screen*/
 void print_align(char *string, uint16_t alignment) {
-    vga_print_align(string, alignment);
+    graphics_print_align(string, alignment);
 }
 
 /* clears the screen */
 void clear_screen() {
-    vga_clear_screen();
-}
-
-/* copies the screen into buffer */
-void copy_screen(char *buffer) {
-    vga_copy_screen(buffer);
-}
-
-/* gets the cursor postion */
-uint16_t get_cursor_offset() {
-    return get_offset();
+    graphics_clear_screen();
 }
 
 /* sets the cursor position */
 void set_cursor_offset(uint16_t x, uint16_t y) {
-    set_cursor(x,y);
+    graphics_set_cursor(x,y);
 }
 
 /* sets the color of text */
 void set_color(enum vga_color fg, enum vga_color bg) {
-    vga_set_color(fg, bg);
+    graphics_set_color(fg, bg);
 }
 
 /* sets the foreground color of text */
 void set_fg_color(enum vga_color c) {
-    vga_set_fg_color(c);
+    graphics_set_fg_color(c);
 }
 
 /*sets the background color of text */
 void set_bg_color(enum vga_color c) {
-    vga_set_bg_color(c);
+    graphics_set_bg_color(c);
 }
 
 void set_default_color() {
-    vga_set_color(DEFAULT_FG, DEFAULT_BG);
-}
-
-/* gets the color of text
-   background is in the first 4 bits, foreground in last 4 bits */
-uint16_t get_color() {
-    return vga_get_color();
+    if (get_graphics_mode() == GRAPHICS_MODE)
+        graphics_set_color(WHITE, BLACK);
+    else
+        graphics_set_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
 }

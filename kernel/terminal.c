@@ -3,7 +3,7 @@
 #include "port_io.h"
 #include "../libc/stdio.h"
 #include "../libc/string.h"
-#include "../drivers/vga.h"
+#include "../drivers/graphics.h"
 #include "../drivers/keyboard.h"
 
 #define NUM_COMMANDS 6
@@ -82,6 +82,10 @@ void terminal_init() {
    logo sizes are defined in terminal.h */
 void print_logo(int logo_size) {
     int i;
+
+    if (get_graphics_mode() == GRAPHICS_MODE)
+        set_fg_color(0xcc5500);
+    
     if (logo_size == FULL_LOGO)
        for (i = 0; i < 20; i++)
             println(full_size_logo[i]);
@@ -89,6 +93,8 @@ void print_logo(int logo_size) {
         for (i = 0; i < 10; i++)
             println(half_size_logo[i]);
     
+    if (get_graphics_mode() == GRAPHICS_MODE)
+        set_fg_color(WHITE);
 }
 
 /* function for the terminal process to use, constantly scans input */
@@ -110,7 +116,7 @@ static void read_stdin() {
     char c = get_std(stdin);
     while (c != -1) {
         if (c == '\n') {
-            vga_print_char('\n');
+            graphics_print_char('\n');
 
             int i;
             for (i = 0; i < NUM_COMMANDS; i++)
@@ -124,11 +130,11 @@ static void read_stdin() {
                 //get rid of character the backspace is upposed to get rid of
                 get_std(stdin);
                 shrink_buffer(1);
-                print_backspace();
+                graphics_print_backspace();
             }
         } else {
             append_to_buffer(c);
-            vga_print_char(c);
+            graphics_print_char(c);
         }
 
         c = get_std(stdin);
@@ -201,7 +207,11 @@ static void grub(char *line __attribute__ ((unused))) {
 /* novelty command */
 static void moon(char *line __attribute__ ((unused))) {
     printf("did you mean: ");
-    set_fg_color(VGA_COLOR_RED);
+    if (get_graphics_mode() == TEXT_MODE)
+        set_fg_color(VGA_COLOR_RED);
+    else
+        set_fg_color(RED);
+    
     printf("\"GAMER GOD MOONMOON\"?\n");
     set_default_color();
 }
