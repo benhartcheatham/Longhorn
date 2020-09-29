@@ -155,8 +155,8 @@ struct thread *thread_get_running() {
 void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) {
     thread_ticks++;
     current->ticks++;
-    
-    if (thread_ticks >= MAX_THREAD_TICKS) {
+
+    if (thread_ticks % MAX_THREAD_TICKS == 0) {
         schedule();
     }
 }

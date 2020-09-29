@@ -102,18 +102,21 @@ void print_logo(int logo_size) {
 
 /* function for the terminal process to use, constantly scans input */
 static void terminal_waiter(void *aux __attribute__ ((unused))) {
-
-    struct thread *this_thread = thread_get_running(); 
+    struct thread *term_thread = thread_get_running();
+    uint32_t last_cursor_tick = -1u;
 
     while (1) {
         read_stdin();
-        if (this_thread->ticks % 100 == 0) {
-            if (cursor_on)
+        if (term_thread->ticks % 25 == 0 && term_thread->ticks != last_cursor_tick) {
+            if (cursor_on) {
                 graphics_hide_cursor();
-            else
+                cursor_on = false;
+            } else {
                 graphics_show_cursor();
-    
-            cursor_on = !cursor_on;
+                cursor_on = true;
+            }
+
+            last_cursor_tick = term_thread->ticks;
         }
     }
 
@@ -140,6 +143,9 @@ static void read_stdin() {
         } else if (c == '\b') {
             if (key_buf_i > 0) {
                 //get rid of character the backspace is upposed to get rid of
+                if (cursor_on)
+                    graphics_hide_cursor();
+                
                 get_std(stdin);
                 shrink_buffer(1);
                 graphics_print_backspace();
@@ -147,6 +153,8 @@ static void read_stdin() {
         } else {
             append_to_buffer(c);
             graphics_print_char(c);
+            graphics_show_cursor();
+            cursor_on = true;
         }
 
         c = get_std(stdin);
