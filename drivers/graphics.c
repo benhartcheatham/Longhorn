@@ -14,6 +14,8 @@ static void (*pri_align) (char *, uint16_t);
 static void (*pri_backspace) (void);
 static void (*clear) (void);
 static void (*set_cur) (uint32_t, uint32_t);
+static void (*show_cur) (void);
+static void (*hide_cur) (void);
 static void (*set_fg) (uint32_t);
 static void (*set_bg) (uint32_t);
 static void (*set_c) (uint32_t, uint32_t);
@@ -40,8 +42,10 @@ static void set_driver(uint8_t driver_no, multiboot_info_t *mbi) {
         set_fg = vesa_set_fg_color;
         set_bg = vesa_set_bg_color;
         set_c = vesa_set_color;
-
+        show_cur = vesa_show_cursor;
+        hide_cur = vesa_hide_cursor;
         graphics_mode = GRAPHICS_MODE;
+
     } else if (driver_no == VGA_DRIVER) {
         pri = vga_print;
         pri_c = vga_print_char;
@@ -50,10 +54,12 @@ static void set_driver(uint8_t driver_no, multiboot_info_t *mbi) {
         pri_backspace = vga_print_backspace;
         clear = vga_clear_screen;
         set_cur = (void (*) (uint32_t, uint32_t)) vga_set_cursor;
+        show_cur = vga_show_cursor;
+        hide_cur = vga_hide_cursor;
         set_fg = (void (*) (uint32_t)) vga_set_fg_color;
         set_bg = (void (*) (uint32_t)) vga_set_bg_color;
         set_c = (void (*) (uint32_t, uint32_t)) vga_set_color;
-
+        
         graphics_mode = TEXT_MODE;
     }
 }
@@ -89,6 +95,14 @@ void graphics_clear_screen() {
 
 void graphics_set_cursor(uint32_t x, uint32_t y) {
     set_cur(x, y);
+}
+
+void graphics_show_cursor() {
+    show_cur();
+}
+
+void graphics_hide_cursor() {
+    hide_cur();
 }
 
 /* color functions */

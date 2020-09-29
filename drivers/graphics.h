@@ -49,6 +49,8 @@ void graphics_clear_screen();
 /* cursor functions */
 uint32_t graphics_get_offset();
 void graphics_set_cursor(uint32_t x, uint32_t y);
+void graphics_show_cursor();
+void graphics_hide_cursor();
 
 /* color functions */
 void graphics_set_fg_color(uint32_t c);

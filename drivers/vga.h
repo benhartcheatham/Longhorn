@@ -24,14 +24,18 @@
 
 /* printing functions */
 void vga_print_char(char c);
-uint16_t get_offset();
-void vga_set_cursor(uint16_t x, uint16_t y);
 void vga_print(char *string);
 void vga_println(char *string);
 void vga_print_align(char *string, uint16_t alignment);
 void vga_clear_screen();
 void vga_copy_screen(char *buffer);
 void vga_print_backspace();
+
+/* cursor functions */
+uint16_t get_offset();
+void vga_set_cursor(uint16_t x, uint16_t y);
+void vga_show_cursor();
+void vga_hide_cursor();
 
 /* color functions */
 void vga_set_fg_color(enum vga_color c);

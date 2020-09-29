@@ -1,5 +1,7 @@
+#include <stdbool.h>
 #include "terminal.h"
 #include "proc.h"
+#include "thread.h"
 #include "port_io.h"
 #include "../libc/stdio.h"
 #include "../libc/string.h"
@@ -16,8 +18,9 @@ uint32_t terminal_pid;
 
 static char key_buffer[TERMINAL_LIMIT + 1];
 static uint32_t key_buf_i = 0;
+static bool cursor_on = false;
 
-char *full_size_logo[20] = {
+char *full_size_ascii_logo[20] = {
     "dyyyyyhddm                                                           mdhhyyyyyh",
     "     dhysssyhd                                                   dhssssyhd     ",
     "         mhysssyhm                                            mhssssydm        ",
@@ -40,7 +43,7 @@ char *full_size_logo[20] = {
     "                                   dyyyyyyyyd                                  ",
 };
 
-char *half_size_logo[10] = {
+char *half_size_ascii_logo[10] = {
     "ddhhhhm                          mhhhhdm",
     "      dyydm                  mhyyd      ",
     "        mhsshhddhyyyyyyhddhysyh         ",
@@ -88,10 +91,10 @@ void print_logo(int logo_size) {
     
     if (logo_size == FULL_LOGO)
        for (i = 0; i < 20; i++)
-            println(full_size_logo[i]);
+            println(full_size_ascii_logo[i]);
     else if (logo_size == HALF_LOGO) 
         for (i = 0; i < 10; i++)
-            println(half_size_logo[i]);
+            println(half_size_ascii_logo[i]);
     
     if (get_graphics_mode() == GRAPHICS_MODE)
         set_fg_color(WHITE);
@@ -100,9 +103,18 @@ void print_logo(int logo_size) {
 /* function for the terminal process to use, constantly scans input */
 static void terminal_waiter(void *aux __attribute__ ((unused))) {
 
-    //the while loop breaks the keyboard entirely for some reason
+    struct thread *this_thread = thread_get_running(); 
+
     while (1) {
         read_stdin();
+        if (this_thread->ticks % 100 == 0) {
+            if (cursor_on)
+                graphics_hide_cursor();
+            else
+                graphics_show_cursor();
+    
+            cursor_on = !cursor_on;
+        }
     }
 
 }

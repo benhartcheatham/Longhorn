@@ -19,6 +19,7 @@ struct thread {
     uint32_t *esp;
     uint32_t tid;
     uint8_t priority;
+    uint32_t ticks;
     char name[MAX_PNAME_LENGTH + MAX_TNAME_LENGTH + 1];
     enum thread_states state;
 

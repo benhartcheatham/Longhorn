@@ -60,6 +60,36 @@ void vesa_set_cursor(uint32_t x, uint32_t y) {
     }
 }
 
+void vesa_show_cursor() {
+    uint32_t *pixel_pos = framebuffer_addr + (current_y * width) + current_x;
+
+    int i;
+    for (i = 0; i < FONT_HEIGHT; i++) {
+        char c_font = (char) vga_font[(219 * FONT_HEIGHT) + i];
+
+        int j;
+        for (j = 0; j < FONT_WIDTH; j++)
+            if (c_font & (1 << j))
+                pixel_pos[FONT_WIDTH - j] = fg_color;
+        
+        pixel_pos += width;
+    }
+}
+
+void vesa_hide_cursor() {
+    uint32_t *pixel_pos = framebuffer_addr + (current_y * width) + current_x;
+
+    int i;
+    for (i = 0; i < FONT_HEIGHT; i++) {
+
+        int j;
+        for (j = 0; j < FONT_WIDTH; j++)
+            pixel_pos[FONT_WIDTH - j] = bg_color;
+        
+        pixel_pos += width;
+    }
+}
+
 void vesa_print_char(char c) {
     if (c == '\n') {
         vesa_set_cursor(0, cursor_y + 1);
@@ -80,9 +110,12 @@ void vesa_print_char(char c) {
         char c_font = (char) vga_font[(c * FONT_HEIGHT) + i];
 
         int j;
-        for (j = 0; j < FONT_WIDTH; j++)
+        for (j = 0; j < FONT_WIDTH; j++) {
             if (c_font & (1 << j))
                 pixel_pos[FONT_WIDTH - j] = fg_color;
+            else
+                pixel_pos[FONT_WIDTH - j] = bg_color;
+        }
         
         pixel_pos += width;
     }

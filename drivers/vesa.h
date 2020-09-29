@@ -10,6 +10,8 @@
 
 void init_vesa(multiboot_info_t *mbi);
 void vesa_set_cursor(uint32_t x, uint32_t y);
+void vesa_show_cursor();
+void vesa_hide_cursor();
 void vesa_print_char(char c);
 void vesa_print_backspace();
 void vesa_print(char *string);

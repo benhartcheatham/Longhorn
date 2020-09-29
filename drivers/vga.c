@@ -24,6 +24,14 @@ void vga_set_cursor(uint16_t x, uint16_t y) {
     }
 }
 
+void vga_show_cursor() {
+    return;
+}
+
+void vga_hide_cursor() {
+    return;
+}
+
 /* gets the offest of the cursor */
 uint16_t get_offset() {
     uint32_t pos = 0;
