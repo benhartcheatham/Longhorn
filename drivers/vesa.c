@@ -145,7 +145,7 @@ static void scroll() {
         uint32_t y;
         for (y = 0; y < height; y++)
             for (x = 0; x < width; x++)
-                framebuffer_addr[(y * height) + x] = framebuffer_addr[(y * height + FONT_HEIGHT) + x];
+                framebuffer_addr[(y * width) + x] = framebuffer_addr[((y  + FONT_HEIGHT) * width) + x];
     
         vesa_set_cursor(0, num_rows - 1);
     }
