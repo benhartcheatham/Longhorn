@@ -140,13 +140,12 @@ static void read_stdin() {
             int i;
             for (i = 0; i < NUM_COMMANDS; i++)
                 if (strcmp(trim(key_buffer), commands[i]) == 0) {
-                    proc_create(commands[i], command_functions[i], NULL);
+                    /* this should make a new process/thread, but I need semaphores
+                       to ensure the prompt shows up in the right place after it's
+                       done */
+                    command_functions[i](NULL);
                     break;
                 }
-            
-            //yielding allows the new process to run and the input prompt to
-            //be put in the right place. I suspect this only works for short tasks though
-            thread_yield();
 
             flush_buffer();
             printf("\n> ");
@@ -211,7 +210,6 @@ static void shutdown(void *line __attribute__ ((unused))) {
 }
 
 static void ps(void *line __attribute__ ((unused))) {
-    //shouldn't be using the list directly, should be using an iterator with const nodes
     const list_node_t *node = proc_peek_all_list();
     
     printf("name");

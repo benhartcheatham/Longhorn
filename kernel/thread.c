@@ -125,10 +125,6 @@ void thread_exit() {
     schedule();
 }
 
-void thread_yield() {
-    //schedule();
-}
-
 /* kills thread thread if owned by current process
    returns the tid of the killed thread if successful, -1 otherwise */
 int thread_kill(struct thread *thread) {
