@@ -1,5 +1,9 @@
 This file is for planning out new features.
 
+Graphics Drivers:
+    - Each driver should implement a set of functions (to be defined later)
+    - The should be a single file (probably graphics.c) to be imported that will interface the Drivers
+        - This file should be where switching/choosing the right graphics driver should be
 Processes:
     - Should have a stdin, stdout, and stderror stream
         - Might be better suited as files on the system

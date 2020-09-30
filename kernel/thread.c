@@ -10,7 +10,7 @@
 #include "../libc/mem.h"
 
 /* defines */
-#define MAX_THREAD_TICKS 24
+#define MAX_THREAD_TICKS 8
 
 /* static data */
 //may also need an all list but im not sure
@@ -154,8 +154,9 @@ struct thread *thread_get_running() {
 /* interrupt handler for the timer interrupt, also starts scheduling periodically */
 void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) {
     thread_ticks++;
+    current->ticks++;
 
-    if (thread_ticks >= MAX_THREAD_TICKS) {
+    if (thread_ticks % MAX_THREAD_TICKS == 0) {
         schedule();
     }
 }

@@ -4,6 +4,7 @@
 #include "../boot/multiboot.h"
 
 /* Drivers */
+#include "../drivers/vesa.h"
 
 /* libc */
 #include "../libc/stdio.h"
@@ -28,13 +29,14 @@ char *major_version_no = "0";
 char *minor_version_no = "1";
 char *build_version_no = "x";
 
-void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
-    clear_screen();
-    
+void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_idt();
-    init_alloc(mb);
+    init_alloc(mbi);
     init_processes();
-    terminal_init();
+    if (mbi->vbe_mode != 3)  {
+        init_vesa(mbi);
+        terminal_init();
+    }
 
     #ifdef TESTS
         init_testing(true);
@@ -45,8 +47,9 @@ void kmain(multiboot_info_t *mb, unsigned int magic __attribute__ ((unused))) {
         print_logo(HALF_LOGO);
         printf("\nWelcome to Longhorn!\nVersion no.: %s.%s.%s\nType <help> for a list of commands.\n> ", major_version_no, minor_version_no, build_version_no);
     #endif
-    
     enable_interrupts();
 
-
+    // while (1) {
+    //     thread_yield();
+    // }
 }

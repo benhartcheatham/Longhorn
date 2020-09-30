@@ -16,6 +16,7 @@
 #define DEFAULT_BG VGA_COLOR_BLACK
 
 /* structs */
+
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
 	VGA_COLOR_BLUE = 1,
@@ -34,21 +35,24 @@ enum vga_color {
 	VGA_COLOR_YELLOW = 14,
 	VGA_COLOR_WHITE = 15,
 };
-
 /* typedefs */
 
 /* functions */
 
 /* printing functions */
 void vga_print_char(char c);
-uint16_t get_offset();
-void set_cursor(uint16_t x, uint16_t y);
 void vga_print(char *string);
 void vga_println(char *string);
 void vga_print_align(char *string, uint16_t alignment);
 void vga_clear_screen();
 void vga_copy_screen(char *buffer);
-void print_backspace();
+void vga_print_backspace();
+
+/* cursor functions */
+uint16_t get_offset();
+void vga_set_cursor(uint16_t x, uint16_t y);
+void vga_show_cursor();
+void vga_hide_cursor();
 
 /* color functions */
 void vga_set_fg_color(enum vga_color c);

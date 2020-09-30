@@ -1,10 +1,16 @@
+#include <stdbool.h>
 #include "terminal.h"
 #include "proc.h"
+#include "thread.h"
 #include "port_io.h"
 #include "../libc/stdio.h"
 #include "../libc/string.h"
+#include "../drivers/vesa.h"
 #include "../drivers/vga.h"
 #include "../drivers/keyboard.h"
+
+#define GRAPHICS_MODE 0
+#define TEXT_MODE 1
 
 #define NUM_COMMANDS 6
 #define NUM_HELP_COMMANDS (NUM_COMMANDS - 2)
@@ -16,8 +22,9 @@ uint32_t terminal_pid;
 
 static char key_buffer[TERMINAL_LIMIT + 1];
 static uint32_t key_buf_i = 0;
+static bool cursor_on = false;
 
-char *full_size_logo[20] = {
+char *full_size_ascii_logo[20] = {
     "dyyyyyhddm                                                           mdhhyyyyyh",
     "     dhysssyhd                                                   dhssssyhd     ",
     "         mhysssyhm                                            mhssssydm        ",
@@ -40,7 +47,7 @@ char *full_size_logo[20] = {
     "                                   dyyyyyyyyd                                  ",
 };
 
-char *half_size_logo[10] = {
+char *half_size_ascii_logo[10] = {
     "ddhhhhm                          mhhhhdm",
     "      dyydm                  mhyyd      ",
     "        mhsshhddhyyyyyyhddhysyh         ",
@@ -75,28 +82,43 @@ void terminal_init() {
     terminal_pid = proc_create("terminal", terminal_waiter, NULL);
     proc_set_active(terminal_pid);
     flush_buffer();
-
 }
 
 /* prints the logo of the correpsonding size to the screen
    logo sizes are defined in terminal.h */
 void print_logo(int logo_size) {
     int i;
+
+    set_fg_color(0xcc5500);
+    
     if (logo_size == FULL_LOGO)
        for (i = 0; i < 20; i++)
-            println(full_size_logo[i]);
+            println(full_size_ascii_logo[i]);
     else if (logo_size == HALF_LOGO) 
         for (i = 0; i < 10; i++)
-            println(half_size_logo[i]);
+            println(half_size_ascii_logo[i]);
     
+    set_fg_color(WHITE);
 }
 
 /* function for the terminal process to use, constantly scans input */
 static void terminal_waiter(void *aux __attribute__ ((unused))) {
+    struct thread *term_thread = thread_get_running();
+    uint32_t last_cursor_tick = -1u;
 
-    //the while loop breaks the keyboard entirely for some reason
     while (1) {
         read_stdin();
+        if (term_thread->ticks % 24 == 0 && term_thread->ticks != last_cursor_tick) {
+            if (cursor_on) {
+                vesa_hide_cursor();
+                cursor_on = false;
+            } else {
+                vesa_show_cursor();
+                cursor_on = true;
+            }
+
+            last_cursor_tick = term_thread->ticks;
+        }
     }
 
 }
@@ -110,7 +132,10 @@ static void read_stdin() {
     char c = get_std(stdin);
     while (c != -1) {
         if (c == '\n') {
-            vga_print_char('\n');
+            if (cursor_on)
+                vesa_hide_cursor();
+            
+            vesa_print_char('\n');
 
             int i;
             for (i = 0; i < NUM_COMMANDS; i++)
@@ -122,13 +147,19 @@ static void read_stdin() {
         } else if (c == '\b') {
             if (key_buf_i > 0) {
                 //get rid of character the backspace is upposed to get rid of
+                if (cursor_on)
+                    vesa_hide_cursor();
+                
                 get_std(stdin);
                 shrink_buffer(1);
-                print_backspace();
+                vesa_print_backspace();
             }
         } else {
             append_to_buffer(c);
-            vga_print_char(c);
+            vesa_print_char(c);
+
+            vesa_show_cursor();
+            cursor_on = true;
         }
 
         c = get_std(stdin);
@@ -201,7 +232,8 @@ static void grub(char *line __attribute__ ((unused))) {
 /* novelty command */
 static void moon(char *line __attribute__ ((unused))) {
     printf("did you mean: ");
-    set_fg_color(VGA_COLOR_RED);
+    set_fg_color(RED);
+    
     printf("\"GAMER GOD MOONMOON\"?\n");
     set_default_color();
 }
