@@ -1,9 +1,10 @@
 These should all probably be github issues but here we are...
 
-CURRENT: Terminal
+CURRENT: libk
+
+0. Terminal
     - Figure out an interface for terminal commands to use
       without a file system
-
 1. Memory allocation
     - test kmalloc
     - use the GRUB mem map to mark off non-usuable areas of memory
@@ -13,10 +14,10 @@ CURRENT: Terminal
     - Idle Process
 3. Threads
     - Test threads
+    - Test thread cleanup
+    - Blocking/Unblocking threads
 5. Housekeeping
-    - format all .c files according to README
-    - format all .h files according to README
-    - figure out a naming convention for 
+    - format all files according to Coding Conventions.txt
 6. Linking
     - Don't let kernel images over 1MB be made
         - Probably need to wait until i have an assert command like in PintOS
@@ -27,3 +28,8 @@ CURRENT: Terminal
     - get rid of the mem.h file and put those functions in string.h
     - move all functions out of string.h/stdio.h(?) and into their own files 
     - Implement string.h functions based on C99
+9. Synchronization
+    - synchronize kmalloc
+    - synchronize threads
+    - synchronize processes
+    - synchronize terminal (process creation for commands)
