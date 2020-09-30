@@ -132,6 +132,9 @@ static void read_stdin() {
     char c = get_std(stdin);
     while (c != -1) {
         if (c == '\n') {
+            if (cursor_on)
+                vesa_hide_cursor();
+            
             vesa_print_char('\n');
 
             int i;

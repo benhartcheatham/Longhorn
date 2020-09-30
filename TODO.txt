@@ -1,8 +1,9 @@
 These should all probably be github issues but here we are...
 
-0. Graphics
-    - Get rid of graphics interface and make a vga terminal and a vesa terminal
-    - speed up graphics driver somehow
+CURRENT: Terminal
+    - Figure out an interface for terminal commands to use
+      without a file system
+
 1. Memory allocation
     - test kmalloc
     - use the GRUB mem map to mark off non-usuable areas of memory
