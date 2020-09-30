@@ -166,7 +166,7 @@ void proc_set_running() {
 
 /* sets the active process to proc */
 void proc_set_active(uint32_t pid) {
-    list_node_t *node = all_procs.head.next;
+    list_node *node = all_procs.head.next;
     struct process *proc = (struct process *) node->_struct;
 
     while (list_hasNext(node)) {
@@ -195,7 +195,7 @@ struct process *proc_get_active() {
 /* returns a pointer to the all list for processes
    don't use this unless necessary, should be using a list
    iterator that doesn't allow for modification */
-const list_node_t *proc_peek_all_list() {
+const list_node *proc_peek_all_list() {
     return list_peek(&all_procs);
 }
 

@@ -210,7 +210,7 @@ static void shutdown(void *line __attribute__ ((unused))) {
 }
 
 static void ps(void *line __attribute__ ((unused))) {
-    const list_node_t *node = proc_peek_all_list();
+    const list_node *node = proc_peek_all_list();
     
     printf("name");
     print_align("pid", 2);

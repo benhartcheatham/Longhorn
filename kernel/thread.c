@@ -67,7 +67,7 @@ void init_threads() {
 /* thread state functions */
 
 /* creates a thread under the given parent process */
-int thread_create(uint8_t priority, char *name, struct list_node *parent, struct thread *thread, thread_function func, void *aux) {
+int thread_create(uint8_t priority, char *name, list_node *parent, struct thread *thread, thread_function func, void *aux) {
     uint8_t *s = (uint8_t *) palloc();
 
     //setup the thread struct at the top of the page
@@ -206,7 +206,7 @@ static void thread_execute(thread_function func, void *aux) {
 
 /* schedules threads */
 static void schedule() {
-    struct list_node *next = list_pop(&ready_threads);
+    list_node *next = list_pop(&ready_threads);
     struct thread *next_thread = (struct thread *) next->_struct;
     
     list_insert_end(&ready_threads.tail, next);

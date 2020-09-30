@@ -27,7 +27,7 @@ struct process {
     //shouldn't be accessed directly
     std_stream stdin, stdout, stderr;
 
-    list_node_t node;
+    list_node node;
 };
 
 /* typedefs */
@@ -52,7 +52,7 @@ void proc_set_active(uint32_t pid);
 /* process "getter" functions */
 struct process *proc_get_running();
 struct process *proc_get_active();
-const list_node_t *proc_peek_all_list();
+const list_node *proc_peek_all_list();
 uint8_t proc_get_live_t_count(struct process *proc);
 
 #endif

@@ -25,10 +25,10 @@ struct thread {
 
     //have to use a list_node * instead of a process * because of recursive includes that I couldn't see an
     //easy fix to. Probably want to come back and fix this
-    struct list_node *parent;
+    list_node *parent;
     uint32_t child_num;
 
-    struct list_node node;
+    list_node node;
 };
 
 
