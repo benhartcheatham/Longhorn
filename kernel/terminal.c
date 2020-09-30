@@ -68,14 +68,14 @@ static void shrink_buffer();
 static void flush_buffer();
 
 /* command functions */
-static void help(char *line);
-static void shutdown(char *line);
-static void ps(char *line);
-static void grub(char *line);
-static void moon(char *line);
-static void logo(char *line);
+static void help(void *line);
+static void shutdown(void *line);
+static void ps(void *line);
+static void grub(void *line);
+static void moon(void *line);
+static void logo(void *line);
 
-terminal_command command_functions[NUM_COMMANDS] = {help, shutdown, ps, grub, moon, logo};
+terminal_command *command_functions[NUM_COMMANDS] = {help, shutdown, ps, grub, moon, logo};
 
 /* initializes a terminal process */
 void terminal_init() {
@@ -139,9 +139,15 @@ static void read_stdin() {
 
             int i;
             for (i = 0; i < NUM_COMMANDS; i++)
-                if (strcmp(trim(key_buffer), commands[i]) == 0)
-                    command_functions[i](NULL);
+                if (strcmp(trim(key_buffer), commands[i]) == 0) {
+                    proc_create(commands[i], command_functions[i], NULL);
+                    break;
+                }
             
+            //yielding allows the new process to run and the input prompt to
+            //be put in the right place. I suspect this only works for short tasks though
+            thread_yield();
+
             flush_buffer();
             printf("\n> ");
         } else if (c == '\b') {
@@ -192,7 +198,7 @@ static void flush_buffer() {
 }
 
 /* prints a list of available commands */
-static void help(char *line __attribute__ ((unused))) {
+static void help(void *line __attribute__ ((unused))) {
     printf("Available Commands:\n");
     int i;
     for (i = 0; i < NUM_HELP_COMMANDS; i++) {
@@ -200,11 +206,11 @@ static void help(char *line __attribute__ ((unused))) {
     }
 }
 /* shutsdown the machine gracefully (only works for qemu) */
-static void shutdown(char *line __attribute__ ((unused))) {
+static void shutdown(void *line __attribute__ ((unused))) {
     outw(0x604, 0x2000);
 }
 
-static void ps(char *line __attribute__ ((unused))) {
+static void ps(void *line __attribute__ ((unused))) {
     //shouldn't be using the list directly, should be using an iterator with const nodes
     const list_node_t *node = proc_peek_all_list();
     
@@ -222,15 +228,16 @@ static void ps(char *line __attribute__ ((unused))) {
 
         node = list_get_next(node);
     }
+
 }
 
 /* novelty command */
-static void grub(char *line __attribute__ ((unused))) {
+static void grub(void *line __attribute__ ((unused))) {
     printf("GRUB is ok\n\n\n\ni guess...\n");
 }
 
 /* novelty command */
-static void moon(char *line __attribute__ ((unused))) {
+static void moon(void *line __attribute__ ((unused))) {
     printf("did you mean: ");
     set_fg_color(RED);
     
@@ -239,6 +246,6 @@ static void moon(char *line __attribute__ ((unused))) {
 }
 
 /* prints the OS logo to the screen */
-static void logo(char *line __attribute__ ((unused))) {
+static void logo(void *line __attribute__ ((unused))) {
     print_logo(HALF_LOGO);
 }
