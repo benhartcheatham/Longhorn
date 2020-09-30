@@ -7,7 +7,7 @@ MAGIC     equ  0x1BADB002         		; 'magic number' lets bootloader find the he
 CHECKSUM  equ -(MAGIC + FLAGS)    		; checksum of above, to prove we are multiboot
 
 ; get GRUB to setup our video mode
-VIDEO_MODE   equ 1						; 1 for text mode, 0 for graphical
+VIDEO_MODE   equ 0						; 1 for text mode, 0 for graphical
 VIDEO_WIDTH  equ 80						; number of pixels in graphical mode, num chars in text. 0 if we just want what GRUB gives us
 VIDEO_HEIGHT equ 25						; number of pixels in graphical mode, num chars in text
 VIDEO_DEPTH  equ 0						; size of each pixel in graphical mode, 0 for text mode. 0 if we want what GRUB gives us
