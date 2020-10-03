@@ -183,26 +183,26 @@ void reverse(char *src) {
     }
 }
 
-char *strcat(char *destination, const char *source) {
-    char *dest_end = destination + strlen(destination); 
+char *strcat(char *dest, const char *src) {
+    char *dest_end = dest + strlen(dest); 
 
     int i;
-    for (i = 0; source[i] != '\0'; i++)
-        dest_end[i] = source[i];
+    for (i = 0; src[i] != '\0'; i++)
+        dest_end[i] = src[i];
     
     dest_end[i] = '\0';
-    return destination;
+    return dest;
 }
 
-char *strncat(char *destination, const char *source, size_t num) {
-    char *dest_end = destination + strlen(destination);
+char *strncat(char *dest, const char *src, size_t num) {
+    char *dest_end = dest + strlen(dest);
 
     size_t i;
-    for (i = 0; i < num && *source != '\0'; i++)
-        dest_end[i] = source[i];
+    for (i = 0; i < num && *src != '\0'; i++)
+        dest_end[i] = src[i];
     
     dest_end[i] = '\0';
-    return destination;
+    return dest;
 }
 
 /* returns the length of a null-terminated string */
@@ -236,31 +236,31 @@ int strncmp(const char *s1, const char *s2, size_t num) {
 }
 
 
-char *strcpy(char *destination, const char *source) {
+char *strcpy(char *dest, const char *src) {
     int i;
-    for (i = 0; source[i] != '\0'; i++)
-        destination[i] = source[i];
+    for (i = 0; src[i] != '\0'; i++)
+        dest[i] = src[i];
     
-    destination[i] = '\0';
-    return destination;
+    dest[i] = '\0';
+    return dest;
 }
 
 /* copies num chars from source to destination
    destination and source shouldn't overlap
    if source is less than num, then destination is padded with 0s until num
    chars have been copied */
-char *strncpy(char *destination, const char *source, size_t num) {
+char *strncpy(char *dest, const char *src, size_t num) {
     size_t i;
-    for (i = 0; i < num && source[i] != '\0'; i++) {
-        destination[i] = source[i];
+    for (i = 0; i < num && src[i] != '\0'; i++) {
+        dest[i] = src[i];
     }
 
     /* pad with 0s until num chars have been copied */
     for (; i < num; i++) {
-        destination[i] = '\0';
+        dest[i] = '\0';
     }
 
-    return destination;
+    return dest;
 }
 
 /* appends a character to a string */
@@ -279,7 +279,7 @@ int strcoll(const char *str1, const char *str2) {
 }
 
 /* not implemented for the same reason strcoll can't be properly done */
-size_t strxfrm(char *destination, const char *source, size_t num) {
+size_t strxfrm(char *dest, const char *src, size_t num) {
     return 0;
 }
 
