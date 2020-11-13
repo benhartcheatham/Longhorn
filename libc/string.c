@@ -47,25 +47,25 @@ void *memchr(const void *ptr, int c, size_t num) {
     size_t i;
     for (i = 0; i < num; i++, ptr++)
         if (*((const char *) ptr) == (unsigned char) c)
-            return ptr;
+            return (void *) ptr + i;
     
     return NULL;
 }
 
 char *strchr(const char *str, int c) {
-    int i;
+    size_t i;
     for (i = 0; i < strlen(str) + 1; i++)
         if (str[i] == (unsigned char) c)
-            return str;
+            return (char *) str + i;
     
     return NULL;
 }
 
 char *strrchr(const char *str, int c) {
     int i;
-    for (i = strlen(str); i > -1; i--)
+    for (i = strlen(str) - 1; i > -1; i--)
         if (str[i] == (unsigned char) c)
-            return str;
+            return (char *) str + i;
     
     return NULL;
 }
@@ -108,10 +108,12 @@ char *strstr(const char *str1, const char *str2) {
                 break;
         
         if (str2[j] == '\0')
-            return i;
+            return (char *) str1 + i;
         else 
             i += j;
     }
+
+    return NULL;
 }
 
 //this may not work, it's a weird functions
@@ -167,7 +169,7 @@ char *strpbrk(const char *str1, const char *str2) {
     for (; *str1 != '\0'; str1++)
         for (; *str2 != '\0'; str2++)
             if (*str1 == *str2)
-                return str1;
+                return (char *) str1;
     
     return NULL;
 }
@@ -206,7 +208,7 @@ char *strncat(char *dest, const char *src, size_t num) {
 }
 
 /* returns the length of a null-terminated string */
-int strlen(const char *str) {
+size_t strlen(const char *str) {
 
     int i = 0;
     while (str[i] != 0)
@@ -279,7 +281,7 @@ int strcoll(const char *str1, const char *str2) {
 }
 
 /* not implemented for the same reason strcoll can't be properly done */
-size_t strxfrm(char *dest, const char *src, size_t num) {
+size_t strxfrm(char *dest __attribute__ ((unused)), const char *src __attribute__ ((unused)), size_t num __attribute__ ((unused))) {
     return 0;
 }
 
@@ -317,7 +319,7 @@ char *trim(char *str) {
     int i = 0;
     int j = strlen(str) - 1;
 
-    while (i < strlen(str) && str[i] == ' ')
+    while ((size_t) i < strlen(str) && str[i] == ' ')
         i++;
 
     while (j >= 0 && str[j] == ' ')
@@ -341,7 +343,7 @@ char *strim(char *str, char buffer[]) {
     int i = 0;
     int j = strlen(str) - 1;
 
-    while (i < strlen(str) && str[i] == ' ')
+    while ((size_t) i < strlen(str) && str[i] == ' ')
         i++;
     
     while (j >= 0 && str[j] == ' ')

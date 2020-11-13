@@ -23,7 +23,7 @@ char *strncat(char *dest, const char *src, size_t num);
 char *int_to_string(int n);
 char *int_to_hexstring(int n);
 void reverse(char *src);
-int strlen(const char *str);
+size_t strlen(const char *str);
 int strcmp(const char *str1, const char *str2);
 int strncmp(const char *str1, const char *s2, size_t num);
 char *strcpy(char *dest, const char *src);
