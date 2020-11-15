@@ -242,11 +242,13 @@ static void grub(void *line __attribute__ ((unused))) {
 /* novelty command */
 static void moon(void *line __attribute__ ((unused))) {
     printf("did you mean: ");
+
     terminal_fgc(0xff0000);
     
     printf("\"GAMER GOD MOONMOON\"?\n");
+    
     terminal_fgc(0xffffff);
-    terminal_bgc(0x000000);
+
 }
 
 /* prints the OS logo to the screen */

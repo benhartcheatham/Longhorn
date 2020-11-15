@@ -194,7 +194,7 @@ void vesa_set_fg_color(uint32_t fg) {
 }
 
 void vesa_set_bg_color(uint32_t bg) {
-    fg_color = bg;
+    bg_color = bg;
 }
 
 void vesa_set_default_color() {
