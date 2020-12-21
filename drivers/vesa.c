@@ -162,6 +162,11 @@ void vesa_print_align(char *string, uint16_t alignment) {
     vesa_print(string);
 }
 
+void vesa_draw(uint32_t x, uint32_t y, uint32_t col) {
+    uint32_t *pixel_pos = framebuffer_addr + (y * width) + x;
+    *pixel_pos = col;
+}
+
 void vesa_clear_screen() {
     uint32_t x;
     uint32_t y;

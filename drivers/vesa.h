@@ -7,6 +7,7 @@
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 16
 
+#define BITS_PER_PIXEL 24
 #define BLACK 0x00000000
 #define WHITE 0x00ffffff
 #define RED 0x00ff0000
@@ -22,6 +23,7 @@ void vesa_print_backspace();
 void vesa_print(char *string);
 void vesa_println(char *string);
 void vesa_print_align(char *string, uint16_t alignment);
+void vesa_draw(uint32_t x, uint32_t y, uint32_t col);
 void vesa_clear_screen();
 void vesa_set_color(uint32_t fg, uint32_t bg);
 void vesa_set_fg_color(uint32_t fg);
