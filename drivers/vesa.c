@@ -60,6 +60,14 @@ void vesa_set_cursor(uint32_t x, uint32_t y) {
     }
 }
 
+uint32_t vesa_get_cursor_x() {
+    return cursor_x;
+}
+
+uint32_t vesa_get_cursor_y() {
+    return cursor_y;
+}
+
 void vesa_show_cursor() {
     uint32_t *pixel_pos = framebuffer_addr + (current_y * width) + current_x;
 
@@ -181,7 +189,7 @@ static void scroll() {
     if (cursor_y >= num_rows) {
         uint32_t x;
         uint32_t y;
-        for (y = 0; y < height; y++)
+        for (y = 0; y < height - 1; y++)
             for (x = 0; x < width; x++)
                 framebuffer_addr[(y * width) + x] = framebuffer_addr[((y  + FONT_HEIGHT) * width) + x];
     

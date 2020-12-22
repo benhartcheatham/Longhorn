@@ -13,6 +13,6 @@ typedef void (shell_command) (void *line);
 
 /* functions */
 void shell_init();
-void print_logo(int logo_size);
+void print_logo();
 
 #endif

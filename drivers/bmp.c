@@ -3,6 +3,7 @@
 static uint8_t *start_pos = NULL;
 static uint32_t img_size = 0;
 
+/* reads the header of a bmp file at file into buf */
 int read_bmp_header(uint8_t *file, bmp_file_header_t *buf) {
     int num_read = 0;
 
@@ -14,9 +15,11 @@ int read_bmp_header(uint8_t *file, bmp_file_header_t *buf) {
     buf->header.data_offset = *((uint32_t *) file);
     file += 4;
     
-    if (buf->header.file_size < HEADER_SIZE + HEADER_INFO_SIZE)
+    if (buf->header.file_size < HEADER_SIZE + HEADER_INFO_SIZE) {
+        buf->data = NULL;
         return -1;
-    
+    }
+
     num_read += HEADER_SIZE;
 
     // read in bmp info header
@@ -46,8 +49,10 @@ int read_bmp_header(uint8_t *file, bmp_file_header_t *buf) {
     num_read += HEADER_INFO_SIZE;
 
     // we don't support non 24-bit colors
-    if (buf->info_header.bpp < 24)
+    if (buf->info_header.bpp < 24) {
+        buf->data = NULL;
         return -1;
+    }
     
     buf->color_table = NULL;
     buf->data = file;
@@ -81,15 +86,79 @@ int read_bmp_data(bmp_file_header_t *header, std_stream *in) {
     return num_read;
 }
 
+/* draws the bmp image pointed to by header at coordinate (x,y) */
 void draw_bmp_data(bmp_file_header_t *header, uint32_t x, uint32_t y) {
     uint8_t *pixel = header->data;
 
-    for (uint32_t i = 0; i < header->info_header.height; i++)
+    if (header->data == NULL)
+        return;
+    
+    for (uint32_t i = header->info_header.height; i > 0; i--) {
         for (uint32_t j = 0; j < header->info_header.width; j++) {
-            uint32_t col = *pixel << 16; //red byte
+            uint32_t col = 0;
+            col = *pixel; //blue byte
             col |= *(pixel + 1) << 8; //green byte
-            col |= *(pixel + 2);    //blue byte
+            col |= *(pixel + 2) << 16;    //red byte
             vesa_draw(x + j, y + i, col);
             pixel += 3;
         }
+
+        pixel += 4 - ((header->info_header.width * (header->info_header.bpp / 8)) % 4);
+    }
+}
+
+/* changes color old to color new in the bmp image pointed to by header */
+void bmp_change_color(bmp_file_header_t *header, uint32_t old, uint32_t new) {
+    uint8_t *pixel = header->data;
+
+    if (header->data == NULL)
+        return;
+    
+    for (uint32_t i = header->info_header.height; i > 0; i--) {
+        for (uint32_t j = 0; j < header->info_header.width; j++) {
+            uint32_t col = 0;
+
+            col = *pixel; //blue byte
+            col |= *(pixel + 1) << 8; //green byte
+            col |= *(pixel + 2) << 16;    //red byte
+
+            if (col == old) {
+                *pixel = new & 0xFF;
+                *(pixel + 1) = new & (0xFF << 8);
+                *(pixel + 2) = new & (0xFF << 16);
+            }
+
+            pixel += 3;
+        }
+
+        pixel += 4 - ((header->info_header.width * (header->info_header.bpp / 8)) % 4);
+    }
+}
+
+/* sets all colors other than color to black in the bmp image pointed to by header*/
+void bmp_remove_all(bmp_file_header_t *header, uint32_t color) {
+    uint8_t *pixel = header->data;
+
+    if (header->data == NULL)
+        return;
+    
+    for (uint32_t i = header->info_header.height; i > 0; i--) {
+        for (uint32_t j = 0; j < header->info_header.width; j++) {
+            uint32_t col = 0;
+
+            col = *pixel; //blue byte
+            col |= *(pixel + 1) << 8; //green byte
+            col |= *(pixel + 2) << 16;    //red byte
+
+            if (col != color) {
+                *pixel = 0x0;
+                *(pixel + 1) = 0x0;
+                *(pixel + 2) = 0x0;
+            }
+
+            pixel += 3;
+        }
+
+        pixel += 4 - ((header->info_header.width * (header->info_header.bpp / 8)) % 4);
+    }
 }

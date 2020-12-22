@@ -59,6 +59,7 @@ typedef struct bmp_file_header bmp_file_header_t;
 int read_bmp_header(uint8_t *file, bmp_file_header_t *buf);
 int read_bmp_data(bmp_file_header_t *header, std_stream *in); // this should be updated to write to a file or stream
 void draw_bmp_data(bmp_file_header_t *header, uint32_t x, uint32_t y);
-
-
+void print_bmp_header(bmp_file_header_t *header);
+void bmp_change_color(bmp_file_header_t *header, uint32_t old, uint32_t new);
+void bmp_remove_all(bmp_file_header_t *header, uint32_t color);
 #endif

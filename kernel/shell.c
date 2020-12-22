@@ -6,57 +6,31 @@
 #include "../libc/stdio.h"
 #include "../libc/string.h"
 #include "../drivers/terminal.h"
+#include "../drivers/bmp.h"
 
 #define GRAPHICS_MODE 0
 #define TEXT_MODE 1
 
-#define NUM_COMMANDS 6
+#define NUM_COMMANDS 5
 #define NUM_HELP_COMMANDS (NUM_COMMANDS - 2)
 
+#define LOGO_COLOR 0xBD5615
+
+/* shell info */
 size_t last_index = 0;
-char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "ps", "logo"};
-char *commands[NUM_COMMANDS] = {"help", "shutdown", "ps", "grub", "moon", "logo"};
+char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "ps"};
+char *commands[NUM_COMMANDS] = {"help", "shutdown", "ps", "grub", "moon"};
 uint32_t shell_pid;
 
+/* logo variables */
+extern char _binary_assets_longhorn_logo_bmp_start;
+uint8_t *header_addr = (uint8_t *) &_binary_assets_longhorn_logo_bmp_start;
+bmp_file_header_t header;
+
+/* key buffer info */
 static char key_buffer[TERMINAL_LIMIT + 1];
 static uint32_t key_buf_i = 0;
 static bool cursor_on = false;
-
-char *full_size_ascii_logo[20] = {
-    "dyyyyyhddm                                                           mdhhyyyyyh",
-    "     dhysssyhd                                                   dhssssyhd     ",
-    "         mhysssyhm                                            mhssssydm        ",
-    "            mhssssshm                                      dyssssyd            ",
-    "               mhsssssydm      mhhhhhhhhhhhhhhhdm      mhyssssshm              ",
-    "                  dysssssssssssssssssssssssssssssssssssssssshm                 ",
-    "                     mdysssssssssssssssssssssssssssssssshdm                    ",
-    "                     mdysssssssssssssssssssssssssssssssshdm                    ",
-    "                    dsssssssssssssssssssssssssssssssssssssym                   ",
-    "                       mddm   yssssssssssssssssssh  mmddm                      ",
-    "                              dssssssssssssssssssm                             ",
-    "                               hssssssssssssssssd                              ",
-    "                                hssssssssssssssd                               ",
-    "                                 hssssssssssssd                                ",
-    "                                  sssssssssssy                                 ",
-    "                                  sssssssssssy                                 ",
-    "                                 dssssssssssssm                                ",
-    "                                 yssssssssssssh                                ",
-    "                                  sssssssssssy                                 ",
-    "                                   dyyyyyyyyd                                  ",
-};
-
-char *half_size_ascii_logo[10] = {
-    "ddhhhhm                          mhhhhdm",
-    "      dyydm                  mhyyd      ",
-    "        mhsshhddhyyyyyyhddhysyh         ",
-    "           dyssssssssssssssyd           ",
-    "           dhhdhsssssssshdhhd           ",
-    "                yssssssy                ",
-    "                 yssssy                 ",
-    "                 dssssm                 ",
-    "                nysssshn                ",
-    "                 myssym                 ",
-};
 
 /* static functions */
 static void shell_waiter(void *aux);
@@ -71,31 +45,24 @@ static void shutdown(void *line);
 static void ps(void *line);
 static void grub(void *line);
 static void moon(void *line);
-static void logo(void *line);
-shell_command *command_functions[NUM_COMMANDS] = {help, shutdown, ps, grub, moon, logo};
+shell_command *command_functions[NUM_COMMANDS] = {help, shutdown, ps, grub, moon};
 
 /* initializes a shell process */
 void shell_init() {
     shell_pid = proc_create("shell", shell_waiter, NULL);
     proc_set_active(shell_pid);
     flush_buffer();
+
+    read_bmp_header(header_addr, &header);
+    bmp_change_color(&header, 0xFFFFFF, 0x0);
 }
 
 /* prints the logo of the correpsonding size to the screen
    logo sizes are defined in terminal.h */
-void print_logo(int logo_size) {
-    int i;
-
-    set_fg_color(0xcc5500);
-    
-    if (logo_size == FULL_LOGO)
-       for (i = 0; i < 20; i++)
-            println(full_size_ascii_logo[i]);
-    else if (logo_size == HALF_LOGO) 
-        for (i = 0; i < 10; i++)
-            println(half_size_ascii_logo[i]);
-    
-    set_fg_color(0xffffff);
+void print_logo() {
+    clear_screen();
+    draw_bmp_data(&header, 10, vesa_get_cursor_y() * FONT_HEIGHT + 10);
+    vesa_set_cursor(0, (header.info_header.height / FONT_HEIGHT) + 1);
 }
 
 /* function for the shell process to use, constantly scans input */
@@ -134,7 +101,6 @@ static void shell_waiter(void *aux __attribute__ ((unused))) {
    input is executed as a command, if available, when the ENTER key is pressed */ 
 static void read_stdin(struct process *active) {
     
-
     std_stream *stdin = &active->stdin;
 
     char c = get_std(stdin);
@@ -249,9 +215,4 @@ static void moon(void *line __attribute__ ((unused))) {
     
     terminal_fgc(0xffffff);
 
-}
-
-/* prints the OS logo to the screen */
-static void logo(void *line __attribute__ ((unused))) {
-    print_logo(HALF_LOGO);
 }
