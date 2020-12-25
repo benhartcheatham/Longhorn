@@ -11,7 +11,7 @@
 
 /* Processes/Threads */
 #include "proc.h"
-#include "terminal.h"
+#include "shell.h"
 
 /* Memory Management */
 #include "kalloc.h"
@@ -35,7 +35,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_processes();
     if (mbi->vbe_mode != 3)  {
         init_vesa(mbi);
-        terminal_init();
+        shell_init();
     }
 
     #ifdef TESTS

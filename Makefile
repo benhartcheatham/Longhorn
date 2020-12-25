@@ -4,13 +4,14 @@ C_SOURCES = $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.c))
 HEADERS = $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.h))
 ASM_SOURCES = $(wildcard kernel/*.asm)
 BOOT_SOURCES = boot/boot.asm
+ASSETS = $(wildcard assets/*.bmp)
 
-OBJ = $(C_SOURCES:.c=.o)
+OBJ = $(C_SOURCES:.c=.o) $(ASSETS:.bmp=.o)
 ASM = $(ASM_SOURCES:.asm=.o)
 BOOT = $(BOOT_SOURCES:.asm=.o)
 
 ### COMPILER GROUPS/RULES ###
-CC = i686-elf-gcc
+CC = i386-elf-gcc
 CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 DEFINES = 
 
@@ -51,6 +52,10 @@ os-binary: $(BOOT)  $(OBJ) $(ASM)
 
 %.o: %.asm
 	nasm $< -f elf32 -o $@
+
+%.o: %.bmp
+	$ objcopy --input binary --output elf32-i386 --binary-architecture i386 \
+    $< $@
 
 ### BUILD RULES ###
 

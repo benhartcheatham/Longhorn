@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "string.h"
 
 /* THIS FILE NEEDS TO BE REVISED TO CONFORM TO C99 */
@@ -39,6 +40,140 @@ char *int_to_hexstring(int n) {
     return str;
 }
 
+/* STANDARD LIBRARY FUNCTIONS */
+
+
+void *memchr(const void *ptr, int c, size_t num) {
+    size_t i;
+    for (i = 0; i < num; i++, ptr++)
+        if (*((const char *) ptr) == (unsigned char) c)
+            return (void *) ptr + i;
+    
+    return NULL;
+}
+
+char *strchr(const char *str, int c) {
+    size_t i;
+    for (i = 0; i < strlen(str) + 1; i++)
+        if (str[i] == (unsigned char) c)
+            return (char *) str + i;
+    
+    return NULL;
+}
+
+char *strrchr(const char *str, int c) {
+    int i;
+    for (i = strlen(str) - 1; i > -1; i--)
+        if (str[i] == (unsigned char) c)
+            return (char *) str + i;
+    
+    return NULL;
+}
+
+size_t strspn(const char *str1, const char *str2) {
+    size_t num = 0;
+    size_t i;
+    size_t j;
+    for (i = 0; i < strlen(str1); i++) {
+        for (j = 0; j < strlen(str2); j++)
+            if (str1[i] == str2[j])
+                num++;
+            
+        if (num == 0)
+            return 0;
+    }
+
+    return num;
+}
+
+size_t strcspn(const char *str1, const char *str2) {
+    size_t i;
+    size_t j;
+    for (i = 0; i < strlen(str1) + 1; i++)
+        for (j = 0; j < strlen(str2) + 1; j++) 
+            if (str1[i] == str2[j])
+                return i;
+    
+    return strlen(str1);
+}
+
+//this one is a little wonky
+char *strstr(const char *str1, const char *str2) {
+    size_t i;
+    for (i = 0; str1[i] != '\0'; i++) {
+
+        size_t j;
+        for (j = 0; str1[i + j] != '\0' && str2[j] != '\0'; j++)
+            if (str1[i + j] != str2[j])
+                break;
+        
+        if (str2[j] == '\0')
+            return (char *) str1 + i;
+        else 
+            i += j;
+    }
+
+    return NULL;
+}
+
+//this may not work, it's a weird functions
+char *strtok(char *str, const char *delimeters) {
+    static char *tok = NULL;
+
+    if (tok == NULL && str != NULL)
+        tok = str;
+    
+    if (tok == NULL)
+        return NULL;
+    
+    //scan for the first non-delimeter character
+    bool delim = true;
+    int i;
+    int j;
+    for (i = 0; tok[i] != '\0' && delim; i++)
+        for (j = 0; delimeters[j] != '\0'; j++)
+            if (tok[i] == delimeters[j]) {
+                tok += i;
+                delim = false;
+            }
+
+    //find the end of the first token
+    for (i = 0; tok[i] != '\0'; i++)
+        for (j = 0; delimeters[j] != '\0'; j++)
+            if (tok[i] == delimeters[j]) {
+                //get pointer to the beginning of the token
+                char *p = tok;
+
+                //move to next token
+                tok += i + 1;
+
+                //set the end of this token to null-terminator
+                tok[i] = '\0';
+                return p;
+            }
+
+    //special logic for the last token
+    if (*tok != '\0') {
+        //get pointer to the beginning of the token
+        char *p = tok;
+
+        //set the end of this token to null-terminator
+        tok[i] = '\0';
+        return p;
+    }
+
+    return NULL;
+}
+
+char *strpbrk(const char *str1, const char *str2) {
+    for (; *str1 != '\0'; str1++)
+        for (; *str2 != '\0'; str2++)
+            if (*str1 == *str2)
+                return (char *) str1;
+    
+    return NULL;
+}
+
 /* reverses a null terminated string */
 void reverse(char *src) {
     int i, j;
@@ -50,8 +185,30 @@ void reverse(char *src) {
     }
 }
 
+char *strcat(char *dest, const char *src) {
+    char *dest_end = dest + strlen(dest); 
+
+    int i;
+    for (i = 0; src[i] != '\0'; i++)
+        dest_end[i] = src[i];
+    
+    dest_end[i] = '\0';
+    return dest;
+}
+
+char *strncat(char *dest, const char *src, size_t num) {
+    char *dest_end = dest + strlen(dest);
+
+    size_t i;
+    for (i = 0; i < num && *src != '\0'; i++)
+        dest_end[i] = src[i];
+    
+    dest_end[i] = '\0';
+    return dest;
+}
+
 /* returns the length of a null-terminated string */
-int strlen(const char *str) {
+size_t strlen(const char *str) {
 
     int i = 0;
     while (str[i] != 0)
@@ -61,30 +218,51 @@ int strlen(const char *str) {
 }
 
 /* returns < 0 if s1 < s2, 0 if s1 == s2, > 0 if s1 > s2 */
-int strcmp(char *s1, char *s2) {
+int strcmp(const char *s1, const char *s2) {
     int i;
     for (i = 0; s1[i] == s2[i]; i++) {
-        if (s1[i] == '\0') return 0;
+        if (s1[i] == '\0') 
+            return 0;
     }
     return s1[i] - s2[i];
+}
+
+int strncmp(const char *s1, const char *s2, size_t num) {
+    size_t i;
+    for (i = 0; i < num && s1[i] == s2[i]; i++) {
+        if (s1[i] == '\0') 
+            return 0;
+    }
+
+    return s1[i] - s2[i];
+}
+
+
+char *strcpy(char *dest, const char *src) {
+    int i;
+    for (i = 0; src[i] != '\0'; i++)
+        dest[i] = src[i];
+    
+    dest[i] = '\0';
+    return dest;
 }
 
 /* copies num chars from source to destination
    destination and source shouldn't overlap
    if source is less than num, then destination is padded with 0s until num
    chars have been copied */
-char *strncpy(char *destination, const char *source, size_t num) {
+char *strncpy(char *dest, const char *src, size_t num) {
     size_t i;
-    for (i = 0; i < num && source[i] != '\0'; i++) {
-        destination[i] = source[i];
+    for (i = 0; i < num && src[i] != '\0'; i++) {
+        dest[i] = src[i];
     }
 
     /* pad with 0s until num chars have been copied */
     for (; i < num; i++) {
-        destination[i] = '\0';
+        dest[i] = '\0';
     }
 
-    return destination;
+    return dest;
 }
 
 /* appends a character to a string */
@@ -95,6 +273,23 @@ void append(char str[], char c) {
     *tmp = c;
     tmp++;
     *tmp = '\0';
+}
+
+/* strcoll can't be properly implemented right now because I don't have a C locale */
+int strcoll(const char *str1, const char *str2) {
+    return strcmp(str1, str2);
+}
+
+/* not implemented for the same reason strcoll can't be properly done */
+size_t strxfrm(char *dest __attribute__ ((unused)), const char *src __attribute__ ((unused)), size_t num __attribute__ ((unused))) {
+    return 0;
+}
+
+char *strerr(int errnum) {
+    if (errnum == 0)
+        return "No error";
+    else
+        return "Some error has occurred (This function is not implemented right now)";
 }
 
 /* Creates a all upperscase version of str and puts it into a buffer
@@ -124,7 +319,7 @@ char *trim(char *str) {
     int i = 0;
     int j = strlen(str) - 1;
 
-    while (i < strlen(str) && str[i] == ' ')
+    while ((size_t) i < strlen(str) && str[i] == ' ')
         i++;
 
     while (j >= 0 && str[j] == ' ')
@@ -148,7 +343,7 @@ char *strim(char *str, char buffer[]) {
     int i = 0;
     int j = strlen(str) - 1;
 
-    while (i < strlen(str) && str[i] == ' ')
+    while ((size_t) i < strlen(str) && str[i] == ' ')
         i++;
     
     while (j >= 0 && str[j] == ' ')

@@ -1,5 +1,5 @@
-#ifndef _TERMINAL_H
-#define _TERMINAL_H
+#ifndef _SHELL_H
+#define _SHELL_H
 
 /* includes */
 
@@ -9,10 +9,10 @@
 /* structs */
 
 /* typedefs */
-typedef void (terminal_command) (void *line);
+typedef void (shell_command) (void *line);
 
 /* functions */
-void terminal_init();
+void shell_init();
 void print_logo();
 
 #endif

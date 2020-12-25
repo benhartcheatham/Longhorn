@@ -1,68 +1,40 @@
 #include <stdbool.h>
-#include "terminal.h"
-#include "proc.h"
+#include "shell.h"
 #include "thread.h"
 #include "port_io.h"
+#include "proc.h"
 #include "../libc/stdio.h"
 #include "../libc/string.h"
-#include "../drivers/vesa.h"
-#include "../drivers/vga.h"
-#include "../drivers/keyboard.h"
+#include "../drivers/terminal.h"
+#include "../drivers/bmp.h"
 
 #define GRAPHICS_MODE 0
 #define TEXT_MODE 1
 
-#define NUM_COMMANDS 6
+#define NUM_COMMANDS 5
 #define NUM_HELP_COMMANDS (NUM_COMMANDS - 2)
 
-size_t last_index = 0;
-char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "ps", "logo"};
-char *commands[NUM_COMMANDS] = {"help", "shutdown", "ps", "grub", "moon", "logo"};
-uint32_t terminal_pid;
+#define LOGO_COLOR 0xBD5615
 
+/* shell info */
+size_t last_index = 0;
+char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "ps"};
+char *commands[NUM_COMMANDS] = {"help", "shutdown", "ps", "grub", "moon"};
+uint32_t shell_pid;
+
+/* logo variables */
+extern char _binary_assets_longhorn_logo_bmp_start;
+uint8_t *header_addr = (uint8_t *) &_binary_assets_longhorn_logo_bmp_start;
+bmp_file_header_t header;
+
+/* key buffer info */
 static char key_buffer[TERMINAL_LIMIT + 1];
 static uint32_t key_buf_i = 0;
 static bool cursor_on = false;
 
-char *full_size_ascii_logo[20] = {
-    "dyyyyyhddm                                                           mdhhyyyyyh",
-    "     dhysssyhd                                                   dhssssyhd     ",
-    "         mhysssyhm                                            mhssssydm        ",
-    "            mhssssshm                                      dyssssyd            ",
-    "               mhsssssydm      mhhhhhhhhhhhhhhhdm      mhyssssshm              ",
-    "                  dysssssssssssssssssssssssssssssssssssssssshm                 ",
-    "                     mdysssssssssssssssssssssssssssssssshdm                    ",
-    "                     mdysssssssssssssssssssssssssssssssshdm                    ",
-    "                    dsssssssssssssssssssssssssssssssssssssym                   ",
-    "                       mddm   yssssssssssssssssssh  mmddm                      ",
-    "                              dssssssssssssssssssm                             ",
-    "                               hssssssssssssssssd                              ",
-    "                                hssssssssssssssd                               ",
-    "                                 hssssssssssssd                                ",
-    "                                  sssssssssssy                                 ",
-    "                                  sssssssssssy                                 ",
-    "                                 dssssssssssssm                                ",
-    "                                 yssssssssssssh                                ",
-    "                                  sssssssssssy                                 ",
-    "                                   dyyyyyyyyd                                  ",
-};
-
-char *half_size_ascii_logo[10] = {
-    "ddhhhhm                          mhhhhdm",
-    "      dyydm                  mhyyd      ",
-    "        mhsshhddhyyyyyyhddhysyh         ",
-    "           dyssssssssssssssyd           ",
-    "           dhhdhsssssssshdhhd           ",
-    "                yssssssy                ",
-    "                 yssssy                 ",
-    "                 dssssm                 ",
-    "                nysssshn                ",
-    "                 myssym                 ",
-};
-
 /* static functions */
-static void terminal_waiter(void *aux);
-static void read_stdin();
+static void shell_waiter(void *aux);
+static void read_stdin(struct process *active);
 static void append_to_buffer(char c);
 static void shrink_buffer();
 static void flush_buffer();
@@ -73,47 +45,49 @@ static void shutdown(void *line);
 static void ps(void *line);
 static void grub(void *line);
 static void moon(void *line);
-static void logo(void *line);
+shell_command *command_functions[NUM_COMMANDS] = {help, shutdown, ps, grub, moon};
 
-terminal_command *command_functions[NUM_COMMANDS] = {help, shutdown, ps, grub, moon, logo};
-
-/* initializes a terminal process */
-void terminal_init() {
-    terminal_pid = proc_create("terminal", terminal_waiter, NULL);
-    proc_set_active(terminal_pid);
+/* initializes a shell process */
+void shell_init() {
+    shell_pid = proc_create("shell", shell_waiter, NULL);
+    proc_set_active(shell_pid);
     flush_buffer();
+
+    read_bmp_header(header_addr, &header);
+    bmp_change_color(&header, 0xFFFFFF, 0x0);
 }
 
 /* prints the logo of the correpsonding size to the screen
    logo sizes are defined in terminal.h */
-void print_logo(int logo_size) {
-    int i;
-
-    set_fg_color(0xcc5500);
-    
-    if (logo_size == FULL_LOGO)
-       for (i = 0; i < 20; i++)
-            println(full_size_ascii_logo[i]);
-    else if (logo_size == HALF_LOGO) 
-        for (i = 0; i < 10; i++)
-            println(half_size_ascii_logo[i]);
-    
-    set_fg_color(WHITE);
+void print_logo() {
+    clear_screen();
+    draw_bmp_data(&header, 10, vesa_get_cursor_y() * FONT_HEIGHT + 10);
+    vesa_set_cursor(0, (header.info_header.height / FONT_HEIGHT) + 1);
 }
 
-/* function for the terminal process to use, constantly scans input */
-static void terminal_waiter(void *aux __attribute__ ((unused))) {
+/* function for the shell process to use, constantly scans input */
+static void shell_waiter(void *aux __attribute__ ((unused))) {
+    struct terminal shell_term;
+    terminal_init(&shell_term);
+
     struct thread *term_thread = thread_get_running();
     uint32_t last_cursor_tick = -1u;
 
+    struct process *active = proc_get_active();
+    terminal_out(&shell_term, active);
+    terminal_dmode(&shell_term, D_CHAR_ONLY);
+    terminal_active(&shell_term);
+
     while (1) {
-        read_stdin();
+        terminal_active(&shell_term);
+
+        read_stdin(active);
         if (term_thread->ticks % 24 == 0 && term_thread->ticks != last_cursor_tick) {
             if (cursor_on) {
-                vesa_hide_cursor();
+                terminal_hcur();
                 cursor_on = false;
             } else {
-                vesa_show_cursor();
+                terminal_scur();
                 cursor_on = true;
             }
 
@@ -125,24 +99,23 @@ static void terminal_waiter(void *aux __attribute__ ((unused))) {
 
 /* reads the active process' stdin stream for input from the user
    input is executed as a command, if available, when the ENTER key is pressed */ 
-static void read_stdin() {
-    struct process *active = proc_get_active();
+static void read_stdin(struct process *active) {
+    
     std_stream *stdin = &active->stdin;
 
     char c = get_std(stdin);
     while (c != -1) {
         if (c == '\n') {
-            if (cursor_on)
-                vesa_hide_cursor();
+            terminal_hcur();
             
-            vesa_print_char('\n');
-
             int i;
             for (i = 0; i < NUM_COMMANDS; i++)
                 if (strcmp(trim(key_buffer), commands[i]) == 0) {
                     /* this should make a new process/thread, but I need semaphores
                        to ensure the prompt shows up in the right place after it's
                        done */
+                    terminal_p("\n");
+
                     command_functions[i](NULL);
                     break;
                 }
@@ -152,18 +125,16 @@ static void read_stdin() {
         } else if (c == '\b') {
             if (key_buf_i > 0) {
                 //get rid of character the backspace is upposed to get rid of
-                if (cursor_on)
-                    vesa_hide_cursor();
+                terminal_hcur();
                 
                 get_std(stdin);
                 shrink_buffer(1);
-                vesa_print_backspace();
+                terminal_pback();
             }
         } else {
             append_to_buffer(c);
-            vesa_print_char(c);
 
-            vesa_show_cursor();
+            terminal_scur();
             cursor_on = true;
         }
 
@@ -237,13 +208,11 @@ static void grub(void *line __attribute__ ((unused))) {
 /* novelty command */
 static void moon(void *line __attribute__ ((unused))) {
     printf("did you mean: ");
-    set_fg_color(RED);
+
+    terminal_fgc(0xff0000);
     
     printf("\"GAMER GOD MOONMOON\"?\n");
-    set_default_color();
-}
+    
+    terminal_fgc(0xffffff);
 
-/* prints the OS logo to the screen */
-static void logo(void *line __attribute__ ((unused))) {
-    print_logo(HALF_LOGO);
 }

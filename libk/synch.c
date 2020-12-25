@@ -50,8 +50,8 @@ int semaphore_try_down(semaphore *s) {
     return s->value;
 }
 
-void lock_init(lock *l, int val, struct thread *o) {
-    semaphore_init(l->s, val);
+void lock_init(lock *l, struct thread *o) {
+    semaphore_init(l->s, 0);
     l->owner = o;
 }
 

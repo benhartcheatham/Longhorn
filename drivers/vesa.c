@@ -60,6 +60,14 @@ void vesa_set_cursor(uint32_t x, uint32_t y) {
     }
 }
 
+uint32_t vesa_get_cursor_x() {
+    return cursor_x;
+}
+
+uint32_t vesa_get_cursor_y() {
+    return cursor_y;
+}
+
 void vesa_show_cursor() {
     uint32_t *pixel_pos = framebuffer_addr + (current_y * width) + current_x;
 
@@ -162,6 +170,11 @@ void vesa_print_align(char *string, uint16_t alignment) {
     vesa_print(string);
 }
 
+void vesa_draw(uint32_t x, uint32_t y, uint32_t col) {
+    uint32_t *pixel_pos = framebuffer_addr + (y * width) + x;
+    *pixel_pos = col;
+}
+
 void vesa_clear_screen() {
     uint32_t x;
     uint32_t y;
@@ -176,7 +189,7 @@ static void scroll() {
     if (cursor_y >= num_rows) {
         uint32_t x;
         uint32_t y;
-        for (y = 0; y < height; y++)
+        for (y = 0; y < height - 1; y++)
             for (x = 0; x < width; x++)
                 framebuffer_addr[(y * width) + x] = framebuffer_addr[((y  + FONT_HEIGHT) * width) + x];
     
@@ -194,7 +207,7 @@ void vesa_set_fg_color(uint32_t fg) {
 }
 
 void vesa_set_bg_color(uint32_t bg) {
-    fg_color = bg;
+    bg_color = bg;
 }
 
 void vesa_set_default_color() {
