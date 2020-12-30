@@ -6,34 +6,41 @@
 #include "../kernel/thread.h"
 
 /* defines */
+#define LOCK_INIT_FAIL 1
+#define LOCK_INIT_SUCC 0
+#define LOCK_ACQ_FAIL 2
+#define LOCK_ACQ_SUCC 0
+#define LOCK_REL_FAIL 3
+#define LOCK_REL_SUCC 0
 
 /* structs */
-struct semaphore {
-    int val;
-    list waiters;
-} semaphore;
 
-struct lock {
-    struct semaphore s;
+struct spin_lock {
+    int val;
     struct thread *owner;
 };
 
+struct semaphore {
+    int val;
+    struct spin_lock lock;
+    list waiters;
+};
+
 /* typedefs */
-typedef semaphore semaphore;
-typedef lock lock;
+typedef struct semaphore semaphore_t;
+typedef struct spin_lock spin_lock_t;
 
 /* functions */
 
 /* semaphore functions */
-void semaphore_init(semaphore *s, int val);
-void semaphore_down(semaphore *s);
-void semaphore_up(semaphore *s);
-int semaphore_try_down(semaphore *s);
+int semaphore_init(semaphore_t *s, int val);
+int semaphore_down(semaphore_t *s);
+int semaphore_up(semaphore_t *s);
+int semaphore_try_down(semaphore_t *s);
 
 /* lock functions */
-void lock_init(lock *l, int val, struct thread *o);
-void lock_acquire(lock *l);
-void lock_release(lock *l);
-int lock_try_acquire(lock *l);
+int spin_lock_init(spin_lock_t *sl, struct thread *o);
+int spin_lock_acquire(spin_lock_t *sl);
+int spin_lock_release(spin_lock_t *sl);
 
 #endif
