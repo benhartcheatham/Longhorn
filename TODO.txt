@@ -1,6 +1,4 @@
-*****THIS IS THE MASTER BRANCH*****
-
-CURRENT: Test new string functions
+CURRENT: Test spin locks and semaphores
 
 1. Memory allocation
     - test kmalloc

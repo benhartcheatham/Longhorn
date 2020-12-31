@@ -39,7 +39,7 @@ int semaphore_up(semaphore_t *s);
 int semaphore_try_down(semaphore_t *s);
 
 /* lock functions */
-int spin_lock_init(spin_lock_t *sl, struct thread *o);
+int spin_lock_init(spin_lock_t *sl);
 int spin_lock_acquire(spin_lock_t *sl);
 int spin_lock_release(spin_lock_t *sl);
 

@@ -23,7 +23,7 @@ int semaphore_init(semaphore_t *s, int val) {
     
     s->val = val;
 
-    ret = spin_lock_init(&s->lock, thread_get_running());
+    ret = spin_lock_init(&s->lock);
     if (ret == 0)
         list_init(&s->waiters);
 
@@ -143,13 +143,12 @@ int semaphore_try_down(semaphore_t *s) {
 /* Initializes an unlocked spin lock with owner thread o 
  * Returns _LOCK_INIT_FAIL if o is null and 0 on
  * a successful initialization */
-int spin_lock_init(spin_lock_t *sl, struct thread *o) {
-    sl->val = 0;
-
-    if (o == NULL)
+int spin_lock_init(spin_lock_t *sl) {
+    if (sl == NULL)
         return -LOCK_INIT_FAIL;
     
-    sl->owner = o;
+    sl->val = 0;
+    sl->owner = NULL;
 
     return LOCK_INIT_SUCC;
 }
@@ -184,8 +183,8 @@ int spin_lock_release(spin_lock_t *sl) {
     // just return an error code and don't attempt to fix
     // it. Other functions shouldn't allow the lock to 
     // be used after the error
-    if (sl->owner != thread_get_running())
-        return -LOCK_ACQ_FAIL;
+    if (sl == NULL || sl->owner != thread_get_running())
+        return -LOCK_REL_FAIL;
     
     if (fetch_and_add(&sl->val, -1) != 1)
         return -LOCK_REL_FAIL;
