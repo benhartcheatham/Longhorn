@@ -183,8 +183,8 @@ int spin_lock_release(spin_lock_t *sl) {
     // just return an error code and don't attempt to fix
     // it. Other functions shouldn't allow the lock to 
     // be used after the error
-    if (sl == NULL || sl->owner != thread_get_running())
-        return -LOCK_REL_FAIL;
+    //if (sl == NULL || sl->owner != thread_get_running())
+        //return -LOCK_REL_FAIL;
     
     if (fetch_and_add(&sl->val, -1) != 1)
         return -LOCK_REL_FAIL;

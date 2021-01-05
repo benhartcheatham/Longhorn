@@ -1,3 +1,15 @@
+/* May want to make the stack limited to a page or two and put them at
+  a specified interval like in linux. This would allow getting rid of
+  the current pointer and just doing some quick math with esp to get
+  the running thread.
+  
+  For synchronization, I think synchronizing around the to thread lists
+  is correct, but to get around schedule blocking, it should try to acquire the 
+  semaphore/lock and then schedule the thread that holds the lock if it can't
+  
+  Priority scehduling is also something I will want to implement now */
+
+/* includes */
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -15,6 +27,7 @@
 /* static data */
 //may also need an all list but im not sure
 static struct list ready_threads;
+static struct list blocked_threads;
 static bool tids[MAX_TID];
 static uint8_t thread_ticks = 0;
 
@@ -55,6 +68,7 @@ extern void switch_threads(struct thread *current_thread, struct thread *next_th
 /* initializes threading */
 void init_threads() {
     list_init(&ready_threads);
+    list_init(&blocked_threads);
 
     init_t = &proc_get_running()->threads[0];
     init_t->node._struct = (void *) init_t;
@@ -108,11 +122,14 @@ int thread_create(uint8_t priority, char *name, list_node *parent, struct thread
 
 /* blocks a thread */
 void thread_block(struct thread *thread) {
+    list_insert(&blocked_threads, list_delete(&ready_threads, &thread->node));
     thread->state = THREAD_BLOCKED;
+    schedule();
 }
 
 /* unblocks a thread and sets it to ready to run */
 void thread_unblock(struct thread *thread) {
+    list_insert(&ready_threads, list_delete(&blocked_threads, &thread->node));
     thread->state = THREAD_READY;
 }
 
@@ -136,20 +153,23 @@ int thread_kill(struct thread *thread) {
     //maybe only processes with a higher privilege can kill it?
     // if (proc_get_running() != thread_parent)
     //     return -1;
-    
-    if (thread->state == THREAD_READY)
-        list_delete(&ready_threads, &thread->node);
         
     thread->state = THREAD_TERMINATED;
     pfree(thread->esp);
     
     thread_parent->num_live_threads--;
+
+    if (thread->state == THREAD_READY)
+        list_delete(&ready_threads, &thread->node);
+    else
+        list_delete(&blocked_threads, &thread->node);
+    
     return thread->tid;
 }
 
 /* thread "getter" functions */
 
-/* returns a pointer to the running thread struct*/
+/* returns a pointer to the running thread struct */
 struct thread *thread_get_running() {
     return current;
 }
