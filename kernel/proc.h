@@ -20,6 +20,8 @@ struct process {
     enum proc_states state;
     char name[MAX_NAME_LENGTH + 1];
     struct thread *active_thread;
+    //may want to make this an array of pointers and put the threads at the bottom
+    //of their respective stacks (this would save a good amount of space)
     struct thread threads[MAX_NUM_THREADS];
     uint8_t num_live_threads;
 

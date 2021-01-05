@@ -1,3 +1,14 @@
+/* May want to make the stack limited to a page or two and put them at
+  a specified interval like in linux. This would allow getting rid of
+  the current pointer and just doing some quick math with esp to get
+  the running thread.
+  
+  For synchronization, I think synchronizing around the to thread lists
+  is correct, but to get around schedule blocking, it should try to acquire the 
+  semaphore/lock and then schedule the thread that holds the lock if it can't
+  
+  Priority scehduling is also something I will want to implement now */
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
