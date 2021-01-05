@@ -1,7 +1,9 @@
 /* May want to make the stack limited to a page or two and put them at
   a specified interval like in linux. This would allow getting rid of
   the current pointer and just doing some quick math with esp to get
-  the running thread.
+  the running thread. I think putting a pointer to the thread struct
+  at the top of the stack, as well as a pointer to its parent process
+  (I could also just put the thread struct itself in the stack).
   
   For synchronization, I think synchronizing around the to thread lists
   is correct, but to get around schedule blocking, it should try to acquire the 
@@ -84,7 +86,7 @@ void init_threads() {
 int thread_create(uint8_t priority, char *name, list_node *parent, struct thread *thread, thread_function func, void *aux) {
     uint8_t *s = (uint8_t *) palloc();
 
-    //setup the thread struct at the top of the page
+    //setup the thread struct in its parent process
     thread->tid = allocate_tid();
     thread->state = THREAD_READY;
     sprintf(thread->name, "%s:%s", ((struct process *) parent->_struct)->name, name);
