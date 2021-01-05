@@ -188,7 +188,7 @@ static void ps(void *line __attribute__ ((unused))) {
     print_align("state", 3);
     print_align("active thread\n", 4);
     while (list_hasNext(node)) {
-        struct process *proc = (struct process *) node->_struct;
+        struct process *proc = LIST_ENTRY(node, struct process, node);
         printf("%s", proc->name);
         print_align(int_to_string(proc->pid), 2);
         print_align(int_to_string(proc->state), 3);

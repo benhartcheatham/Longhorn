@@ -57,7 +57,6 @@ void init_threads() {
     list_init(&ready_threads);
 
     init_t = &proc_get_running()->threads[0];
-    init_t->node._struct = (void *) init_t;
     tids[0] = true;
     current = init_t;
 
@@ -73,9 +72,8 @@ int thread_create(uint8_t priority, char *name, list_node *parent, struct thread
     //setup the thread struct at the top of the page
     thread->tid = allocate_tid();
     thread->state = THREAD_READY;
-    sprintf(thread->name, "%s:%s", ((struct process *) parent->_struct)->name, name);
+    sprintf(thread->name, "%s:%s", LIST_ENTRY(parent, struct process, node)->name, name);
     thread->priority = priority;
-    thread->node._struct = (void *) thread;
     thread->parent = parent;
 
     s += PG_SIZE;
@@ -129,7 +127,7 @@ void thread_exit() {
    returns the tid of the killed thread if successful, -1 otherwise */
 int thread_kill(struct thread *thread) {
 
-    struct process *thread_parent = (struct process *) thread->parent->_struct;
+    struct process *thread_parent = LIST_ENTRY(thread->parent, struct process, node);
 
     //only the parent process of the thread can kill it
     //while i like this thought, scheduling kind of screws it up
@@ -182,7 +180,7 @@ void finish_schedule() {
     proc_set_running();
     
     if (dying != NULL) {
-        struct process *dying_parent = (struct process *) dying->parent->_struct;
+        struct process *dying_parent = LIST_ENTRY(dying->parent, struct process, node);
 
         //only kill the parent process if this is its last thread
         if (proc_get_live_t_count(dying_parent) != 1)
@@ -207,11 +205,11 @@ static void thread_execute(thread_function func, void *aux) {
 /* schedules threads */
 static void schedule() {
     list_node *next = list_pop(&ready_threads);
-    struct thread *next_thread = (struct thread *) next->_struct;
+    struct thread *next_thread = LIST_ENTRY(next, struct thread, node);
     
     list_insert_end(&ready_threads.tail, next);
     
-    if (next == NULL || next->_struct == NULL || current == next_thread || next_thread->state != THREAD_READY)
+    if (next == NULL || current == next_thread || next_thread->state != THREAD_READY)
         return;
 
     switch_temp = next_thread;

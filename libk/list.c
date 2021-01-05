@@ -20,12 +20,9 @@ static int node_comparator(list_node *node1, list_node *node2);
 void list_init(list *list) {
     list->head.prev = NULL;
     list->head.next = &list->tail;
-    list->head._struct = NULL;
 
     list->tail.prev = &list->head;
     list->tail.next = NULL;
-    list->tail._struct = NULL;
-
 }
 
 /* LIST MODIFICATION FUNCTIONS */
@@ -34,14 +31,12 @@ void list_init(list *list) {
 void list_set_head(list *list, list_node head) {
     list->head.prev = head.prev;
     list->head.next = head.next;
-    list->head._struct = head._struct;
 }
 
 /* sets the tail of a list */
 void list_set_tail(list *list, list_node tail) {
     list->tail.prev = tail.prev;
     list->tail.next = tail.next;
-    list->head._struct = tail._struct;
 }
 
 /* inserts node into list */
@@ -182,16 +177,10 @@ void node_set_prev(list_node *node, list_node *prev) {
     node->prev = prev;
 }
 
-/* sets the node specified's _struct member */
-void node_set_struct(list_node *node, void *_struct) {
-    node->_struct = _struct;
-}
-
 /* default comparator for comparing two nodes */
 static int node_comparator(list_node *node1, list_node *node2) {
     if (node1->next == node2->next && node1->prev == node2->prev)
-        if (node1->_struct == node2->_struct)
-            return 1;
+        return 1;
     return 0;
 }
 

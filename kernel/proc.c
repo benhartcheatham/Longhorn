@@ -36,7 +36,6 @@ void init_processes() {
     flush_std(&p->stderr);
 
     sprintf(p->name, "init");
-    p->node._struct = (void *) p;
     pid_count = 0;
     p->pid = pid_count++;
     p->state = PROCESS_RUNNING;
@@ -73,7 +72,6 @@ int proc_create(char *name, proc_function func, void *aux) {
         return -1;
     
     sprintf(p->name, "%s", name);
-    p->node._struct = (void *) p;
 
     p->pid = pid_count++;
     p->state = PROCESS_READY;
@@ -159,7 +157,7 @@ void proc_unblocked(struct process *proc) {
 void proc_set_running() {
     current->state = PROCESS_READY;
 
-    current = (struct process *) thread_get_running()->parent->_struct;
+    current = LIST_ENTRY(thread_get_running()->parent, struct process, node);
     current->active_thread = thread_get_running();
     current->state = PROCESS_RUNNING;
 }
@@ -167,7 +165,7 @@ void proc_set_running() {
 /* sets the active process to proc */
 void proc_set_active(uint32_t pid) {
     list_node *node = all_procs.head.next;
-    struct process *proc = (struct process *) node->_struct;
+    struct process *proc = LIST_ENTRY(node, struct process, node);
 
     while (list_hasNext(node)) {
         if (proc != NULL && proc->pid == pid) {
@@ -176,7 +174,7 @@ void proc_set_active(uint32_t pid) {
         }
 
         node = node->next;
-        proc = (struct process *) node->_struct;
+        proc = LIST_ENTRY(node, struct process, node);
     }
 }
 

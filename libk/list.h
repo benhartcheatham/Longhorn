@@ -2,12 +2,12 @@
 #define _LIST_H
 
 /* includes */
+#include <stddef.h>
 
 /* structs */
 struct list_node {
     struct list_node *next;
     struct list_node *prev;
-    void *_struct;
 };
 
 struct list {
@@ -19,6 +19,11 @@ struct list {
 typedef struct list_node list_node;
 typedef struct list list;
 typedef int (list_comparator)(struct list_node *, struct list_node *);
+
+
+/* Macros */
+#define LIST_ENTRY(ptr, type, member) \
+((type *) ((char *) ptr - offsetof(type, member)))
 
 /* functions */
 
@@ -45,7 +50,6 @@ int list_isEmpty(list *list);
 /* node functions */
 void node_set_next(list_node *node, list_node *next);
 void node_set_prev(list_node *node, list_node *prev);
-void node_set_struct(list_node *node, void *_struct);
 int node_equals(list_node *node1, list_node *node2, list_comparator comparator);
 
 #endif
