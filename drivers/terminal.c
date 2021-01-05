@@ -99,7 +99,7 @@ int terminal_put(uint8_t c) {
             put_std(&active_t->out->stdin, '\b');
 
         } else if (c == SHIFT_PRESSED || c == SHIFT_RELEASED || c == CAPS_LOCK_PRESSED) {
-            capitalize *= -1;
+            capitalize = !capitalize;
 
         } else if (c <= KC_MAX && c > 0) {
             if (capitalize == 0)
