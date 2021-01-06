@@ -1,57 +1,21 @@
-This file is for planning out new features.
+Process and Thread Rework Plan:
 
-Graphics Drivers:
-    - Each driver should implement a set of functions (to be defined later)
-    - The should be a single file (probably graphics.c) to be imported that will interface the Drivers
-        - This file should be where switching/choosing the right graphics driver should be
-Processes:
-    - Should have a stdin, stdout, and stderror stream
-        - Might be better suited as files on the system
-    - Array of threads owned by Process
-        - Number of live threads
-            - When number of live threads = 0, kill the process
-    - Active thread in Process
-    - Way to kill Processes
-        - Way to kill threads within Process?
-            - If calling thread isn't in process, kills the entire process?
-            - Does killing a process kill its threads?
-            - Can't kill init Process?
-    - Parental Hierarchy between Processes?
-    - Idle Process
-        - may want to put and idle thread in the init process instead
-    - List of Processes
-        - Using a sorted insert cuts time to find a process in half (O(n/2))
-        - May want to cap the num processes and just use an array for fast access, could also use a hash map
+*** Each thread will eventually have a kernel stack and user stack, this is for the kernel stack ***
+- Threads should be the unit to be scheduled only, processes shouldn't be scheduled themselves
+- Processes are only "containers" for threads, they must have at least 1 thread, but no more than
+  a max amount
+- Processes only contain pointers to the threads they create
+- Threads will live at the top of the stack in a thread_info struct (the stack will grow towards the thread struct)
+    - stack will be either 1 or 2 pages in length (may want this to be variable later)
+- The thread info struct will also have a pointer to the thread's parent process for easy access
+- Probably don't need a list of processes for any use other than listing them out
+- Threads will share the address space of their parent process, each with their own stack
+- Threads will share the same std streams as the parent process
+- Will want to (eventually) store more of the thread state for when they are switched
+- The running_thread function should be made into a macro, and the thread_running function should instead
+  return a thread_info struct
+- Process exit/kill should try to kill any remaining threads (threads that have a lock/semaphore will need to be able to run
+  until the release them, don't know how to do that, maybe they just release them in kill?)
+- Don't need set_running for process (might actually be a flaw with how it's implemented now)
+- Should allow set_active to take a process pointer that way threads can set their parent to the active process
 
-    When File I/O is Added:
-    - Pointer to the stack segment
-        - Each thread should have it's own stack in this segment
-        - Each thread saves state when swapping
-    - Pointer to the text segment
-    - Pointer to the data segment
-
-Threads:
-    - Per Thread:
-        - Way to save state
-        - Parent process Pointer
-            - Threads are stored in parent process Array
-            - Thread stacks are palloc'ed
-        - Priority
-        - Name
-    - Thread switching
-    - Current thread Pointer
-    - Dying Thread Pointer
-    - List of all threads for scheduling
-    - Timer interrupt in thread.c? (Probably)
-
-Standard Streams:
-    - Have keyboard write to stdin
-    - Have stdin and stdout be directed to the in and out streams of the active process
-    - Active process should choose what to do with each stream
-        - Terminal process should output stdin and stdout to the screen
-    - Maybe have a boolean flag in std streams that allows immediate response from active process?
-        - If enabled, writes to the stream will jump to a function given by the active process
-        - If disabled, active process has to write/read from streams when in it's timeslice
-
-
-    

@@ -35,7 +35,6 @@ struct thread *current;
 struct thread *switch_temp;
 struct thread *dying;
 
-
 /* structs */
 struct thread_func_frame {
     void *eip;
@@ -77,17 +76,23 @@ void init_threads() {
 /* thread state functions */
 
 /* creates a thread under the given parent process */
-int thread_create(uint8_t priority, char *name, list_node *parent, struct thread *thread, thread_function func, void *aux) {
+int thread_create(uint8_t priority, char *name, struct process *parent, struct thread **sthread, thread_function func, void *aux) {
     uint8_t *s = (uint8_t *) palloc();
 
     //setup the thread struct at the top of the page
+    s += PG_SIZE;
+    s -= sizeof(struct thread);
+
+    struct thread *thread = (struct thread *) s;
     thread->tid = allocate_tid();
     thread->state = THREAD_READY;
     sprintf(thread->name, "%s:%s", LIST_ENTRY(parent, struct process, node)->name, name);
     thread->priority = priority;
-    thread->parent = parent;
 
-    s += PG_SIZE;
+    //add a pointer to the parent process after thread struct
+    s -= sizeof(struct process *);
+    struct process *p = (struct process *) s;
+    p = parent;
 
     //setup arguments thread_execute
     s -= sizeof(struct thread_func_frame);
