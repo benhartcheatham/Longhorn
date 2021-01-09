@@ -22,7 +22,7 @@ struct process {
     struct thread *active_thread;
     //may want to make this an array of pointers and put the threads at the bottom
     //of their respective stacks (this would save a good amount of space)
-    struct thread threads[MAX_NUM_THREADS];
+    struct thread *threads[MAX_NUM_THREADS];
     uint8_t num_live_threads;
 
     //might want to make these FILE structs later on
@@ -41,14 +41,11 @@ typedef void (proc_function) (void *aux);
 void init_processes();
 
 /* process state functions */
-int proc_create(char *name, proc_function , void *aux);
+int proc_create(char *name, proc_function f, void *aux);
 int proc_exit(struct process *proc);
 int proc_kill(struct process *proc);
-void proc_block(struct process *proc);
-void proc_unblock(struct process *proc);
 
 /* process "setter" functions */
-void proc_set_running();
 void proc_set_active(uint32_t pid);
 
 /* process "getter" functions */

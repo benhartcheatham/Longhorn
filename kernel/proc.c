@@ -42,24 +42,24 @@ void init_processes() {
 
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++) {
-        p->threads[i].state = THREAD_TERMINATED;
-        p->threads[i].child_num = i;
+        p->threads[i]->state = THREAD_TERMINATED;
+        p->threads[i]->child_num = i;
     }
 
     current = p;
     
     //create init thread
-    struct thread *init_t = &p->threads[0];
-    init_t->parent = &p->node;
-    init_t->state = THREAD_RUNNING;
-    init_t->tid = 0;
-    char *init_tname = "init:init_t";
-    memcpy(init_t->name, init_tname, strlen(init_tname) + 1);
-    asm volatile("mov %%esp, %0" : "=g" (init_t->esp));
-    init_t->esp = (uint32_t *) ((uint32_t) init_t->esp);
+    // struct thread init_t;
+    // init_t.state = THREAD_RUNNING;
+    // init_t.tid = 0;
+    // init_t.pid = p->pid;
+    // char *init_tname = "init:init_t";
+    // memcpy(init_t.name, init_tname, strlen(init_tname) + 1);
+    // asm volatile("mov %%esp, %0" : "=g" (init_t.esp));
+    // init_t.esp = (uint32_t *) ((uint32_t) init_t.esp);
     init_threads(p);
 
-    p->active_thread = &p->threads[0];
+    p->active_thread = p->threads[0];
     list_insert(&all_procs, &p->node);
 }
 
@@ -85,8 +85,8 @@ int proc_create(char *name, proc_function func, void *aux) {
 
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++) {
-        p->threads[i].state = THREAD_TERMINATED;
-        p->threads[i].child_num = i;
+        p->threads[i]->state = THREAD_TERMINATED;
+        p->threads[i]->child_num = i;
     }
 
     if (thread_create(0, "main_t", &p->node, &p->threads[0], func, aux) > -1)
@@ -123,9 +123,9 @@ int proc_kill(struct process *proc) {
     int i;
     for (i = 0; i < MAX_NUM_THREADS && proc->num_live_threads != 0; i++) {
         int kill_return = thread_kill(&proc->threads[i]);
-        if (kill_return != (int) proc->threads[i].tid) {
-            printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i].name, proc->threads[i].tid);
-            printf("THREAD TID: %d PROC->THREAD TID: %d\n", kill_return, proc->threads[i].tid);
+        if (kill_return != (int) proc->threads[i]->tid) {
+            printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i]->name, proc->threads[i]->tid);
+            printf("THREAD TID: %d PROC->THREAD TID: %d\n", kill_return, proc->threads[i]->tid);
             return -1;
         }
         
@@ -143,24 +143,7 @@ int proc_kill(struct process *proc) {
     return proc_pid;
 }
 
-void proc_block(struct process *proc) {
-    proc->state = PROCESS_BLOCKED;
-}
-
-void proc_unblocked(struct process *proc) {
-    proc->state = PROCESS_READY;
-}
-
 /* process "setter" functions */
-
-/* sets the current process to the parent of the current thread */
-void proc_set_running() {
-    current->state = PROCESS_READY;
-
-    current = LIST_ENTRY(thread_get_running()->parent, struct process, node);
-    current->active_thread = thread_get_running();
-    current->state = PROCESS_RUNNING;
-}
 
 /* sets the active process to proc */
 void proc_set_active(uint32_t pid) {
@@ -208,7 +191,7 @@ uint8_t proc_get_live_t_count(struct process *proc) {
 static struct thread *proc_get_free_thread(struct process *proc) {
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++)
-        if (proc->threads[i].state == THREAD_TERMINATED)
+        if (proc->threads[i]->state == THREAD_TERMINATED)
             return &proc->threads[i];
     return NULL;
 }

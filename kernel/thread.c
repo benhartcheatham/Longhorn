@@ -31,7 +31,6 @@ static uint8_t thread_ticks = 0;
 
 /* data */
 struct thread *init_t;
-struct thread *current;
 struct thread *switch_temp;
 struct thread *dying;
 
@@ -63,14 +62,15 @@ extern void switch_threads(struct thread *current_thread, struct thread *next_th
 /* initialization functions */
 
 /* initializes threading */
-void init_threads() {
+void init_threads(struct process *init) {
     list_init(&ready_threads);
 
-    init_t = &proc_get_running()->threads[0];
-    tids[0] = true;
-    current = init_t;
+    thread_create(0, "init_t", init, &init->threads[0], __init, NULL);
+    init_t = init->threads[0];
+}
 
-    list_insert(&ready_threads, &init_t->node);
+static void __init(void *aux __attribute__ ((unused))) {
+    while (1) {};
 }
 
 /* thread state functions */
@@ -79,20 +79,19 @@ void init_threads() {
 int thread_create(uint8_t priority, char *name, struct process *parent, struct thread **sthread, thread_function func, void *aux) {
     uint8_t *s = (uint8_t *) palloc();
 
-    //setup the thread struct at the top of the page
-    s += PG_SIZE;
-    s -= sizeof(struct thread);
+    //setup the thread struct at the bottom of the page (lowest addr)
+    struct thread_info *ti = (struct thread_info *) s;
 
-    struct thread *thread = (struct thread *) s;
-    thread->tid = allocate_tid();
-    thread->state = THREAD_READY;
-    sprintf(thread->name, "%s:%s", LIST_ENTRY(parent, struct process, node)->name, name);
-    thread->priority = priority;
+    ti->t.tid = allocate_tid();
+    ti->t.state = THREAD_READY;
+    sprintf(ti->t.name, "%s:%s", parent->name, name);
+    ti->t.priority = priority;
+    ti->t.pid = parent->pid;
 
     //add a pointer to the parent process after thread struct
-    s -= sizeof(struct process *);
-    struct process *p = (struct process *) s;
-    p = parent;
+    ti->p = parent;
+
+    s += PG_SIZE;
 
     //setup arguments thread_execute
     s -= sizeof(struct thread_func_frame);
@@ -112,12 +111,12 @@ int thread_create(uint8_t priority, char *name, struct process *parent, struct t
     sf->eip = first_switch_entry;
     sf->ebp = 0;
 
-    thread->esp = (uint32_t *) s;
+    ti->t.esp = (uint32_t *) s;
 
-    thread->state = THREAD_READY;
-    list_insert(&ready_threads, &thread->node);
+    ti->t.state = THREAD_READY;
+    list_insert(&ready_threads, &ti->t.node);
 
-    return thread->tid;
+    return ti->t.tid;
 }
 
 /* blocks a thread */
@@ -132,9 +131,10 @@ void thread_unblock(struct thread *thread) {
 
 /* function called at the end of the current thread's lifecycle */
 void thread_exit() {
-    current->state = THREAD_DYING;
-    dying = thread_get_running();
-    list_delete(&ready_threads, &current->node);
+    struct thread *t = THREAD_CUR();
+    t->state = THREAD_DYING;
+    dying = t;
+    list_delete(&ready_threads, &t->node);
 
     schedule();
 }
@@ -143,7 +143,7 @@ void thread_exit() {
    returns the tid of the killed thread if successful, -1 otherwise */
 int thread_kill(struct thread *thread) {
 
-    struct process *thread_parent = LIST_ENTRY(thread->parent, struct process, node);
+    struct process *thread_parent = get_thread_proc(thread);
 
     //only the parent process of the thread can kill it
     //while i like this thought, scheduling kind of screws it up
@@ -163,9 +163,18 @@ int thread_kill(struct thread *thread) {
 
 /* thread "getter" functions */
 
-/* returns a pointer to the running thread struct*/
-struct thread *thread_get_running() {
-    return current;
+/* returns a pointer to the current thread's thread_info struct */
+inline struct thread_info *get_running() {
+    uint32_t esp;
+    asm volatile ("move %%esp, %0" : "=g" (esp));
+    // chop off last 12 bits to round to bottom of page
+    esp = esp & (~(PG_SIZE - 1));
+    return (struct thread_info *) esp;
+}
+
+/* returns a pointer to the thread's process */
+inline struct process *get_thread_proc(struct thread *t) {
+    return (struct process *) ((char *) t) + offsetof(thread_info_t, p);
 }
 
 /* scheduling functions */
@@ -173,7 +182,7 @@ struct thread *thread_get_running() {
 /* interrupt handler for the timer interrupt, also starts scheduling periodically */
 void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) {
     thread_ticks++;
-    current->ticks++;
+    THREAD_CUR()->ticks++;
 
     if (thread_ticks % MAX_THREAD_TICKS == 0) {
         schedule();
@@ -185,6 +194,7 @@ void finish_schedule() {
     //finish the part after we switch threads in schedule()
 
     //set old thread to ready
+    struct thread *current = THREAD_CUR();
     current->state = THREAD_READY;
 
     //set current thread to running
@@ -196,7 +206,7 @@ void finish_schedule() {
     proc_set_running();
     
     if (dying != NULL) {
-        struct process *dying_parent = LIST_ENTRY(dying->parent, struct process, node);
+        struct process *dying_parent = get_thread_proc(dying);
 
         //only kill the parent process if this is its last thread
         if (proc_get_live_t_count(dying_parent) != 1)
@@ -222,7 +232,8 @@ static void thread_execute(thread_function func, void *aux) {
 static void schedule() {
     list_node *next = list_pop(&ready_threads);
     struct thread *next_thread = LIST_ENTRY(next, struct thread, node);
-    
+    struct thread *current = THREAD_CUR();
+
     list_insert_end(&ready_threads.tail, next);
     
     if (next == NULL || current == next_thread || next_thread->state != THREAD_READY)
