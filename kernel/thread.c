@@ -61,16 +61,17 @@ extern void switch_threads(struct thread *current_thread, struct thread *next_th
 
 /* initialization functions */
 
+/* function that the init thread runs after interrupts are enabled */
+static void __init(void *aux __attribute__ ((unused))) {
+    while (1) {};
+}
+
 /* initializes threading */
 void init_threads(struct process *init) {
     list_init(&ready_threads);
 
     thread_create(0, "init_t", init, &init->threads[0], __init, NULL);
     init_t = init->threads[0];
-}
-
-static void __init(void *aux __attribute__ ((unused))) {
-    while (1) {};
 }
 
 /* thread state functions */
@@ -90,6 +91,7 @@ int thread_create(uint8_t priority, char *name, struct process *parent, struct t
 
     //add a pointer to the parent process after thread struct
     ti->p = parent;
+    *sthread = &ti->t;
 
     s += PG_SIZE;
 
@@ -142,7 +144,9 @@ void thread_exit() {
 /* kills thread thread if owned by current process
    returns the tid of the killed thread if successful, -1 otherwise */
 int thread_kill(struct thread *thread) {
-
+    if (thread == NULL)
+        return -1;
+    
     struct process *thread_parent = get_thread_proc(thread);
 
     //only the parent process of the thread can kill it
@@ -153,28 +157,12 @@ int thread_kill(struct thread *thread) {
     
     if (thread->state == THREAD_READY)
         list_delete(&ready_threads, &thread->node);
-        
-    thread->state = THREAD_TERMINATED;
+    
+    thread_parent->threads[thread->child_num] = NULL;
     pfree(thread->esp);
     
     thread_parent->num_live_threads--;
     return thread->tid;
-}
-
-/* thread "getter" functions */
-
-/* returns a pointer to the current thread's thread_info struct */
-inline struct thread_info *get_running() {
-    uint32_t esp;
-    asm volatile ("move %%esp, %0" : "=g" (esp));
-    // chop off last 12 bits to round to bottom of page
-    esp = esp & (~(PG_SIZE - 1));
-    return (struct thread_info *) esp;
-}
-
-/* returns a pointer to the thread's process */
-inline struct process *get_thread_proc(struct thread *t) {
-    return (struct process *) ((char *) t) + offsetof(thread_info_t, p);
 }
 
 /* scheduling functions */
@@ -201,9 +189,6 @@ void finish_schedule() {
     current = switch_temp;
     switch_temp = NULL;
     current->state = THREAD_RUNNING;
-
-    //set running process
-    proc_set_running();
     
     if (dying != NULL) {
         struct process *dying_parent = get_thread_proc(dying);

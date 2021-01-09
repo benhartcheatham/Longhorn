@@ -4,6 +4,7 @@
 /* includes */
 #include <stdint.h>
 #include "isr.h"
+#include "kalloc.h"
 #include "../libk/list.h"
 
 /* defines */
@@ -11,8 +12,9 @@
 #define MAX_TNAME_LENGTH 24
 #define MAX_TID 512
 #define THREAD_MAGIC 0x5f5f5f5fu
+#define STACK_SIZE PG_SIZE
 #define THREAD_CUR() ((struct thread *) get_running())
-#define PROC_CUR() ((struct process *) (((char *) get_running()) + offsetof(struct thread_info, p))
+#define PROC_CUR() ((struct process *) (((char *) get_running()) + offsetof(struct thread_info, p)))
 
 /* structs */
 enum thread_states {THREAD_READY, THREAD_RUNNING, THREAD_BLOCKED, THREAD_DYING, THREAD_TERMINATED};
@@ -57,8 +59,13 @@ void thread_yield();
 int thread_kill(struct thread *thread);
 
 /* thread "getter" functions */
-inline struct thread_info *get_running();
-inline struct process *get_thread_proc(struct thread *t);
+static inline struct thread_info *get_running() {
+    uint32_t esp;
+    asm volatile ("mov %%esp, %0" : "=g" (esp));
+    // chop off last 12 bits to round to bottom of page
+    esp = esp & (~(PG_SIZE - 1));
+    return (struct thread_info *) esp;
+}
 
 /* scheduling functions */
 void timer_interrupt_handler(struct register_frame *r);

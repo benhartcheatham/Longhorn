@@ -54,4 +54,8 @@ struct process *proc_get_active();
 const list_node *proc_peek_all_list();
 uint8_t proc_get_live_t_count(struct process *proc);
 
+inline struct process *get_thread_proc(struct thread *t) {
+    return (struct process *) ((char *) t) + offsetof(thread_info_t, p);
+}
+
 #endif

@@ -89,21 +89,21 @@ int proc_create(char *name, proc_function func, void *aux) {
         p->threads[i]->child_num = i;
     }
 
-    if (thread_create(0, "main_t", &p->node, &p->threads[0], func, aux) > -1)
+    if (thread_create(0, "main_t", p, &p->threads[0], func, aux) > -1)
         p->num_live_threads = 1;
     else {
         proc_kill(p);
         return -1;
     }
     
-    p->active_thread = &p->threads[0];
+    p->active_thread = p->threads[0];
     list_insert_end(&all_procs.tail, &p->node);
     return p->pid;
 }
 
 int proc_create_thread(uint8_t priority, char *name, thread_function func, void *aux) {
-    struct thread *t = proc_get_free_thread(proc_get_running());
-    int tid = thread_create(priority, name, &proc_get_running()->node, t, func, aux);
+    struct thread *t = proc_get_free_thread(PROC_CUR());
+    int tid = thread_create(priority, name, PROC_CUR(), &t, func, aux);
 
     if (tid > -1)
         proc_get_running()->num_live_threads++;
@@ -122,7 +122,7 @@ int proc_exit(struct process *proc) {
 int proc_kill(struct process *proc) {
     int i;
     for (i = 0; i < MAX_NUM_THREADS && proc->num_live_threads != 0; i++) {
-        int kill_return = thread_kill(&proc->threads[i]);
+        int kill_return = thread_kill(proc->threads[i]);
         if (kill_return != (int) proc->threads[i]->tid) {
             printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i]->name, proc->threads[i]->tid);
             printf("THREAD TID: %d PROC->THREAD TID: %d\n", kill_return, proc->threads[i]->tid);
@@ -191,8 +191,8 @@ uint8_t proc_get_live_t_count(struct process *proc) {
 static struct thread *proc_get_free_thread(struct process *proc) {
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++)
-        if (proc->threads[i]->state == THREAD_TERMINATED)
-            return &proc->threads[i];
+        if (proc->threads[i] == NULL)
+            return proc->threads[i];
     return NULL;
 }
 

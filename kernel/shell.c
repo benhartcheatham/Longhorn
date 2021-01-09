@@ -70,7 +70,7 @@ static void shell_waiter(void *aux __attribute__ ((unused))) {
     struct terminal shell_term;
     terminal_init(&shell_term);
 
-    struct thread *term_thread = thread_get_running();
+    struct thread *term_thread = THREAD_CUR();
     uint32_t last_cursor_tick = -1u;
 
     struct process *active = proc_get_active();
