@@ -79,7 +79,7 @@ void init_threads(struct process *init) {
 
     thread_create(0, "init_t", init, &init->threads[0], __init, NULL);
     init_t = init->threads[0];
-    init_t->state = THREAD_RUNNING;
+
 }
 
 /* thread state functions */

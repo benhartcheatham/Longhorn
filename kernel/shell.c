@@ -196,6 +196,7 @@ static char *p_state_to_string(enum proc_states s) {
             return "TER";
         default:
             return "UND";
+
     }
 }
 
