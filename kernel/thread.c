@@ -26,6 +26,7 @@
 /* static data */
 //may also need an all list but im not sure
 static struct list ready_threads;
+static struct list blocked_threads;
 static bool tids[MAX_TID];
 static uint8_t thread_ticks = 0;
 
@@ -69,6 +70,7 @@ static void __init(void *aux __attribute__ ((unused))) {
 /* initializes threading */
 void init_threads(struct process *init) {
     list_init(&ready_threads);
+    list_init(&blocked_threads);
 
     thread_create(0, "init", init, &init->threads[0], __init, NULL);
     init_t = init->threads[0];
@@ -124,11 +126,25 @@ int thread_create(uint8_t priority, char *name, struct process *parent, struct t
 
 /* blocks a thread */
 void thread_block(struct thread *thread) {
+    struct list_node *node = list_delete(&ready_threads, &thread->node);
+
+    if (node == NULL)
+        return;
+    
+    list_insert(&blocked_threads, node);
     thread->state = THREAD_BLOCKED;
+
+    schedule();
 }
 
 /* unblocks a thread and sets it to ready to run */
 void thread_unblock(struct thread *thread) {
+    struct list_node *node = list_delete(&blocked_threads, &thread->node);
+
+    if (node == NULL)
+        return;
+    
+    list_insert(&ready_threads, node);
     thread->state = THREAD_READY;
 }
 
@@ -216,7 +232,8 @@ static void schedule() {
     struct thread *next_thread = LIST_ENTRY(next, struct thread, node);
     struct thread *current = THREAD_CUR();
 
-    current->state = THREAD_READY;
+    if (current->state == THREAD_RUNNING)
+        current->state = THREAD_READY;
 
     list_insert_end(&ready_threads.tail, next);
     
