@@ -13,8 +13,8 @@
 #define MAX_TID 512
 #define THREAD_MAGIC 0x5f5f5f5fu
 #define STACK_SIZE PG_SIZE
-#define THREAD_CUR() ((struct thread *) get_running())
-#define PROC_CUR() ((struct process *) (((char *) get_running()) + offsetof(struct thread_info, p)))
+#define THREAD_CUR() ((struct thread *) &get_running()->t)
+#define PROC_CUR() (get_running()->p)
 
 /* structs */
 enum thread_states {THREAD_READY, THREAD_RUNNING, THREAD_BLOCKED, THREAD_DYING, THREAD_TERMINATED};

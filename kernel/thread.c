@@ -63,7 +63,14 @@ extern void switch_threads(struct thread *current_thread, struct thread *next_th
 
 /* function that the init thread runs after interrupts are enabled */
 static void __init(void *aux __attribute__ ((unused))) {
-    while (1) {};
+
+    while (1) {
+        //  char * pidc = THREAD_CUR()->name;
+        // printf("%s\n", pidc);
+        // disable_interrupts();
+        // ps(NULL);
+        // asm volatile ("hlt");
+    };
 }
 
 /* initializes threading */
@@ -72,6 +79,7 @@ void init_threads(struct process *init) {
 
     thread_create(0, "init_t", init, &init->threads[0], __init, NULL);
     init_t = init->threads[0];
+    init_t->state = THREAD_RUNNING;
 }
 
 /* thread state functions */
@@ -181,14 +189,9 @@ void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) 
 void finish_schedule() {
     //finish the part after we switch threads in schedule()
 
-    //set old thread to ready
-    struct thread *current = THREAD_CUR();
-    current->state = THREAD_READY;
-
     //set current thread to running
-    current = switch_temp;
-    switch_temp = NULL;
-    current->state = THREAD_RUNNING;
+    THREAD_CUR()->state = THREAD_RUNNING;
+    PROC_CUR()->state = PROCESS_RUNNING;
     
     if (dying != NULL) {
         struct process *dying_parent = get_thread_proc(dying);
@@ -219,14 +222,16 @@ static void schedule() {
     struct thread *next_thread = LIST_ENTRY(next, struct thread, node);
     struct thread *current = THREAD_CUR();
 
+    current->state = THREAD_READY;
+    PROC_CUR()->state = PROCESS_READY;
+
     list_insert_end(&ready_threads.tail, next);
     
     if (next == NULL || current == next_thread || next_thread->state != THREAD_READY)
         return;
 
-    switch_temp = next_thread;
     switch_threads(current, next_thread);
-    
+
     finish_schedule();
 }
 

@@ -6,6 +6,7 @@
 #include "../libc/string.h"
 #include "../libc/stdio.h"
 #include "../libk/list.h"
+#include "../drivers/vesa.h"
 
 /* static data */
 static struct list all_procs;
@@ -48,18 +49,9 @@ void init_processes() {
 
     current = p;
     
-    //create init thread
-    // struct thread init_t;
-    // init_t.state = THREAD_RUNNING;
-    // init_t.tid = 0;
-    // init_t.pid = p->pid;
-    // char *init_tname = "init:init_t";
-    // memcpy(init_t.name, init_tname, strlen(init_tname) + 1);
-    // asm volatile("mov %%esp, %0" : "=g" (init_t.esp));
-    // init_t.esp = (uint32_t *) ((uint32_t) init_t.esp);
     init_threads(p);
-
     p->active_thread = p->threads[0];
+
     list_insert(&all_procs, &p->node);
 }
 
@@ -106,7 +98,7 @@ int proc_create_thread(uint8_t priority, char *name, thread_function func, void 
     int tid = thread_create(priority, name, PROC_CUR(), &t, func, aux);
 
     if (tid > -1)
-        proc_get_running()->num_live_threads++;
+        PROC_CUR()->num_live_threads++;
     
     return tid;
 }
@@ -162,11 +154,6 @@ void proc_set_active(uint32_t pid) {
 }
 
 /* process "getter" functions */
-
-/* returns a pointer to the current process */
-struct process *proc_get_running() {
-    return current;
-}
 
 /* returns a pointer to the active process */
 struct process *proc_get_active() {

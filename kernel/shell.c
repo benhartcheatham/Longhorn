@@ -74,15 +74,16 @@ static void shell_waiter(void *aux __attribute__ ((unused))) {
     uint32_t last_cursor_tick = -1u;
 
     struct process *active = proc_get_active();
+    
     terminal_out(&shell_term, active);
     terminal_dmode(&shell_term, D_CHAR_ONLY);
     terminal_active(&shell_term);
-
+    
     while (1) {
         terminal_active(&shell_term);
 
         read_stdin(active);
-        if (term_thread->ticks % 24 == 0 && term_thread->ticks != last_cursor_tick) {
+        if (term_thread->ticks % 48 == 0 && term_thread->ticks != last_cursor_tick) {
             if (cursor_on) {
                 terminal_hcur();
                 cursor_on = false;
@@ -93,6 +94,7 @@ static void shell_waiter(void *aux __attribute__ ((unused))) {
 
             last_cursor_tick = term_thread->ticks;
         }
+
     }
 
 }
@@ -102,8 +104,9 @@ static void shell_waiter(void *aux __attribute__ ((unused))) {
 static void read_stdin(struct process *active) {
     
     std_stream *stdin = &active->stdin;
-
+    
     char c = get_std(stdin);
+    
     while (c != -1) {
         if (c == '\n') {
             terminal_hcur();
@@ -137,7 +140,7 @@ static void read_stdin(struct process *active) {
             terminal_scur();
             cursor_on = true;
         }
-
+        
         c = get_std(stdin);
     }
 }
@@ -175,9 +178,25 @@ static void help(void *line __attribute__ ((unused))) {
         printf("\t%s\n", help_commands[i]);
     }
 }
-/* shutsdown the machine gracefully (only works for qemu) */
+/* shuts down the machine gracefully (only works for qemu) */
 static void shutdown(void *line __attribute__ ((unused))) {
     outw(0x604, 0x2000);
+}
+
+
+static char *p_state_to_string(enum proc_states s) {
+    switch(s) {
+        case PROCESS_RUNNING:
+            return "RUN";
+        case PROCESS_READY:
+            return "REA";
+        case PROCESS_DYING:
+            return "DYI";
+        case PROCESS_TERMINATED:
+            return "TER";
+        default:
+            return "UND";
+    }
 }
 
 static void ps(void *line __attribute__ ((unused))) {
@@ -191,7 +210,7 @@ static void ps(void *line __attribute__ ((unused))) {
         struct process *proc = LIST_ENTRY(node, struct process, node);
         printf("%s", proc->name);
         print_align(int_to_string(proc->pid), 2);
-        print_align(int_to_string(proc->state), 3);
+        print_align(p_state_to_string(proc->state), 3);
         print_align(proc->active_thread->name, 4);
         printf("\n");
 

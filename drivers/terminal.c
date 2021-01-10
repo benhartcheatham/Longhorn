@@ -29,7 +29,7 @@ static int8_t capitalize = 0;
 static int is_whitespace(uint8_t keycode);
 
 void terminal_init(struct terminal *t) {
-    t->out = proc_get_running();
+    t->out = PROC_CUR();
     t->mode = FILTERED;
     t->drmode = VESA;
     t->dmode = D_FILTERED;
@@ -42,8 +42,7 @@ void terminal_init(struct terminal *t) {
 }
 
 int terminal_out(struct terminal *t, struct process *out) {
-    if (out == NULL || t == NULL || out->state == PROCESS_TERMINATED 
-                                        || out->state == PROCESS_DYING)
+    if (out == NULL || t == NULL)
         return -1;
     
     t->out = out;
