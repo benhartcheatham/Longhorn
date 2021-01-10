@@ -184,16 +184,18 @@ static void shutdown(void *line __attribute__ ((unused))) {
 }
 
 
-static char *p_state_to_string(enum proc_states s) {
+static char *p_state_to_string(enum thread_states s) {
     switch(s) {
-        case PROCESS_RUNNING:
+        case THREAD_RUNNING:
             return "RUN";
-        case PROCESS_READY:
+        case THREAD_READY:
             return "REA";
-        case PROCESS_DYING:
+        case THREAD_DYING:
             return "DYI";
-        case PROCESS_TERMINATED:
+        case THREAD_TERMINATED:
             return "TER";
+        case THREAD_BLOCKED:
+            return "BLO";
         default:
             return "UND";
 
@@ -211,7 +213,7 @@ static void ps(void *line __attribute__ ((unused))) {
         struct process *proc = LIST_ENTRY(node, struct process, node);
         printf("%s", proc->name);
         print_align(int_to_string(proc->pid), 2);
-        print_align(p_state_to_string(proc->state), 3);
+        print_align(p_state_to_string(proc_get_state(proc)), 3);
         print_align(proc->active_thread->name, 4);
         printf("\n");
 

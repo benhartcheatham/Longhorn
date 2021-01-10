@@ -1,21 +1,10 @@
 Process and Thread Rework Plan:
 
 *** Each thread will eventually have a kernel stack and user stack, this is for the kernel stack ***
-- Threads should be the unit to be scheduled only, processes shouldn't be scheduled themselves
-- Processes are only "containers" for threads, they must have at least 1 thread, but no more than
-  a max amount
-- Processes only contain pointers to the threads they create
-- Threads will live at the top of the stack in a thread_info struct (the stack will grow towards the thread struct)
-    - stack will be either 1 or 2 pages in length (may want this to be variable later)
-- The thread info struct will also have a pointer to the thread's parent process for easy access
-- Probably don't need a list of processes for any use other than listing them out
 - Threads will share the address space of their parent process, each with their own stack
 - Threads will share the same std streams as the parent process
 - Will want to (eventually) store more of the thread state for when they are switched
-- The running_thread function should be made into a macro, and the thread_running function should instead
-  return a thread_info struct
 - Process exit/kill should try to kill any remaining threads (threads that have a lock/semaphore will need to be able to run
   until the release them, don't know how to do that, maybe they just release them in kill?)
-- Don't need set_running for process (might actually be a flaw with how it's implemented now)
 - Should allow set_active to take a process pointer that way threads can set their parent to the active process
 

@@ -39,7 +39,6 @@ void init_processes() {
     sprintf(p->name, "init");
     pid_count = 0;
     p->pid = pid_count++;
-    p->state = PROCESS_RUNNING;
 
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++) {
@@ -66,7 +65,6 @@ int proc_create(char *name, proc_function func, void *aux) {
     sprintf(p->name, "%s", name);
 
     p->pid = pid_count++;
-    p->state = PROCESS_READY;
 
     init_std(&p->stdin);
     init_std(&p->stdout);
@@ -81,7 +79,7 @@ int proc_create(char *name, proc_function func, void *aux) {
         p->threads[i]->child_num = i;
     }
 
-    if (thread_create(0, "main_t", p, &p->threads[0], func, aux) > -1)
+    if (thread_create(0, "main", p, &p->threads[0], func, aux) > -1)
         p->num_live_threads = 1;
     else {
         proc_kill(p);
@@ -89,6 +87,7 @@ int proc_create(char *name, proc_function func, void *aux) {
     }
     
     p->active_thread = p->threads[0];
+
     list_insert_end(&all_procs.tail, &p->node);
     return p->pid;
 }
@@ -127,7 +126,6 @@ int proc_kill(struct process *proc) {
         
     }
 
-    proc->state = PROCESS_DYING;
     list_delete(&all_procs, &proc->node);
     int proc_pid = (int) proc->pid;
     pfree(proc);
@@ -137,7 +135,11 @@ int proc_kill(struct process *proc) {
 
 /* process "setter" functions */
 
-/* sets the active process to proc */
+void proc_set_active_thread(struct process *proc, uint8_t num) {
+    proc->active_thread = proc->threads[num];
+}
+
+/* sets the active process to proc with pid*/
 void proc_set_active(uint32_t pid) {
     list_node *node = all_procs.head.next;
     struct process *proc = LIST_ENTRY(node, struct process, node);
@@ -153,7 +155,17 @@ void proc_set_active(uint32_t pid) {
     }
 }
 
+/* sets the active process to proc */
+void proc_set_active_p(struct process *proc) {
+    active = proc;
+}
+
 /* process "getter" functions */
+
+/* gets the state of the active thread of the process */
+enum thread_states proc_get_state(struct process *p) {
+    return p->active_thread->state;
+}
 
 /* returns a pointer to the active process */
 struct process *proc_get_active() {
