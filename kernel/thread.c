@@ -64,7 +64,10 @@ extern void switch_threads(struct thread *current_thread, struct thread *next_th
 
 /* function that the init thread runs after interrupts are enabled */
 static void __init(void *aux __attribute__ ((unused))) {
-    while (1) {};
+    while (1) {
+        thread_yield();
+        // thread_block(THREAD_CUR());
+    };
 }
 
 /* initializes threading */
@@ -140,10 +143,13 @@ int thread_create(uint8_t priority, char *name, struct process *parent, struct t
 void thread_block(struct thread *thread) {
     if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC)
         return;
-
+    
     struct list_node *node = list_delete(&ready_threads, &thread->node);
     spin_lock_release(&r_lock);
 
+    // failing this check for some treason,
+    // but doesn't if i insert next instead of
+    // &current->node into ready_threads in schedule
     if (node == NULL)
         return;
     
@@ -158,8 +164,8 @@ void thread_block(struct thread *thread) {
         return;
     }
     
-    list_insert(&blocked_threads, node);
     thread->state = THREAD_BLOCKED;
+    list_insert(&blocked_threads, node);
     spin_lock_release(&b_lock);
 
     schedule();
@@ -187,8 +193,8 @@ void thread_unblock(struct thread *thread) {
         return;
     }
     
-    list_insert(&ready_threads, node);
     thread->state = THREAD_READY;
+    list_insert(&ready_threads, node);
     spin_lock_release(&r_lock);
 }
 
@@ -208,7 +214,9 @@ void thread_exit() {
 }
 
 /* kills thread thread if owned by current process
-   returns the tid of the killed thread if successful, -1 otherwise */
+   returns the tid of the killed thread if successful, -1 otherwise 
+   
+   THIS DOESN'T RELEASE THE LOCKS HELD BY THE THREAD, NEEDS TO BE UPDATED */
 int thread_kill(struct thread *thread) {
     if (thread == NULL)
         return -1;

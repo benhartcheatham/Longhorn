@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "list.h"
+#include "../libc/stdio.h"
 
 static int node_comparator(list_node *node1, list_node *node2);
 
@@ -100,7 +101,7 @@ list_node *list_delete(list *list, list_node *node) {
     //case where there is only 1 node
     if (curr->next == NULL && curr->prev == NULL) {
         list = NULL;
-        return NULL;
+        return curr;
     }
 
     if (curr->prev == NULL) {
