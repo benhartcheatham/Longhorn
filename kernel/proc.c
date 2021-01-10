@@ -82,7 +82,7 @@ int proc_create(char *name, proc_function func, void *aux) {
     if (thread_create(0, "main", p, &p->threads[0], func, aux) > -1)
         p->num_live_threads = 1;
     else {
-        proc_kill(p);
+        proc_kill(p, NULL);
         return -1;
     }
     
@@ -104,33 +104,39 @@ int proc_create_thread(uint8_t priority, char *name, thread_function func, void 
 
 /* intended for a graceful exit */
 int proc_exit(struct process *proc) {
-    if (proc_kill(proc) < 0)
-        return -1;
+    int ret = 0;
+    proc_kill(proc, &ret);
+    
+    if (ret < 0)
+        return ret;
     
     return 0;
 }
 
-int proc_kill(struct process *proc) {
+void proc_kill(struct process *proc, int *ret) {
     int i;
-    for (i = 0; i < MAX_NUM_THREADS && proc->num_live_threads != 0; i++) {
-        int kill_return = thread_kill(proc->threads[i]);
-        if (kill_return != (int) proc->threads[i]->tid) {
-            printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i]->name, proc->threads[i]->tid);
-            printf("THREAD TID: %d PROC->THREAD TID: %d\n", kill_return, proc->threads[i]->tid);
-            return -1;
+    for (i = 0; i < MAX_NUM_THREADS && proc->num_live_threads > 1; i++) {
+        if (proc->threads[i]->tid != THREAD_CUR()->tid) {
+            int kill_return = thread_kill(proc->threads[i]);
+            if (kill_return != (int) proc->threads[i]->tid) {
+                printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i]->name, proc->threads[i]->tid);
+                printf("THREAD TID: %d PROC->THREAD TID: %d\n", kill_return, proc->threads[i]->tid);
+            }
+            
+            if (proc->num_live_threads <= 0)
+                break; 
         }
-        
-        proc->num_live_threads--;
-        if (proc->num_live_threads <= 0)
-            break; 
-        
     }
 
     list_delete(&all_procs, &proc->node);
     int proc_pid = (int) proc->pid;
     pfree(proc);
 
-    return proc_pid;
+    if (ret != NULL)
+        *ret = proc_pid;
+    
+    THREAD_CUR()->state = THREAD_DYING;
+    thread_yield();
 }
 
 /* process "setter" functions */

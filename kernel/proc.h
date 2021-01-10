@@ -41,7 +41,7 @@ void init_processes();
 /* process state functions */
 int proc_create(char *name, proc_function f, void *aux);
 int proc_exit(struct process *proc);
-int proc_kill(struct process *proc);
+void proc_kill(struct process *proc, int *ret);
 
 /* process "setter" functions */
 void proc_set_active_thread(struct process *proc, uint8_t num);

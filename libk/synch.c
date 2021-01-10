@@ -80,7 +80,7 @@ static int __sdown(semaphore_t *s) {
     if (ret < 0)
         return ret;
 
-    thread_block(thread_get_running());
+    thread_block(THREAD_CUR());
 
     spin_lock_acquire(&s->lock);
 
@@ -100,7 +100,7 @@ int semaphore_up(semaphore_t *s) {
         return ret;
 
     if (!list_isEmpty(&s->waiters)) {
-        struct thread *next = (struct thread *) list_pop(&s->waiters)->_struct;
+        struct thread *next = LIST_ENTRY(list_pop(&s->waiters), struct thread, node);
         thread_unblock(next);
     } else
         s->val++;

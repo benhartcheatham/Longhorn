@@ -56,7 +56,6 @@ int thread_create(uint8_t priority, char *name, struct process *parent, struct t
 void thread_block(struct thread *thread);
 void thread_unblock(struct thread *thread);
 void thread_exit();
-void thread_yield();
 int thread_kill(struct thread *thread);
 
 /* thread "getter" functions */
@@ -72,6 +71,7 @@ static inline struct thread_info *get_running() {
 }
 
 /* scheduling functions */
+void thread_yield();
 void timer_interrupt_handler(struct register_frame *r);
 void finish_schedule();
 

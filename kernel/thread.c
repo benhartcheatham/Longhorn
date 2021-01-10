@@ -1,13 +1,7 @@
 /* May want to make the stack limited to a page or two and put them at
   a specified interval like in linux. This would allow getting rid of
   the current pointer and just doing some quick math with esp to get
-<<<<<<< HEAD
   the running thread.
-=======
-  the running thread. I think putting a pointer to the thread struct
-  at the top of the stack, as well as a pointer to its parent process
-  (I could also just put the thread struct itself in the stack).
->>>>>>> synchronization
   
   For synchronization, I think synchronizing around the to thread lists
   is correct, but to get around schedule blocking, it should try to acquire the 
@@ -23,23 +17,23 @@
 #include "kalloc.h"
 #include "port_io.h"
 #include "../libc/stdio.h"
-#include "../libc/string.h"
-#include "../libc/mem.h"
+#include "../libk/synch.h"
 
 /* defines */
 #define MAX_THREAD_TICKS 8
 
 /* static data */
-//may also need an all list but im not sure
 static struct list ready_threads;
 static struct list blocked_threads;
+static struct list dying_threads;
 static bool tids[MAX_TID];
 static uint8_t thread_ticks = 0;
 
 /* data */
 struct thread *init_t;
 struct thread *switch_temp;
-struct thread *dying;
+struct spin_lock r_lock;
+struct spin_lock b_lock;
 
 /* structs */
 struct thread_func_frame {
@@ -77,6 +71,9 @@ static void __init(void *aux __attribute__ ((unused))) {
 void init_threads(struct process *init) {
     list_init(&ready_threads);
     list_init(&blocked_threads);
+    list_init(&dying_threads);
+    spin_lock_init(&r_lock);
+    spin_lock_init(&b_lock);
 
     thread_create(0, "init", init, &init->threads[0], __init, NULL);
     init_t = init->threads[0];
@@ -87,7 +84,7 @@ void init_threads(struct process *init) {
 
 /* creates a thread under the given parent process */
 int thread_create(uint8_t priority, char *name, struct process *parent, struct thread **sthread, thread_function func, void *aux) {
-    uint8_t *s = (uint8_t *) palloc();
+    uint8_t *s = (uint8_t *) palloc_mult(STACK_SIZE / PG_SIZE);
 
     //setup the thread struct at the bottom of the page (lowest addr)
     struct thread_info *ti = (struct thread_info *) s;
@@ -102,7 +99,7 @@ int thread_create(uint8_t priority, char *name, struct process *parent, struct t
     ti->p = parent;
     *sthread = &ti->t;
 
-    s += PG_SIZE;
+    s += STACK_SIZE;
 
     //setup arguments thread_execute
     s -= sizeof(struct thread_func_frame);
@@ -125,41 +122,87 @@ int thread_create(uint8_t priority, char *name, struct process *parent, struct t
     ti->t.esp = (uint32_t *) s;
 
     ti->t.state = THREAD_READY;
+
+    // if we can't acquire, something is wrong and the thread shouldn't be created
+    if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC) {
+        uint32_t temp = (uint32_t) s & (~(STACK_SIZE - 1));
+        kfree((void *) temp);
+        return -1;
+    }
+
     list_insert(&ready_threads, &ti->t.node);
+    spin_lock_release(&r_lock);
 
     return ti->t.tid;
 }
 
 /* blocks a thread */
 void thread_block(struct thread *thread) {
+    if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC)
+        return;
+
     struct list_node *node = list_delete(&ready_threads, &thread->node);
+    spin_lock_release(&r_lock);
 
     if (node == NULL)
         return;
     
+    // if we can't acquire the blocked list lock,
+    // reinsert into the ready queue and return
+    if (spin_lock_acquire(&b_lock) != LOCK_ACQ_SUCC) {
+        if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC)
+            return;
+
+        list_delete(&ready_threads, node);
+        spin_lock_release(&r_lock);
+        return;
+    }
+    
     list_insert(&blocked_threads, node);
     thread->state = THREAD_BLOCKED;
+    spin_lock_release(&b_lock);
 
     schedule();
 }
 
 /* unblocks a thread and sets it to ready to run */
 void thread_unblock(struct thread *thread) {
+    if (spin_lock_acquire(&b_lock) != LOCK_ACQ_SUCC)
+        return;
+
     struct list_node *node = list_delete(&blocked_threads, &thread->node);
+    spin_lock_release(&b_lock);
 
     if (node == NULL)
         return;
     
+    // if we can't acquire the ready queue lock,
+    // reinsert into the blocked list and return
+    if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC) {
+        if (spin_lock_acquire(&b_lock) != LOCK_ACQ_SUCC)
+            return;
+
+        list_delete(&blocked_threads, node);
+        spin_lock_release(&b_lock);
+        return;
+    }
+    
     list_insert(&ready_threads, node);
     thread->state = THREAD_READY;
+    spin_lock_release(&r_lock);
 }
 
 /* function called at the end of the current thread's lifecycle */
 void thread_exit() {
     struct thread *t = THREAD_CUR();
-    t->state = THREAD_DYING;
-    dying = t;
+
+    if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC)
+        return;
+    
     list_delete(&ready_threads, &t->node);
+    t->state = THREAD_DYING;
+    list_insert(&dying_threads, &t->node);
+    spin_lock_release(&r_lock);
 
     schedule();
 }
@@ -172,29 +215,41 @@ int thread_kill(struct thread *thread) {
     
     struct process *thread_parent = get_thread_proc(thread);
 
-    //only the parent process of the thread can kill it
-    //while i like this thought, scheduling kind of screws it up
-    //maybe only processes with a higher privilege can kill it?
-    // if (proc_get_running() != thread_parent)
-    //     return -1;
-    
-    if (thread->state == THREAD_READY)
-        list_delete(&ready_threads, &thread->node);
-    
-    thread_parent->threads[thread->child_num] = NULL;
-    pfree(thread->esp);
-    
-    thread_parent->num_live_threads--;
+    if (thread->state == THREAD_READY || thread->state == THREAD_RUNNING) {
+        if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC)
+            return -1;
 
-    if (thread->state == THREAD_READY)
         list_delete(&ready_threads, &thread->node);
-    else
-        list_delete(&blocked_threads, &thread->node);
+
+        thread_parent->threads[thread->child_num] = NULL;
+        uint32_t temp = (uint32_t) thread->esp & (~(STACK_SIZE - 1));
+        pfree((void *) temp);
     
+        thread_parent->num_live_threads--;
+        spin_lock_release(&r_lock);
+
+    } else {
+        if (spin_lock_acquire(&b_lock) != LOCK_ACQ_SUCC)
+            return -1;
+        
+        list_delete(&blocked_threads, &thread->node);
+
+        thread_parent->threads[thread->child_num] = NULL;
+        uint32_t temp = (uint32_t) thread->esp & (~(STACK_SIZE - 1));
+        pfree((void *) temp);
+
+        thread_parent->num_live_threads--;
+        spin_lock_release(&b_lock);
+    }
+
     return thread->tid;
 }
 
 /* scheduling functions */
+
+void thread_yield() {
+    schedule();
+}
 
 /* interrupt handler for the timer interrupt, also starts scheduling periodically */
 void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) {
@@ -215,11 +270,12 @@ void finish_schedule() {
     cur->state = THREAD_RUNNING;
     proc_set_active_thread(PROC_CUR(), cur->child_num);
     
-    if (dying != NULL) {
+    if (list_isEmpty(&dying_threads) == false) {
+        struct thread *dying = LIST_ENTRY(list_pop(&dying_threads), struct thread, node);
         struct process *dying_parent = get_thread_proc(dying);
 
         //only kill the parent process if this is its last thread
-        if (proc_get_live_t_count(dying_parent) != 1)
+        if (proc_get_live_t_count(dying_parent) > 1)
             thread_kill(dying);
         else
             proc_exit(dying_parent);
@@ -247,7 +303,11 @@ static void schedule() {
     if (current->state == THREAD_RUNNING)
         current->state = THREAD_READY;
 
-    list_insert_end(&ready_threads.tail, next);
+    if (current->state == THREAD_DYING)
+        list_insert(&dying_threads, &current->node);
+    
+    if (current->state == THREAD_READY)
+        list_insert_end(&ready_threads.tail, &current->node);
     
     if (next == NULL || current == next_thread || next_thread->state != THREAD_READY)
         return;
