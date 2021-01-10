@@ -4,6 +4,7 @@
 #include "kalloc.h"
 #include "../boot/multiboot.h"
 #include "../libk/bitmap.h"
+#include "../libk/synch.h"
 
 /* defines */
 #define MAX_ARENA_UNIT (PG_SIZE / 4)
@@ -26,6 +27,8 @@ struct mem_arena_g {
 static bitmap_t free_map;
 static char *start_addr = (char *) (2*MB);
 static struct mem_arena_g malloc_g;
+static spin_lock_t malloc_lock;
+static spin_lock_t palloc_lock;
 
 /* static funcion declarations */
 static size_t round_power_2(size_t n);
@@ -47,6 +50,9 @@ void init_alloc(multiboot_info_t *mb) {
         malloc_g.arenas[i].unit = j;
         malloc_g.arenas[i].mem = ((char *) malloc_g.map.map_p) + (i * MEM_ARENA_SIZE); 
     }
+
+    spin_lock_init(&malloc_lock);
+    spin_lock_init(&palloc_lock);
 }
 
 /* gets the address of a free page of memory from the memory manager 
@@ -58,13 +64,18 @@ void *palloc() {
 /* gets the address of cnt consecutive free pages of memory from the memory manager
    returns NULL if this range doesn't exist */ 
 void *palloc_mult(size_t cnt) {
+    if (spin_lock_acquire(&palloc_lock) != LOCK_ACQ_SUCC)
+        return NULL;
+    
     size_t idx = bitmap_find_range(&free_map, 0, bitmap_get_size(&free_map), cnt, false);
 
     if (idx != bitmap_get_size(&free_map) + 1) {
         bitmap_set_range(&free_map, idx, cnt, true);
+        spin_lock_release(&palloc_lock);
         return (void *) (start_addr + (idx * PG_SIZE));
     }
     
+    spin_lock_release(&palloc_lock);
     return NULL;
 }
 
@@ -77,11 +88,17 @@ int pfree(void *addr) {
 /* frees cnt pages of memory obtained from the memory manager
    returns -1 if addr wasn't from the memory manager and the number of pages freed otherwise */
 int pfree_mult(void *addr, size_t cnt) {
+    if (spin_lock_acquire(&palloc_lock) != LOCK_ACQ_SUCC)
+        return -1;
+    
     size_t idx = ((char *) addr - start_addr) / PG_SIZE;
 
-    if (idx + cnt < bitmap_get_size(&free_map) && bitmap_count_range(&free_map, idx, cnt) == cnt)
+    if (idx + cnt < bitmap_get_size(&free_map) && bitmap_count_range(&free_map, idx, cnt) == cnt) {
+        spin_lock_release(&palloc_lock);
         return bitmap_set_range(&free_map, idx, cnt, false);
+    }
 
+    spin_lock_release(&palloc_lock);
     return -1;
 }
 
@@ -96,6 +113,9 @@ void *kmalloc(size_t size) {
     } else 
         size = round_power_2(size);
 
+    if (spin_lock_acquire(&malloc_lock) != LOCK_ACQ_SUCC)
+        return NULL;
+    
     /* looks for a free slot of memory in malloc_g of size and moves up a power of 2
        if that size has no space left */
     int i;
@@ -106,11 +126,13 @@ void *kmalloc(size_t size) {
 
         if (idx != bitmap_get_size(&malloc_g.map) + 1) {
             bitmap_set_range(&malloc_g.map, idx, unit, true);
+            spin_lock_release(&malloc_lock);
             return (void *) malloc_g.arenas[m_idx].mem + (idx - (m_idx * MEM_ARENA_SIZE));
         }
 
     }
 
+    spin_lock_release(&malloc_lock);
     return NULL;
 }
 
@@ -133,14 +155,19 @@ int kfree(void *addr) {
     //round addr down to an arena mem address
     a_addr = a_addr - (a_addr % MEM_ARENA_SIZE);
 
+    if (spin_lock_acquire(&malloc_lock) != LOCK_ACQ_SUCC)
+        return -1;
+    
     int i;
     for (i = 0; i < ARENAS_PER_PAGE; i++)
         if (malloc_g.arenas[i].mem == (char *) a_addr) {
             uint32_t idx = a_addr % MEM_ARENA_SIZE;
             bitmap_set_range(&malloc_g.map, i * MEM_ARENA_SIZE + idx, malloc_g.arenas[i].unit, false);
+            spin_lock_release(&malloc_lock);
             return malloc_g.arenas[i].unit;
         }
     
+    spin_lock_release(&malloc_lock);
     return pfree(addr);
 }
 

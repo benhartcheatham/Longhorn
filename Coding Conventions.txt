@@ -23,6 +23,8 @@ Naming Conventions
 ------------------
 structs:
     - all lower case, words seperated by _
+    - Do not use the syntactic sugar for typedefs in .h files
+      put the typedef in the typedefs section
 typedefs:
     - TODO
 defines/macros:
@@ -38,6 +40,9 @@ functions:
     - functions with no parameters should be written as foo(), not foo(void)
         - This doesn't apply for function pointers or function pointer typedefs
     - functions with pointer return types should be written type *foo(), not type* foo()
+    - system initializer functions (like the ones that initialize threads and processes) should be named
+      init_<system>(), whereas initializer functions for structs/types should be named <system>_init()
+    - function names should start with the file/system they belong to (this is only preferred)
 comments:
     - multiline comments should be marked with /* */
         - the content of the comment should start on the same column over multiple lines, ex.:

@@ -1,7 +1,13 @@
 /* May want to make the stack limited to a page or two and put them at
   a specified interval like in linux. This would allow getting rid of
   the current pointer and just doing some quick math with esp to get
+<<<<<<< HEAD
   the running thread.
+=======
+  the running thread. I think putting a pointer to the thread struct
+  at the top of the stack, as well as a pointer to its parent process
+  (I could also just put the thread struct itself in the stack).
+>>>>>>> synchronization
   
   For synchronization, I think synchronizing around the to thread lists
   is correct, but to get around schedule blocking, it should try to acquire the 
@@ -179,6 +185,12 @@ int thread_kill(struct thread *thread) {
     pfree(thread->esp);
     
     thread_parent->num_live_threads--;
+
+    if (thread->state == THREAD_READY)
+        list_delete(&ready_threads, &thread->node);
+    else
+        list_delete(&blocked_threads, &thread->node);
+    
     return thread->tid;
 }
 
