@@ -19,16 +19,15 @@ struct process {
     uint32_t pid;   // unique identifier for the process
     char name[MAX_NAME_LENGTH + 1]; // name of the process
     struct thread *active_thread;   // the last thread to run, or currently running thread
-    //may want to make this an array of pointers and put the threads at the bottom
-    //of their respective stacks (this would save a good amount of space)
-    struct thread *threads[MAX_NUM_THREADS];
-    uint8_t num_live_threads;
+    struct thread *threads[MAX_NUM_THREADS];    // the threads in this process, must be at least 1,
+                                                // no more than MAX_NUM_THREADS
+    uint8_t num_live_threads;   // nuber of alive threads in the process
 
     //might want to make these FILE structs later on
     //shouldn't be accessed directly
-    std_stream stdin, stdout, stderr;
+    std_stream stdin, stdout, stderr;   // std streams of the process
 
-    list_node node;
+    list_node node; // node for all list of processes
 };
 
 /* typedefs */
@@ -56,6 +55,7 @@ struct process *proc_get_active();
 const list_node *proc_peek_all_list();
 uint8_t proc_get_live_t_count(struct process *proc);
 
+/* gets the process that contains thread t */
 inline struct process *get_thread_proc(struct thread *t) {
     return (struct process *) ((char *) t) + offsetof(thread_info_t, p);
 }

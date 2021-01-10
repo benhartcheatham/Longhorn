@@ -17,24 +17,25 @@
 #define PROC_CUR() (get_running()->p)
 
 /* structs */
+
+// possible states of a thread 
 enum thread_states {THREAD_READY, THREAD_RUNNING, THREAD_BLOCKED, THREAD_DYING, THREAD_TERMINATED};
 
 struct thread {
-    uint32_t *esp;
-    uint32_t tid;
-    uint32_t pid;
-    uint8_t priority;
-    uint32_t ticks;
-    char name[MAX_PNAME_LENGTH + MAX_TNAME_LENGTH + 1];
-    enum thread_states state;
+    uint32_t *esp;  // the stack pointer of the thread *** MUST NOT BE MOVED FROM FIRST MEMBER ***
+    uint32_t tid;   // the thread id of the thread
+    uint32_t pid;   // the id of the process the thread is contained by
+    uint8_t priority;   // the priority of the thread
+    uint32_t ticks; // the amount of ticks the thread has been scheduled
+    char name[MAX_PNAME_LENGTH + MAX_TNAME_LENGTH + 1]; // name of the thread
+    enum thread_states state;   // state of the thread
 
-    //have to use a list_node * instead of a process * because of recursive includes that I couldn't see an
-    //easy fix to. Probably want to come back and fix this
-    uint32_t child_num;
+    uint32_t child_num; // the location of the thread in the process thread array
 
-    list_node node;
+    list_node node; // list node for ready and non-ready lists
 };
 
+// only for use in this file and thread.c
 struct __attribute__ ((packed)) thread_info {
     struct thread t;
     struct process *p;
@@ -59,6 +60,9 @@ void thread_yield();
 int thread_kill(struct thread *thread);
 
 /* thread "getter" functions */
+
+/* gets the thread_info struct of the thread use either 
+   the THREAD_CUR() or PROC_CUR() macros instead of this function */
 static inline struct thread_info *get_running() {
     uint32_t esp;
     asm volatile ("mov %%esp, %0" : "=g" (esp));
