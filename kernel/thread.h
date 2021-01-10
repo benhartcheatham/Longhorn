@@ -67,7 +67,7 @@ static inline struct thread_info *get_running() {
     uint32_t esp;
     asm volatile ("mov %%esp, %0" : "=g" (esp));
     // chop off last 12 bits to round to bottom of page
-    esp = esp & (~(PG_SIZE - 1));
+    esp = esp & (~(STACK_SIZE - 1));
     return (struct thread_info *) esp;
 }
 
