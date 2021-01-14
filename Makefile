@@ -11,8 +11,9 @@ ASM = $(ASM_SOURCES:.asm=.o)
 BOOT = $(BOOT_SOURCES:.asm=.o)
 
 ### COMPILER GROUPS/RULES ###
-CC = i386-elf-gcc
+CC = i686-elf-gcc
 CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+QEMU = qemu-system-i386
 DEFINES = 
 
 ### MAKEFILE RULES ###
@@ -20,11 +21,11 @@ all: os-binary os-img
 
 #default is to run iso
 run: all
-	qemu-system-i386 -cdrom Longhorn.iso
+	$(QEMU) -cdrom Longhorn.iso
 
 #runs ab usi with no restart on crash
 run-no-reboot: all
-	qemu-system-i386 -cdrom Longhorn.iso -no-reboot -no-shutdown
+	$(QEMU) -cdrom Longhorn.iso -no-reboot -no-shutdown
 
 #runs a version of the kernel that has testing enabled
 test: DEFINES += -DTESTS		#look at https://www.gnu.org/software/make/manual/make.html#Target_002dspecific for how this works
