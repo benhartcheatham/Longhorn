@@ -1,4 +1,6 @@
-CURRENT: Test spin locks and semaphores
+*****THIS IS THE MASTER BRANCH*****
+
+CURRENT: Test new string functions
 
 1. Memory allocation
     - test kmalloc
@@ -9,8 +11,6 @@ CURRENT: Test spin locks and semaphores
     - Idle Process
 3. Threads
     - Test threads
-    - Test thread cleanup
-    - Blocking/Unblocking threads
 5. Housekeeping
     - format all .c files according to README
     - format all .h files according to README
