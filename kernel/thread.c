@@ -31,8 +31,6 @@ static bool tids[MAX_TID];
 static uint8_t thread_ticks = 0;
 
 /* data */
-struct spin_lock r_lock;
-struct spin_lock b_lock;
 
 /* structs */
 struct thread_func_frame {
@@ -67,8 +65,6 @@ void init_threads(struct process *init) {
     list_init(&ready_threads);
     list_init(&blocked_threads);
     list_init(&dying_threads);
-    spin_lock_init(&r_lock);
-    spin_lock_init(&b_lock);
 
     thread_create(0, "idle", init, &init->threads[0], idle, NULL);
     idle_t = init->threads[0];
@@ -279,7 +275,7 @@ static void thread_execute(thread_function func, void *aux) {
 /* schedules threads */
 static void schedule() {
     disable_interrupts();
-    
+
     list_node *next = list_pop(&ready_threads);
     struct thread *next_thread = NULL;
     struct thread *current = THREAD_CUR();
