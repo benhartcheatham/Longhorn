@@ -11,8 +11,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "list.h"
-
-static int node_comparator(list_node *node1, list_node *node2);
+#include "../libc/stdio.h"
 
 /* LIST INIT FUNCTIONS */
 
@@ -60,60 +59,25 @@ void list_insert_front(list_node *head, list_node *node) {
    node->prev = head;
 }
 
-/* inserts node into list in oder determined by comparator */
-void list_insert_sorted(list *list, list_node *node, list_comparator comparator) {
-    if (list_isEmpty(list)) {
-        list_insert(list, node);
-        return;
-    }
-
-    list_node *curr = list->head.next;
-
-    while (list_hasNext(curr)) {
-        if (comparator(curr, node) >= 0) {
-            curr->next->prev = node;
-            node->next = curr->next;
-            curr->next = node;
-            node->prev = curr;
-            return;
-        }
-
-        curr = curr->next;
-    }
-
-    node->prev = list->tail.prev;
-    node->next = &list->tail;
-    list->tail.prev = node;
-    return;
-}
-
 /* deletes and returns node from list */
 list_node *list_delete(list *list, list_node *node) {
     list_node *curr = &list->head;
     
-    while (curr != NULL && !node_equals(curr, node, node_comparator))
+    while (curr != NULL && curr != node)
         curr = curr->next;
 
     if (curr == NULL)
-        return curr;
-    
-    //case where there is only 1 node
-    if (curr->next == NULL && curr->prev == NULL) {
-        list = NULL;
         return NULL;
-    }
 
-    if (curr->prev == NULL) {
-        list->head = (*curr->next);
-        curr->next->prev = NULL;
-    } else if (curr->next == NULL) {
-        list->tail = (*curr->prev);
-        curr->prev->next = NULL;
-    } else {
-        curr->next->prev = curr->prev;
-        curr->prev->next = curr->next;
-    }
+    // don't allow deletion of the head or tail since they don't "exist"
+    if (curr == &list->head || curr == &list->tail)
+        return NULL;
+    
+    // make new links
+    curr->prev->next = curr->next;
+    curr->next->prev = curr->prev;
 
+    // might want to null out old links for safety, have to think about that
     return curr;
 }
 
@@ -165,6 +129,18 @@ int list_isEmpty(list *list) {
     return 0;
 }
 
+size_t list_size(list *list) {
+    list_node *curr = list->head.next;
+
+    size_t size = 0;
+    while (curr != NULL && list_hasNext(curr)) {
+        curr = curr->next;
+        size++;
+    }
+
+    return size;
+}
+
 /* NODE FUNCTIONS */
 
 /* sets the node specified's next member */
@@ -177,16 +153,9 @@ void node_set_prev(list_node *node, list_node *prev) {
     node->prev = prev;
 }
 
-/* default comparator for comparing two nodes */
-static int node_comparator(list_node *node1, list_node *node2) {
-    if (node1->next == node2->next && node1->prev == node2->prev)
-        return 1;
-    return 0;
-}
-
 /* checks if two nodes are equal based on comparator 
    both nodes should be in the same list, but it is not required 
    comparator should handle nodes that don't have the same _struct type if it is used by the comparator */
-int node_equals(list_node *node1, list_node *node2, list_comparator comparator) {
-    return comparator(node1, node2);
+int node_equals(list_node *node1, list_node *node2) {
+    return node1 == node2;
 }

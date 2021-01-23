@@ -6,6 +6,7 @@
 #include "../libc/string.h"
 #include "../libc/stdio.h"
 #include "../libk/list.h"
+#include "../drivers/vesa.h"
 
 /* static data */
 static struct list all_procs;
@@ -38,28 +39,18 @@ void init_processes() {
     sprintf(p->name, "init");
     pid_count = 0;
     p->pid = pid_count++;
-    p->state = PROCESS_RUNNING;
 
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++) {
-        p->threads[i].state = THREAD_TERMINATED;
-        p->threads[i].child_num = i;
+        p->threads[i]->state = THREAD_TERMINATED;
+        p->threads[i]->child_num = i;
     }
 
     current = p;
     
-    //create init thread
-    struct thread *init_t = &p->threads[0];
-    init_t->parent = &p->node;
-    init_t->state = THREAD_RUNNING;
-    init_t->tid = 0;
-    char *init_tname = "init:init_t";
-    memcpy(init_t->name, init_tname, strlen(init_tname) + 1);
-    asm volatile("mov %%esp, %0" : "=g" (init_t->esp));
-    init_t->esp = (uint32_t *) ((uint32_t) init_t->esp);
     init_threads(p);
+    p->active_thread = p->threads[0];
 
-    p->active_thread = &p->threads[0];
     list_insert(&all_procs, &p->node);
 }
 
@@ -74,7 +65,6 @@ int proc_create(char *name, proc_function func, void *aux) {
     sprintf(p->name, "%s", name);
 
     p->pid = pid_count++;
-    p->state = PROCESS_READY;
 
     init_std(&p->stdin);
     init_std(&p->stdout);
@@ -85,84 +75,77 @@ int proc_create(char *name, proc_function func, void *aux) {
 
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++) {
-        p->threads[i].state = THREAD_TERMINATED;
-        p->threads[i].child_num = i;
+        p->threads[i]->state = THREAD_TERMINATED;
+        p->threads[i]->child_num = i;
     }
 
-    if (thread_create(0, "main_t", &p->node, &p->threads[0], func, aux) > -1)
+    if (thread_create(0, "main", p, &p->threads[0], func, aux) > -1)
         p->num_live_threads = 1;
     else {
-        proc_kill(p);
+        proc_kill(p, NULL);
         return -1;
     }
     
-    p->active_thread = &p->threads[0];
+    p->active_thread = p->threads[0];
+
     list_insert_end(&all_procs.tail, &p->node);
     return p->pid;
 }
 
 int proc_create_thread(uint8_t priority, char *name, thread_function func, void *aux) {
-    struct thread *t = proc_get_free_thread(proc_get_running());
-    int tid = thread_create(priority, name, &proc_get_running()->node, t, func, aux);
+    struct thread *t = proc_get_free_thread(PROC_CUR());
+    int tid = thread_create(priority, name, PROC_CUR(), &t, func, aux);
 
     if (tid > -1)
-        proc_get_running()->num_live_threads++;
+        PROC_CUR()->num_live_threads++;
     
     return tid;
 }
 
 /* intended for a graceful exit */
 int proc_exit(struct process *proc) {
-    if (proc_kill(proc) < 0)
-        return -1;
+    int ret = 0;
+    proc_kill(proc, &ret);
+    
+    if (ret < 0)
+        return ret;
     
     return 0;
 }
 
-int proc_kill(struct process *proc) {
+void proc_kill(struct process *proc, int *ret) {
     int i;
-    for (i = 0; i < MAX_NUM_THREADS && proc->num_live_threads != 0; i++) {
-        int kill_return = thread_kill(&proc->threads[i]);
-        if (kill_return != (int) proc->threads[i].tid) {
-            printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i].name, proc->threads[i].tid);
-            printf("THREAD TID: %d PROC->THREAD TID: %d\n", kill_return, proc->threads[i].tid);
-            return -1;
+    for (i = 0; i < MAX_NUM_THREADS && proc->num_live_threads > 1; i++) {
+        if (proc->threads[i]->tid != THREAD_CUR()->tid) {
+            int kill_return = thread_kill(proc->threads[i]);
+            if (kill_return != (int) proc->threads[i]->tid) {
+                printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i]->name, proc->threads[i]->tid);
+                printf("THREAD TID: %d PROC->THREAD TID: %d\n", kill_return, proc->threads[i]->tid);
+            }
+            
+            if (proc->num_live_threads <= 0)
+                break; 
         }
-        
-        proc->num_live_threads--;
-        if (proc->num_live_threads <= 0)
-            break; 
-        
     }
 
-    proc->state = PROCESS_DYING;
     list_delete(&all_procs, &proc->node);
     int proc_pid = (int) proc->pid;
     pfree(proc);
 
-    return proc_pid;
-}
-
-void proc_block(struct process *proc) {
-    proc->state = PROCESS_BLOCKED;
-}
-
-void proc_unblocked(struct process *proc) {
-    proc->state = PROCESS_READY;
+    if (ret != NULL)
+        *ret = proc_pid;
+    
+    THREAD_CUR()->state = THREAD_DYING;
+    thread_yield();
 }
 
 /* process "setter" functions */
 
-/* sets the current process to the parent of the current thread */
-void proc_set_running() {
-    current->state = PROCESS_READY;
-
-    current = LIST_ENTRY(thread_get_running()->parent, struct process, node);
-    current->active_thread = thread_get_running();
-    current->state = PROCESS_RUNNING;
+void proc_set_active_thread(struct process *proc, uint8_t num) {
+    proc->active_thread = proc->threads[num];
 }
 
-/* sets the active process to proc */
+/* sets the active process to proc with pid*/
 void proc_set_active(uint32_t pid) {
     list_node *node = all_procs.head.next;
     struct process *proc = LIST_ENTRY(node, struct process, node);
@@ -178,11 +161,16 @@ void proc_set_active(uint32_t pid) {
     }
 }
 
+/* sets the active process to proc */
+void proc_set_active_p(struct process *proc) {
+    active = proc;
+}
+
 /* process "getter" functions */
 
-/* returns a pointer to the current process */
-struct process *proc_get_running() {
-    return current;
+/* gets the state of the active thread of the process */
+enum thread_states proc_get_state(struct process *p) {
+    return p->active_thread->state;
 }
 
 /* returns a pointer to the active process */
@@ -208,8 +196,8 @@ uint8_t proc_get_live_t_count(struct process *proc) {
 static struct thread *proc_get_free_thread(struct process *proc) {
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++)
-        if (proc->threads[i].state == THREAD_TERMINATED)
-            return &proc->threads[i];
+        if (proc->threads[i] == NULL)
+            return proc->threads[i];
     return NULL;
 }
 
