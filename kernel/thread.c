@@ -81,34 +81,44 @@ void init_threads(struct process *init) {
 int thread_create(uint8_t priority, char *name, struct process *parent, struct thread **sthread, thread_function func, void *aux) {
     uint8_t *s = (uint8_t *) palloc_mult(STACK_SIZE / PG_SIZE);
 
-    //setup the thread struct at the bottom of the page (lowest addr)
+    if (s == NULL)
+        return -1;
+    
+    // setup the thread struct at the bottom of the page (lowest addr)
     struct thread_info *ti = (struct thread_info *) s;
 
     ti->t.tid = allocate_tid();
+
+    // if the max amount of threads on the system is already met don't allow creation
+    if (ti->t.tid == MAX_TID + 1) {
+        kfree((void *) s);
+        return -1;
+    }
+
     ti->t.state = THREAD_READY;
     sprintf(ti->t.name, "%s", name);
     ti->t.priority = priority;
     ti->t.pid = parent->pid;
 
-    //add a pointer to the parent process after thread struct
+    // add a pointer to the parent process after thread struct
     ti->p = parent;
     *sthread = &ti->t;
 
     s += STACK_SIZE;
 
-    //setup arguments thread_execute
+    // setup arguments thread_execute
     s -= sizeof(struct thread_func_frame);
     struct thread_func_frame *f = (struct thread_func_frame *) s;
     f->eip = NULL;
     f->function = func;
     f->aux = (void *) aux;
 
-    //setup to call thread_execute
+    // setup to call thread_execute
     s -= sizeof(struct tail_frame);
     struct tail_frame *tf = (struct tail_frame *) s;
     tf->eip = (void (*) (void)) thread_execute;
 
-    //setup for the first switch of a thread
+    // setup for the first switch of a thread
     s -= sizeof(struct stack_frame);
     struct stack_frame *sf = (struct stack_frame *) s;
     sf->eip = first_switch_entry;
@@ -118,88 +128,61 @@ int thread_create(uint8_t priority, char *name, struct process *parent, struct t
 
     ti->t.state = THREAD_READY;
 
-    // if we can't acquire, something is wrong and the thread shouldn't be created
-    if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC) {
-        uint32_t temp = (uint32_t) s & (~(STACK_SIZE - 1));
-        kfree((void *) temp);
-        return -1;
-    }
-
+    disable_interrupts();
     list_insert(&ready_threads, &ti->t.node);
-    spin_lock_release(&r_lock);
+    enable_interrupts();
 
     return ti->t.tid;
 }
 
 /* blocks a thread */
 void thread_block(struct thread *thread) {
-    if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC)
-        return;
+    disable_interrupts();
 
     struct list_node *node = list_delete(&ready_threads, &thread->node);
-    spin_lock_release(&r_lock);
 
     // running threads aren't in the ready list, so we
     // need to account for that case
-    if (node == NULL && thread->state != THREAD_RUNNING)
-        return;
-    
-    // if we can't acquire the blocked list lock,
-    // reinsert into the ready queue and return
-    if (spin_lock_acquire(&b_lock) != LOCK_ACQ_SUCC) {
-        if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC)
-            return;
-
-        list_insert(&ready_threads, node);
-        spin_lock_release(&r_lock);
+    if (node == NULL && thread->state != THREAD_RUNNING) {
+        enable_interrupts();
         return;
     }
     
     thread->state = THREAD_BLOCKED;
     list_insert(&blocked_threads, node);
-    spin_lock_release(&b_lock);
+
+    enable_interrupts();
 
     schedule();
 }
 
 /* unblocks a thread and sets it to ready to run */
 void thread_unblock(struct thread *thread) {
-    if (spin_lock_acquire(&b_lock) != LOCK_ACQ_SUCC)
-        return;
+    disable_interrupts();
 
     struct list_node *node = list_delete(&blocked_threads, &thread->node);
-    spin_lock_release(&b_lock);
 
-    if (node == NULL)
-        return;
-    
-    // if we can't acquire the ready queue lock,
-    // reinsert into the blocked list and return
-    if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC) {
-        if (spin_lock_acquire(&b_lock) != LOCK_ACQ_SUCC)
-            return;
-        
-        list_insert(&blocked_threads, node);
-        spin_lock_release(&b_lock);
+    if (node == NULL) {
+        enable_interrupts();
         return;
     }
     
     thread->state = THREAD_READY;
     list_insert(&ready_threads, node);
-    spin_lock_release(&r_lock);
+    enable_interrupts();
 }
 
 /* function called at the end of the current thread's lifecycle */
 void thread_exit() {
     struct thread *t = THREAD_CUR();
 
-    if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC)
-        return;
-    
+    disable_interrupts();
+
     list_delete(&ready_threads, &t->node);
     t->state = THREAD_DYING;
     list_insert(&dying_threads, &t->node);
-    spin_lock_release(&r_lock);
+
+    enable_interrupts();
 
     schedule();
 }
@@ -215,8 +198,7 @@ int thread_kill(struct thread *thread) {
     struct process *thread_parent = get_thread_proc(thread);
 
     if (thread->state == THREAD_READY || thread->state == THREAD_RUNNING) {
-        if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC)
-            return -1;
+        disable_interrupts();
 
         list_delete(&ready_threads, &thread->node);
 
@@ -225,11 +207,10 @@ int thread_kill(struct thread *thread) {
         pfree((void *) temp);
     
         thread_parent->num_live_threads--;
-        spin_lock_release(&r_lock);
+        enable_interrupts();
 
     } else {
-        if (spin_lock_acquire(&b_lock) != LOCK_ACQ_SUCC)
-            return -1;
+        disable_interrupts();
         
         list_delete(&blocked_threads, &thread->node);
 
@@ -238,7 +219,7 @@ int thread_kill(struct thread *thread) {
         pfree((void *) temp);
 
         thread_parent->num_live_threads--;
-        spin_lock_release(&b_lock);
+        enable_interrupts();
     }
 
     return thread->tid;
@@ -281,6 +262,8 @@ void finish_schedule() {
         
         dying = NULL;
     }
+
+    enable_interrupts();
 }
 
 /* static functions */
@@ -295,6 +278,8 @@ static void thread_execute(thread_function func, void *aux) {
 
 /* schedules threads */
 static void schedule() {
+    disable_interrupts();
+    
     list_node *next = list_pop(&ready_threads);
     struct thread *next_thread = NULL;
     struct thread *current = THREAD_CUR();
