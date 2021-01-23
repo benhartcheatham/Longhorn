@@ -18,8 +18,6 @@ struct list {
 /* typedefs */
 typedef struct list_node list_node;
 typedef struct list list;
-typedef int (list_comparator)(struct list_node *, struct list_node *);
-
 
 /* Macros */
 #define LIST_ENTRY(ptr, type, member) \
@@ -36,7 +34,6 @@ void list_set_tail(list *list, list_node node);
 void list_insert(list *list, list_node *node);
 void list_insert_end(list_node *tail, list_node *node);
 void list_insert_front(list_node *head, list_node *node);
-void list_insert_sorted(list *list, list_node *node, list_comparator comparator);
 list_node *list_delete(list *list, list_node *node);
 list_node *list_pop(list *list);
 
@@ -46,10 +43,11 @@ const list_node *list_get_next(const list_node *node);
 const list_node *list_get_prev(const list_node *node);
 int list_hasNext(const list_node *node);
 int list_isEmpty(list *list);
+size_t list_size(list *list);
 
 /* node functions */
 void node_set_next(list_node *node, list_node *next);
 void node_set_prev(list_node *node, list_node *prev);
-int node_equals(list_node *node1, list_node *node2, list_comparator comparator);
+int node_equals(list_node *node1, list_node *node2);
 
 #endif

@@ -65,8 +65,8 @@ extern void switch_threads(struct thread *current_thread, struct thread *next_th
 /* function that the init thread runs after interrupts are enabled */
 static void __init(void *aux __attribute__ ((unused))) {
     while (1) {
+        thread_block(THREAD_CUR());
         thread_yield();
-        // thread_block(THREAD_CUR());
     };
 }
 
@@ -143,14 +143,13 @@ int thread_create(uint8_t priority, char *name, struct process *parent, struct t
 void thread_block(struct thread *thread) {
     if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC)
         return;
-    
+
     struct list_node *node = list_delete(&ready_threads, &thread->node);
     spin_lock_release(&r_lock);
 
-    // failing this check for some treason,
-    // but doesn't if i insert next instead of
-    // &current->node into ready_threads in schedule
-    if (node == NULL)
+    // running threads aren't in the ready list, so we
+    // need to account for that case
+    if (node == NULL && thread->state != THREAD_RUNNING)
         return;
     
     // if we can't acquire the blocked list lock,
@@ -159,7 +158,7 @@ void thread_block(struct thread *thread) {
         if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC)
             return;
 
-        list_delete(&ready_threads, node);
+        list_insert(&ready_threads, node);
         spin_lock_release(&r_lock);
         return;
     }
@@ -187,8 +186,8 @@ void thread_unblock(struct thread *thread) {
     if (spin_lock_acquire(&r_lock) != LOCK_ACQ_SUCC) {
         if (spin_lock_acquire(&b_lock) != LOCK_ACQ_SUCC)
             return;
-
-        list_delete(&blocked_threads, node);
+        
+        list_insert(&blocked_threads, node);
         spin_lock_release(&b_lock);
         return;
     }
@@ -316,7 +315,7 @@ static void schedule() {
     
     if (current->state == THREAD_READY)
         list_insert_end(&ready_threads.tail, &current->node);
-    
+
     if (next == NULL || current == next_thread || next_thread->state != THREAD_READY)
         return;
 
