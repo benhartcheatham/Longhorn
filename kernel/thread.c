@@ -26,12 +26,11 @@
 static struct list ready_threads;
 static struct list blocked_threads;
 static struct list dying_threads;
+static struct thread *idle_t;
 static bool tids[MAX_TID];
 static uint8_t thread_ticks = 0;
 
 /* data */
-struct thread *init_t;
-struct thread *switch_temp;
 struct spin_lock r_lock;
 struct spin_lock b_lock;
 
@@ -56,19 +55,12 @@ static uint32_t allocate_tid();
 static void thread_execute(thread_function *func, void *aux);
 static void schedule();
 extern void first_switch_entry();
+static void idle(void *aux);
 
 /* external functions */
 extern void switch_threads(struct thread *current_thread, struct thread *next_thread);
 
 /* initialization functions */
-
-/* function that the init thread runs after interrupts are enabled */
-static void __init(void *aux __attribute__ ((unused))) {
-    while (1) {
-        thread_block(THREAD_CUR());
-        thread_yield();
-    };
-}
 
 /* initializes threading */
 void init_threads(struct process *init) {
@@ -78,8 +70,8 @@ void init_threads(struct process *init) {
     spin_lock_init(&r_lock);
     spin_lock_init(&b_lock);
 
-    thread_create(0, "init", init, &init->threads[0], __init, NULL);
-    init_t = init->threads[0];
+    thread_create(0, "idle", init, &init->threads[0], idle, NULL);
+    idle_t = init->threads[0];
 
 }
 
@@ -304,8 +296,18 @@ static void thread_execute(thread_function func, void *aux) {
 /* schedules threads */
 static void schedule() {
     list_node *next = list_pop(&ready_threads);
-    struct thread *next_thread = LIST_ENTRY(next, struct thread, node);
+    struct thread *next_thread = NULL;
     struct thread *current = THREAD_CUR();
+
+    // if we have no ready threads, we schedule the idle thread
+    // otherwise we just pull one of the top
+    if (next == NULL) {
+        next_thread = idle_t;
+        idle_t->state = THREAD_READY;
+    
+    } else {
+        next_thread = LIST_ENTRY(next, struct thread, node);
+    }
 
     if (current->state == THREAD_RUNNING)
         current->state = THREAD_READY;
@@ -316,12 +318,19 @@ static void schedule() {
     if (current->state == THREAD_READY)
         list_insert_end(&ready_threads.tail, &current->node);
 
-    if (next == NULL || current == next_thread || next_thread->state != THREAD_READY)
+    if (current == next_thread || next_thread->state != THREAD_READY)
         return;
 
     switch_threads(current, next_thread);
 
     finish_schedule();
+}
+
+/* function that the init thread runs after interrupts are enabled */
+static void idle(void *aux __attribute__ ((unused))) {
+    while (1) {
+        thread_block(THREAD_CUR());
+    };
 }
 
 /* allocates a thread id for when a thread is being created */
