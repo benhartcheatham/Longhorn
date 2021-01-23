@@ -14,8 +14,8 @@
 
 /* structs */
 struct bitmap {
-    ELEM_TYPE *map_p;
-    size_t bits;
+    ELEM_TYPE *map_p;   // pointer to the free map
+    size_t bits;    // number of bits in the map
 };
 
 /* typedefs */

@@ -171,6 +171,16 @@ int kfree(void *addr) {
     return pfree(addr);
 }
 
+/* returns the number of pages allocated */
+size_t num_allocated() {
+    return bitmap_count_range(&free_map, 0, free_map.bits);
+}
+
+/* returns the size of the free map */
+size_t map_size() {
+    return free_map.bits;
+}
+
 /* static functions */
 
 /* returns n rounded up to the next power of 2, or the next power of 2 

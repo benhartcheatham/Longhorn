@@ -75,4 +75,7 @@ void thread_yield();
 void timer_interrupt_handler(struct register_frame *r);
 void finish_schedule();
 
+/* testing functions */
+size_t num_threads();
+
 #endif

@@ -28,7 +28,7 @@ run-no-reboot: all
 	$(QEMU) -cdrom Longhorn.iso -no-reboot -no-shutdown
 
 #runs a version of the kernel that has testing enabled
-test: DEFINES += -DTESTS		#look at https://www.gnu.org/software/make/manual/make.html#Target_002dspecific for how this works
+test: DEFINES += -D TESTS #look at https://www.gnu.org/software/make/manual/make.html#Target_002dspecific for how this works
 test: run
 
 #cleans all directories of compiled files (except build)

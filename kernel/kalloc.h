@@ -30,4 +30,8 @@ void *kmalloc(size_t size);
 void *kcalloc(size_t num, size_t size);
 int kfree(void *addr);
 
+/* testing and status functions */
+size_t num_allocated();
+size_t map_size();
+
 #endif

@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "stdio.h"
 #include "string.h"
 #include "../drivers/vesa.h"
@@ -26,8 +27,15 @@ int printf(const char *format, ...) {
             } else if (*format == 'x') {
                 char *temp = int_to_hexstring(va_arg(args, int));
                 vesa_print(temp);
-            } else if (*format == 's')
+            } else if (*format == 's') {
                 vesa_print(va_arg(args, char *));
+            } else if (*format == 'B') {
+                bool arg = va_arg(args, int);
+                if (arg)
+                    vesa_print("true");
+                else
+                    vesa_print("false");
+            }
         } else
             vesa_print_char(*format);
 
@@ -57,6 +65,8 @@ int sprintf(char *str, const char *format, ...) {
                 temp = int_to_hexstring(va_arg(args, int));
             else if (*format == 's')
                 temp = va_arg(args, char *);
+            else if (*format == 'B') 
+                temp = va_arg(args, bool) ? "true" : "false";
             else {
                 format++;
                 continue;

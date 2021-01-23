@@ -325,3 +325,8 @@ static uint32_t allocate_tid() {
     
     return MAX_TID + 1;
 }
+
+/* testing functions */
+size_t num_threads() {
+    return list_size(&ready_threads) + list_size(&blocked_threads);
+}
