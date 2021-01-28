@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include "string.h"
+#include <string.h>
 
 /* THIS FILE NEEDS TO BE REVISED TO CONFORM TO C99 */
 

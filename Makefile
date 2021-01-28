@@ -1,9 +1,12 @@
-### GROUPS ###
+### MAKE GROUPS ###
 SUBDIRS = drivers kernel libc libk
+
 C_SOURCES = $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.c))
 HEADERS = $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.h))
+LIBINCLUDE = include/libc include/libk
 ASM_SOURCES = $(wildcard kernel/*.asm)
 BOOT_SOURCES = boot/boot.asm
+
 ASSETS = $(wildcard assets/*.bmp)
 
 OBJ = $(C_SOURCES:.c=.o) $(ASSETS:.bmp=.o)
@@ -13,25 +16,26 @@ BOOT = $(BOOT_SOURCES:.asm=.o)
 ### COMPILER GROUPS/RULES ###
 CC = i686-elf-gcc
 CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+CPPFLAGS = $(foreach dir, $(LIBINCLUDE), -I "$(dir)")
 QEMU = qemu-system-i386
 DEFINES = 
 
 ### MAKEFILE RULES ###
 all: os-binary os-img
 
-#default is to run iso
+# default is to run iso
 run: all
 	$(QEMU) -cdrom Longhorn.iso
 
-#runs ab usi with no restart on crash
+# runs ab usi with no restart on crash
 run-no-reboot: all
 	$(QEMU) -cdrom Longhorn.iso -no-reboot -no-shutdown
 
-#runs a version of the kernel that has testing enabled
-test: DEFINES += -D TESTS #look at https://www.gnu.org/software/make/manual/make.html#Target_002dspecific for how this works
+# runs a version of the kernel that has testing enabled
+test: DEFINES += -D TESTS # look at https://www.gnu.org/software/make/manual/make.html#Target_002dspecific for how this works
 test: run
 
-#cleans all directories of compiled files (except build)
+# cleans all directories of compiled files (except build)
 clean:
 	rm -rf *.bin *.o *.iso
 	rm -rf ./*/*.bin ./*/*.o
@@ -41,15 +45,15 @@ clean:
 boot/boot.o: boot/boot.asm
 	nasm $< -f elf32 -i "./boot/" -o $@
 
-os-binary: $(BOOT)  $(OBJ) $(ASM)
-	$(CC) $(CFLAGS) $(DEFINES) -T linker.ld -o $@ $^ -nostdlib -lgcc
+os-binary: $(BOOT) $(OBJ) $(ASM)
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(DEFINES) -T linker.ld -o $@ $^ -nostdlib -lgcc
 
 ### FILE EXTENSION RULES ###
 %.bin: %.asm
 	nasm $< -f bin -i -o $@
 
 %.o: %.c $(HEADERS)
-	$(CC) $(CFLAGS) $(DEFINES) -c $< -o $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 %.o: %.asm
 	nasm $< -f elf32 -o $@
@@ -60,7 +64,7 @@ os-binary: $(BOOT)  $(OBJ) $(ASM)
 
 ### BUILD RULES ###
 
-#Builds a disk img of the os
+# Builds a disk img of the os
 os-img:
 	mkdir -p build/boot/grub
 	cp grub.cfg build/boot/grub/grub.cfg

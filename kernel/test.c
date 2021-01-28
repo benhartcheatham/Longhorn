@@ -4,10 +4,10 @@
 #include "kalloc.h"
 #include "proc.h"
 #include "thread.h"
-#include "../libc/stdio.h"
-#include "../libc/mem.h"
-#include "../libc/string.h"
-#include "../libk/list.h"
+#include <stdio.h>
+#include <mem.h>
+#include <string.h>
+#include <list.h>
 
 #define NUM_MODULES 10
 
@@ -37,7 +37,6 @@ void init_testing(bool enable_test_prints) {
     // while (proc_node != NULL && LIST_ENTRY(proc_node, struct process, node)->pid != pid)
     //     proc_node = proc_node->next;
     add_module(&procs);
-
 }
 
 void proc_test_func(void *aux __attribute__ ((unused))) {

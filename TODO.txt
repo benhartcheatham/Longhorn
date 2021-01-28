@@ -1,6 +1,6 @@
 *****THIS IS THE MASTER BRANCH*****
 
-CURRENT: Test new string functions
+CURRENT: Test Test Test
 
 1. Memory allocation
     - test kmalloc

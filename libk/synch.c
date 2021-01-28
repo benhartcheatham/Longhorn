@@ -3,8 +3,8 @@
  * use in a multicore environment. */
 
 #include <stddef.h>
-#include "synch.h"
-#include "atomic.h"
+#include <synch.h>
+#include <atomic.h>
 #include "../kernel/thread.h"
 
 

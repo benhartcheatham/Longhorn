@@ -5,7 +5,7 @@
  * 
  */ 
 
-#include "bitmap.h"
+#include <bitmap.h>
 #include "../kernel/kalloc.h"
 
 /* BIT UTILITY FUNCTIONS */

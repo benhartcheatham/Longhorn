@@ -16,8 +16,8 @@
 #include "proc.h"
 #include "kalloc.h"
 #include "port_io.h"
-#include "../libc/stdio.h"
-#include "../libk/synch.h"
+#include <stdio.h>
+#include <synch.h>
 
 /* defines */
 #define MAX_THREAD_TICKS 8

@@ -10,8 +10,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "list.h"
-#include "../libc/stdio.h"
+#include <list.h>
+#include <stdio.h>
 
 /* LIST INIT FUNCTIONS */
 

@@ -7,7 +7,7 @@
 #include "../drivers/vesa.h"
 
 /* libc */
-#include "../libc/stdio.h"
+#include <stdio.h>
 
 /* Processes/Threads */
 #include "proc.h"

@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "vesa.h"
-#include "../libk/stream.h"
+#include <stream.h>
 
 /* defines */
 #define HEADER_SIZE sizeof(struct bmp_header)

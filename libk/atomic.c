@@ -1,4 +1,4 @@
-#include "atomic.h"
+#include <atomic.h>
 
 int test_and_set(int *dest) {
     int set = 1;

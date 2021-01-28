@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include "../libc/mem.h"
+#include <mem.h>
 
 
 void *memcpy(void *dest, const void *src, size_t n) {

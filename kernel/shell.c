@@ -3,8 +3,8 @@
 #include "thread.h"
 #include "port_io.h"
 #include "proc.h"
-#include "../libc/stdio.h"
-#include "../libc/string.h"
+#include <stdio.h>
+#include <string.h>
 #include "../drivers/terminal.h"
 #include "../drivers/bmp.h"
 

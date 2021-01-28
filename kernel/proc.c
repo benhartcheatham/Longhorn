@@ -2,10 +2,10 @@
 #include <stdint.h>
 #include "proc.h"
 #include "kalloc.h"
-#include "../libc/mem.h"
-#include "../libc/string.h"
-#include "../libc/stdio.h"
-#include "../libk/list.h"
+#include <mem.h>
+#include <string.h>
+#include <stdio.h>
+#include <list.h>
 #include "../drivers/vesa.h"
 
 /* static data */

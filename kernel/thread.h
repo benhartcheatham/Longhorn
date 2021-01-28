@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include "isr.h"
 #include "kalloc.h"
-#include "../libk/list.h"
+#include <list.h>
 
 /* defines */
 #define MAX_PNAME_LENGTH 12

@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include "../libc/mem.h"
+#include <mem.h>
 
 int memcmp(const void *p1, const void *p2, size_t n) {
     const char *a = (const char *) p1;

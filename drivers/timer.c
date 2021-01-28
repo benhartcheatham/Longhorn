@@ -3,7 +3,7 @@
 #include "../kernel/isr.h"
 #include "../kernel/port_io.h"
 #include "../kernel/thread.h"
-#include "../libc/stdio.h"
+#include <stdio.h>
 
 /* Initializes timer interrupt */
 void init_timer(uint32_t freq) {

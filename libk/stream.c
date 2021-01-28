@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "stream.h"
 #include "../kernel/kalloc.h"
-#include "../libc/mem.h"
+#include <mem.h>
 
 /* initializes a char_stream with given size */
 char_stream *init_c(char_stream *stream, size_t size) {

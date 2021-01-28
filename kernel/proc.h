@@ -5,8 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "thread.h"
-#include "../libk/list.h"
-#include "../libk/stream.h"
+#include <list.h>
+#include <stream.h>
 
 /* defines */
 #define MAX_NUM_THREADS 8

@@ -2,7 +2,7 @@
 #include "port_io.h"
 #include "../drivers/timer.h"
 #include "../drivers/keyboard.h"
-#include "../libc/stdio.h"
+#include <stdio.h>
 
 /* IDT structs */
 /*struct for an IDT interrupt call gate */

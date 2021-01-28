@@ -3,8 +3,8 @@
 #include <stdbool.h>
 #include "kalloc.h"
 #include "../boot/multiboot.h"
-#include "../libk/bitmap.h"
-#include "../libk/synch.h"
+#include <bitmap.h>
+#include <synch.h>
 
 /* defines */
 #define MAX_ARENA_UNIT (PG_SIZE / 4)

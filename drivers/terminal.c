@@ -6,7 +6,7 @@
 #include "terminal.h"
 #include "vesa.h"
 #include "vga.h"
-#include "../libc/stdio.h"
+#include <stdio.h>
 
 static const char kc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
                           '7', '8', '9', '0', '-', '=', '?', '?', 
