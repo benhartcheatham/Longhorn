@@ -53,7 +53,6 @@ static uint32_t allocate_tid();
 static void thread_execute(thread_function *func, void *aux);
 static void schedule();
 extern void first_switch_entry();
-static void idle(void *aux);
 
 /* external functions */
 extern void switch_threads(struct thread *current_thread, struct thread *next_thread);
@@ -66,9 +65,17 @@ void init_threads(struct process *init) {
     list_init(&blocked_threads);
     list_init(&dying_threads);
 
+    // set up a dummy thread at the end of this stack that does nothing
+    struct thread_info *ti = (struct thread_info *) THREAD_CUR();
+
+    ti->t.state = THREAD_RUNNING;
+    ti->t.pid = init->pid;
+    sprintf(ti->t.name, "%s", "init");
+    ti->t.priority = 0;
+    ti->p = init;
+
     thread_create(0, "idle", init, &init->threads[0], idle, NULL);
     idle_t = init->threads[0];
-
 }
 
 /* thread state functions */
@@ -262,6 +269,12 @@ void finish_schedule() {
     enable_interrupts();
 }
 
+/* function that the init thread runs after interrupts are enabled */
+void idle(void *aux __attribute__ ((unused))) {
+    while (1) {
+        thread_block(THREAD_CUR());
+    };
+}
 /* static functions */
 
 /* executes the function the thread is created to do and kills the thread when done */
@@ -305,13 +318,6 @@ static void schedule() {
     switch_threads(current, next_thread);
 
     finish_schedule();
-}
-
-/* function that the init thread runs after interrupts are enabled */
-static void idle(void *aux __attribute__ ((unused))) {
-    while (1) {
-        thread_block(THREAD_CUR());
-    };
 }
 
 /* allocates a thread id for when a thread is being created */

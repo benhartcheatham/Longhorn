@@ -189,12 +189,6 @@ int spin_lock_release(spin_lock_t *sl) {
     // just return an error code and don't attempt to fix
     // it. Other functions shouldn't allow the lock to 
     // be used after the error
-
-    // this has to be commented out if its used with kmalloc
-    // because kmalloc isn't initialized yet
-    //if (sl == NULL || sl->owner != thread_get_running())
-        //return -LOCK_REL_FAIL;
-    
     if (fetch_and_add(&sl->val, -1) != 1)
         return -LOCK_REL_FAIL;
 
@@ -214,8 +208,8 @@ int lock_acquire(lock_t *l) {
     if (l->owner == NULL)
         l->owner = THREAD_CUR();
     else {
-        // somehow the lock had a value greater than 1, so we reset it to one
-        test_and_set(&l->lock.val);
+        // somehow the lock had a value greater than 1, so we just don't
+        // allow the acquire to go through
         return -LOCK_ACQ_FAIL;
     }
 

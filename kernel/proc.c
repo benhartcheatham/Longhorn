@@ -14,6 +14,8 @@ static struct process *current;
 static struct process *active;
 static uint32_t pid_count;
 
+struct process init;
+
 /* static functions */
 static struct thread *proc_get_free_thread(struct process *proc);
 
@@ -22,36 +24,36 @@ void init_processes() {
     list_init(&all_procs);
 
     //create init process
-    struct process *p = (struct process *) palloc();
-    if (p == NULL) {
+    struct process *init = (struct process *) palloc();
+    if (init == NULL) {
         println("CRITICAL ERROR: NO MEMORY FOR INIT PROCESS.\nHALTING...");
         asm volatile("cli");
         asm volatile("hlt");
     }
 
-    init_std(&p->stdin);
-    init_std(&p->stdout);
-    init_std(&p->stderr);
-    flush_std(&p->stdin);
-    flush_std(&p->stdout);
-    flush_std(&p->stderr);
+    init_std(&init->stdin);
+    init_std(&init->stdout);
+    init_std(&init->stderr);
+    flush_std(&init->stdin);
+    flush_std(&init->stdout);
+    flush_std(&init->stderr);
 
-    sprintf(p->name, "init");
+    sprintf(init->name, "init");
     pid_count = 0;
-    p->pid = pid_count++;
+    init->pid = pid_count++;
 
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++) {
-        p->threads[i]->state = THREAD_TERMINATED;
-        p->threads[i]->child_num = i;
+        init->threads[i]->state = THREAD_TERMINATED;
+        init->threads[i]->child_num = i;
     }
 
-    current = p;
+    current = init;
     
-    init_threads(p);
-    p->active_thread = p->threads[0];
+    init_threads(init);
+    init->active_thread = init->threads[0];
 
-    list_insert(&all_procs, &p->node);
+    list_insert(&all_procs, &init->node);
 }
 
 /* process state functions */

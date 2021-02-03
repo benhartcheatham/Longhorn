@@ -49,7 +49,7 @@ typedef struct thread_info thread_info_t;
 /* functions */
 
 /* initialization functions */
-void init_threads(struct process *init_p);
+void init_threads(struct process *init);
 
 /* thread state functions */
 int thread_create(uint8_t priority, char *name, struct process *parent, struct thread **sthread, thread_function func, void *aux);
@@ -74,6 +74,7 @@ static inline struct thread_info *get_running() {
 void thread_yield();
 void timer_interrupt_handler(struct register_frame *r);
 void finish_schedule();
+void idle(void *aux);
 
 /* testing functions */
 size_t num_threads();
