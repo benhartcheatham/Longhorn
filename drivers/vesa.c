@@ -186,6 +186,13 @@ void vesa_clear_screen() {
 }
 
 static void scroll() {
+    if (cursor_x >= num_cols) {
+        current_y += FONT_HEIGHT;
+        cursor_y++;
+        current_x = 0;
+        cursor_x = 0;
+    }
+    
     if (cursor_y >= num_rows) {
         uint32_t x;
         uint32_t y;
