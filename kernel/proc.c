@@ -103,24 +103,21 @@ int proc_create_thread(uint8_t priority, char *name, thread_function func, void 
 }
 
 /* intended for a graceful exit */
-int proc_exit(struct process *proc) {
-    int ret = 0;
-    proc_kill(proc, &ret);
-    
-    if (ret < 0)
-        return ret;
-    
-    return 0;
+void proc_exit(int *ret) {
+    proc_kill(PROC_CUR(), &ret);
 }
 
 void proc_kill(struct process *proc, int *ret) {
+    int success = 0;
+
     int i;
     for (i = 0; i < MAX_NUM_THREADS && proc->num_live_threads > 1; i++) {
         if (proc->threads[i]->tid != THREAD_CUR()->tid) {
             int kill_return = thread_kill(proc->threads[i]);
-            if (kill_return != (int) proc->threads[i]->tid) {
+            if (kill_return != 0) {
                 printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i]->name, proc->threads[i]->tid);
                 printf("THREAD TID: %d PROC->THREAD TID: %d\n", kill_return, proc->threads[i]->tid);
+                success = -1;
             }
             
             if (proc->num_live_threads <= 0)
@@ -128,12 +125,15 @@ void proc_kill(struct process *proc, int *ret) {
         }
     }
 
+    if (success == -1 && ret != NULL) {
+        *ret = -1;
+        return;
+    } else if (ret != NULL)
+        *ret = 0;
+
     list_delete(&all_procs, &proc->node);
     int proc_pid = (int) proc->pid;
     pfree(proc);
-
-    if (ret != NULL)
-        *ret = proc_pid;
     
     THREAD_CUR()->state = THREAD_DYING;
     thread_yield();

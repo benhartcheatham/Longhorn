@@ -184,7 +184,7 @@ void thread_exit() {
 }
 
 /* kills thread thread if owned by current process
-   returns the tid of the killed thread if successful, -1 otherwise 
+   returns 0 if successful, -1 otherwise 
    
    THIS DOESN'T RELEASE THE LOCKS HELD BY THE THREAD, NEEDS TO BE UPDATED */
 int thread_kill(struct thread *thread) {
@@ -218,7 +218,7 @@ int thread_kill(struct thread *thread) {
         enable_interrupts();
     }
 
-    return thread->tid;
+    return 0;
 }
 
 /* scheduling functions */

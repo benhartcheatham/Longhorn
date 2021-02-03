@@ -40,7 +40,7 @@ void init_processes();
 
 /* process state functions */
 int proc_create(char *name, proc_function f, void *aux);
-int proc_exit(struct process *proc);
+void proc_exit();
 void proc_kill(struct process *proc, int *ret);
 
 /* process "setter" functions */
