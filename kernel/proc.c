@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <list.h>
+#include <kerrors.h>
 #include "../drivers/vesa.h"
 
 /* static data */
@@ -60,7 +61,7 @@ int proc_create(char *name, proc_function func, void *aux) {
     //change this to just use kmalloc
     struct process *p = (struct process *) palloc();
     if (p == NULL)
-        return -1;
+        return -PROC_CREATE_FAIL;
     
     sprintf(p->name, "%s", name);
 
@@ -79,11 +80,11 @@ int proc_create(char *name, proc_function func, void *aux) {
         p->threads[i]->child_num = i;
     }
 
-    if (thread_create(0, "main", p, &p->threads[0], func, aux) > -1)
+    if (thread_create(0, "main", p, &p->threads[0], func, aux) != -THREAD_CREATE_FAIL)
         p->num_live_threads = 1;
     else {
         proc_kill(p, NULL);
-        return -1;
+        return -PROC_CREATE_FAIL;
     }
     
     p->active_thread = p->threads[0];
@@ -96,7 +97,7 @@ int proc_create_thread(uint8_t priority, char *name, thread_function func, void 
     struct thread *t = proc_get_free_thread(PROC_CUR());
     int tid = thread_create(priority, name, PROC_CUR(), &t, func, aux);
 
-    if (tid > -1)
+    if (tid != -THREAD_CREATE_FAIL)
         PROC_CUR()->num_live_threads++;
     
     return tid;
@@ -114,10 +115,10 @@ void proc_kill(struct process *proc, int *ret) {
     for (i = 0; i < MAX_NUM_THREADS && proc->num_live_threads > 1; i++) {
         if (proc->threads[i]->tid != THREAD_CUR()->tid) {
             int kill_return = thread_kill(proc->threads[i]);
-            if (kill_return != 0) {
+            if (kill_return != THREAD_KILL_SUCC) {
                 printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i]->name, proc->threads[i]->tid);
                 printf("THREAD TID: %d PROC->THREAD TID: %d\n", kill_return, proc->threads[i]->tid);
-                success = -1;
+                success = -THREAD_KILL_FAIL;
             }
             
             if (proc->num_live_threads <= 0)
@@ -125,11 +126,11 @@ void proc_kill(struct process *proc, int *ret) {
         }
     }
 
-    if (success == -1 && ret != NULL) {
-        *ret = -1;
+    if (success != THREAD_KILL_SUCC && ret != NULL) {
+        *ret = -PROC_KILL_FAIL;
         return;
     } else if (ret != NULL)
-        *ret = 0;
+        *ret = PROC_KILL_SUCC;
 
     list_delete(&all_procs, &proc->node);
     int proc_pid = (int) proc->pid;

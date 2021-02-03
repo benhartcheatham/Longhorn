@@ -18,6 +18,7 @@
 #include "port_io.h"
 #include <stdio.h>
 #include <synch.h>
+#include <kerrors.h>
 
 /* defines */
 #define MAX_THREAD_TICKS 8
@@ -169,7 +170,7 @@ void thread_unblock(struct thread *thread) {
 }
 
 /* function called at the end of the current thread's lifecycle */
-void thread_exit() {
+void thread_exit(int *ret) {
     struct thread *t = THREAD_CUR();
 
     disable_interrupts();
@@ -180,6 +181,9 @@ void thread_exit() {
 
     enable_interrupts();
 
+    if (ret != NULL)
+        *ret = THREAD_KILL_SUCCESS;
+    
     schedule();
 }
 
@@ -269,7 +273,7 @@ static void thread_execute(thread_function func, void *aux) {
     //have to reenable interrupts since there isn't a guaruntee we returned to the irq handler
     asm volatile("sti");
     func(aux);
-    thread_exit();
+    thread_exit(NULL);
 }
 
 /* schedules threads */

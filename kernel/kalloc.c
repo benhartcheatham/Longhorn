@@ -5,6 +5,7 @@
 #include "../boot/multiboot.h"
 #include <bitmap.h>
 #include <synch.h>
+#include <kerrors.h>
 
 /* defines */
 #define MAX_ARENA_UNIT (PG_SIZE / 4)
@@ -80,16 +81,16 @@ void *palloc_mult(size_t cnt) {
 }
 
 /* frees a page of memory obtained from the memory manager
-   returns -1 if addr wasn't from the memory manager and the number of pages freed otherwise */
+   returns -MEM_ALLOC_FAIL if addr wasn't from the memory manager and the number of pages freed otherwise */
 int pfree(void *addr) {
     return pfree_mult(addr, 1);
 }
 
 /* frees cnt pages of memory obtained from the memory manager
-   returns -1 if addr wasn't from the memory manager and the number of pages freed otherwise */
+   returns -MEM_FREE_FAIL if addr wasn't from the memory manager and the number of pages freed otherwise */
 int pfree_mult(void *addr, size_t cnt) {
     if (spin_lock_acquire(&palloc_lock) != LOCK_ACQ_SUCC)
-        return -1;
+        return -MEM_FREE_FAIL;
     
     size_t idx = ((char *) addr - start_addr) / PG_SIZE;
 
@@ -99,7 +100,7 @@ int pfree_mult(void *addr, size_t cnt) {
     }
 
     spin_lock_release(&palloc_lock);
-    return -1;
+    return -MEM_FREE_FAIL;
 }
 
 /* obtains the memory address of a memory area of at least size and no greater than PG_SIZE from the memory manager
@@ -149,14 +150,14 @@ void *kcalloc(size_t num, size_t size) {
 }
 
 /* frees a unit of memory gotten from kmalloc or kcalloc
-   returns -1 if memory wasn't obtained from kmalloc or kcalloc and num bytes freed otherwise */
+   returns -MEM_FREE_FAIL if memory wasn't obtained from kmalloc or kcalloc and num bytes freed otherwise */
 int kfree(void *addr) {
     uint32_t a_addr = (uint32_t) addr;
     //round addr down to an arena mem address
     a_addr = a_addr - (a_addr % MEM_ARENA_SIZE);
 
     if (spin_lock_acquire(&malloc_lock) != LOCK_ACQ_SUCC)
-        return -1;
+        return -MEM_FREE_FAIL;
     
     int i;
     for (i = 0; i < ARENAS_PER_PAGE; i++)

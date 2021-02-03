@@ -6,12 +6,6 @@
 #include "../../kernel/thread.h"
 
 /* defines */
-#define LOCK_INIT_FAIL 1
-#define LOCK_INIT_SUCC 0
-#define LOCK_ACQ_FAIL 2
-#define LOCK_ACQ_SUCC 0
-#define LOCK_REL_FAIL 3
-#define LOCK_REL_SUCC 0
 
 /* structs */
 

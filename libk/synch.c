@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <synch.h>
 #include <atomic.h>
+#include <kerrors.h>
 #include "../kernel/thread.h"
 
 

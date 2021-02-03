@@ -55,7 +55,7 @@ void init_threads(struct process *init_p);
 int thread_create(uint8_t priority, char *name, struct process *parent, struct thread **sthread, thread_function func, void *aux);
 void thread_block(struct thread *thread);
 void thread_unblock(struct thread *thread);
-void thread_exit();
+void thread_exit(int *ret);
 int thread_kill(struct thread *thread);
 
 /* thread "getter" functions */
