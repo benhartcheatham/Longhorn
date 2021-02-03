@@ -9,7 +9,7 @@
 
 
 /* static functions */
-static int __sdown(semaphore_t *s);
+static int sdown(semaphore_t *s);
 
 /* semaphore functions */
 
@@ -55,11 +55,16 @@ int semaphore_down(semaphore_t *s) {
 
     if (s->val > 0)
         s->val--;
-    else
-        ret = __sdown(s);
+    else {
+        ret = sdown(s);
 
-    if (ret < 0)
-        return ret;
+        if (ret < 0) {
+            spin_lock_release(&s->lock);
+            return ret;
+        }
+
+        s->val--;
+    }
     
     ret = spin_lock_release(&s->lock);
     if (ret < 0)
@@ -71,7 +76,7 @@ int semaphore_down(semaphore_t *s) {
 /* Static function that does the blocking of the
  * thread trying to call down if the semaphore has
  * no resources available */
-static int __sdown(semaphore_t *s) {
+static int sdown(semaphore_t *s) {
     list_insert(&s->waiters, &s->lock.owner->node);
 
     int ret = 0;
@@ -102,12 +107,13 @@ int semaphore_up(semaphore_t *s) {
     if (!list_isEmpty(&s->waiters)) {
         struct thread *next = LIST_ENTRY(list_pop(&s->waiters), struct thread, node);
         thread_unblock(next);
-    } else
-        s->val++;
+    }
     
     ret = spin_lock_release(&s->lock);
     if (ret < 0)
         return ret;
+
+    s->val++;
 
     return LOCK_REL_SUCC;
 }
@@ -193,4 +199,53 @@ int spin_lock_release(spin_lock_t *sl) {
         return -LOCK_REL_FAIL;
 
     return -LOCK_REL_SUCC;
+}
+
+int lock_init(lock_t *l) {
+    semaphore_init(&l->lock, 0);
+    l->owner = NULL;
+}
+
+int lock_acquire(lock_t *l) {
+    int ret = 0;
+    if ((ret = semaphore_down(&l->lock)) < 0)
+        return ret;
+    
+    if (l->owner == NULL)
+        l->owner = THREAD_CUR();
+    else {
+        // somehow the lock had a value greater than 1, so we reset it to one
+        test_and_set(&l->lock.val);
+        return -LOCK_ACQ_FAIL;
+    }
+
+    return ret;
+}
+
+/* this function only works on uniprocessor */
+int lock_release(lock_t *l) {
+    disable_interrupts();
+
+    if (l->owner != THREAD_CUR() || l->lock.val != 1)
+        return -LOCK_REL_FAIL;
+    
+    enable_interrupts();
+
+    int ret = 0;
+    if ((ret = semaphore_up(&l->lock)) < 0) {
+        return ret;
+    }
+
+    l->owner = NULL;
+
+    return ret;
+}
+
+int lock_try_acquire(lock_t *l){
+    int ret = 0;
+    if ((ret = semaphore_try_down(&l->lock)) != 0)
+        return ret;
+    
+    l->owner = THREAD_CUR();
+    return ret;
 }
