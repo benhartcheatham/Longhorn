@@ -104,7 +104,7 @@ int proc_create_thread(uint8_t priority, char *name, thread_function func, void 
 
 /* intended for a graceful exit */
 void proc_exit(int *ret) {
-    proc_kill(PROC_CUR(), &ret);
+    proc_kill(PROC_CUR(), ret);
 }
 
 void proc_kill(struct process *proc, int *ret) {
@@ -132,7 +132,6 @@ void proc_kill(struct process *proc, int *ret) {
         *ret = 0;
 
     list_delete(&all_procs, &proc->node);
-    int proc_pid = (int) proc->pid;
     pfree(proc);
     
     THREAD_CUR()->state = THREAD_DYING;

@@ -202,8 +202,8 @@ int spin_lock_release(spin_lock_t *sl) {
 }
 
 int lock_init(lock_t *l) {
-    semaphore_init(&l->lock, 0);
     l->owner = NULL;
+    return semaphore_init(&l->lock, 0);
 }
 
 int lock_acquire(lock_t *l) {
