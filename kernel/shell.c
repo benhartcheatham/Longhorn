@@ -5,7 +5,7 @@
 #include "proc.h"
 #include <stdio.h>
 #include <string.h>
-#include "../drivers/terminal.h"
+#include "../drivers/term.h"
 #include "../drivers/bmp.h"
 
 #define GRAPHICS_MODE 0

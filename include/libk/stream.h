@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 /* defines */
-#define STD_STREAM_SIZE 256
+#define STD_STREAM_SIZE 1024
 
 /* structs */
 struct CHAR_STREAM {

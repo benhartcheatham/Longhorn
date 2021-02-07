@@ -105,7 +105,7 @@ char *get_copy_std(std_stream *stream) {
     return cp;
 }
 
-/* retusn and removes the oldest char from the stream */
+/* returns and removes the oldest char from the stream */
 char get_std(std_stream *stream) {
     if(stream->in == stream->out)
         return -1; /* Queue Empty - nothing to get*/

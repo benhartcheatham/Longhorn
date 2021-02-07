@@ -27,12 +27,7 @@ key_driver_t default_kd;
 int keyboard_handler(struct register_frame *r __attribute__ ((unused))) {
     uint8_t keycode = inb(0x60);
     
-    output_terminal->terminal_putc(keycode);
-    return 0;
-}
-
-int keyboard_direct(std_stream *in) {
-    default_kd.in = in;
+    
     return 0;
 }
 
@@ -46,11 +41,9 @@ int keyboard_set_mode(key_modes_t mode) {
 void init_keyboard(void *aux) {
     default_kd.keyboard_handler = keyboard_handler;
     default_kd.keyboard_init = NULL;
-    default_kd.keyboard_direct = keyboard_direct;
     default_kd.keyboard_mode = keyboard_set_mode;
     
     output_terminal = (term_t *) aux;
-    default_kd.keyboard_direct(output_terminal->in);
 
     register_interrupt_handler(IRQ01, keyboard_handler);
 }

@@ -13,6 +13,8 @@ struct display_driver {
     void (*display_init) (uint32_t pixel_width, void *aux); // init for display driver
     int (*display_putc) (char c);   // put a char on the screen
     int (*display_setcur) (int x, int y);   // set the cursor position
+    int (*display_getcurx) (struct display_driver *dd);
+    int (*display_getcury) (struct display_driver *dd);
     int (*display_puti) (void *buf, int width, int height, int x, int y);   // put an image in buf with dimensions
                                                                             // widthxheight at (x,y)
     int (*display_setcol) (struct display_driver *dd, uint32_t foreground, uint32_t background);   // set color to write with
