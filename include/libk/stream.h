@@ -3,6 +3,7 @@
 
 /* includes */
 #include <stddef.h>
+#include <stdbool.h>
 
 /* defines */
 #define STD_STREAM_SIZE 1024
@@ -18,6 +19,7 @@ struct STD_STREAM {
     char stream[STD_STREAM_SIZE];
     size_t size;
     size_t in, out;
+    bool writing;
 };
 
 /* typedefs */
@@ -39,8 +41,9 @@ void destroy_c(char_stream *stream);
 std_stream *init_std(std_stream *stream);
 void flush_std(std_stream *stream);
 int put_std(std_stream *stream, char c);
+int puts_std(std_stream *strea, char *s);
 char *get_copy_std(std_stream *stream);
 char get_std(std_stream *stream);
 char peek_std(std_stream *stream);
-
+bool being_written(std_stream *stream);
 #endif

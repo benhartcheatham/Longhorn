@@ -32,29 +32,31 @@ static const char *escape_sequences[] = { "[nA", // move up n lines
                                           "[nm", // enable rendition
                                           "M"}; // scroll screen backward if cursor is at the top line
 
-static int write_escape_sequence(term_t *t, char *sequence, char param1, char param2);
+static int keyboard_set_mode(key_modes_t mode);
+static int ischar(uint8_t c);
+static int write_escape_sequence(term_t *t, const char *sequence, char param1, char param2);
 
 term_t *output_terminal = NULL;
 key_driver_t default_kd;
 
 /* keyboard interrupt handler
    writes characters pressed to the terminal */
-int keyboard_handler(struct register_frame *r __attribute__ ((unused))) {
+void keyboard_handler(struct register_frame *r __attribute__ ((unused))) {
     uint8_t keycode = inb(0x60);
 
     if (output_terminal == NULL)
-        return -1;
+        return;
     
     if (keycode == KC_LSHIFT || keycode == KC_RSHIFT|| keycode == KC_CAPS_LOCK || keycode == KC_LSHIFT_RELEASED || keycode == KC_RSHIFT_RELEASED) {
         default_kd.capitalize = !default_kd.capitalize;
-        return 0;
+        return;
     }
 
     if (KRAW) {
         if (default_kd.capitalize == true)
-            output_terminal->terminal_writec(output_terminal, kc_ascii_cap[keycode]);
+            output_terminal->writec(output_terminal, kc_ascii_cap[keycode]);
         else
-            output_terminal->terminal_writec(output_terminal, kc_ascii[keycode]);
+            output_terminal->writec(output_terminal, kc_ascii[keycode]);
     } else {
         switch (keycode) {
             // need to figure out the keycodes for the arrow keys
@@ -64,26 +66,26 @@ int keyboard_handler(struct register_frame *r __attribute__ ((unused))) {
             case KC_TAB:
                 write_escape_sequence(output_terminal, escape_sequences[10], 5, 0);
                 break;
+            case KC_ENTER:
+                output_terminal->writec(output_terminal, '\n');
+                break;
             default:    
                 if (ischar(keycode)) {
                     if (default_kd.capitalize == true)
-                        output_terminal->terminal_writec(output_terminal, kc_ascii_cap[keycode]);
+                        output_terminal->writec(output_terminal, kc_ascii_cap[keycode]);
                     else
-                        output_terminal->terminal_writec(output_terminal, kc_ascii[keycode]);
+                        output_terminal->writec(output_terminal, kc_ascii[keycode]);
 
-                    return 0;
                 }
 
                 // if not supported just write out the keycode
                 char *hex_code = int_to_hexstring(keycode);
-                for (int i = 0; i < strlen(hex_code); i++)
-                    output_terminal->terminal_writec(output_terminal, hex_code[i]);
+                for (size_t i = 0; i < strlen(hex_code); i++)
+                    output_terminal->writec(output_terminal, hex_code[i]);
                 break;
                 
         }
     }
-    
-    return 0;
 }
 
 static int ischar(uint8_t c) {
@@ -92,37 +94,43 @@ static int ischar(uint8_t c) {
     return true;
 }
 
-static int write_escape_sequence(term_t *t, char *sequence, char param1, char param2) {
+static int write_escape_sequence(term_t *t, const char *sequence, char param1, char param2) {
     if (strlen(sequence) == 1) {
-        t->terminal_writec(t, sequence[0]);
+        t->writec(t, sequence[0]);
         return 0;
     }
 
-    t->terminal_writec(t, sequence[0]);
-    t->terminal_writec(t, param1);
-    t->terminal_writec(t, sequence[2]);
+    t->writec(t, sequence[0]);
+    t->writec(t, param1);
+    t->writec(t, sequence[2]);
 
     if (strlen(sequence) > 3) {
-        t->terminal_writec(t, param2);
-        t->terminal_writec(t, sequence[4]);
+        t->writec(t, param2);
+        t->writec(t, sequence[4]);
     }
 
     return 0;
 }
 
-int keyboard_set_mode(key_modes_t mode) {
+static int keyboard_set_mode(key_modes_t mode) {
     default_kd.mode = mode;
     return 0;
 }
 
 /* initializes keyboard interrupt handler and key buffer 
    takes in a void * to a terminal struct */
-void init_keyboard(void *aux) {
-    default_kd.keyboard_handler = keyboard_handler;
-    default_kd.keyboard_init = NULL;
-    default_kd.keyboard_mode = keyboard_set_mode;
-    
-    output_terminal = (term_t *) aux;
+void init_keyboard() {
+    default_kd.handler = keyboard_handler;
+    default_kd.init = NULL;
+    default_kd.set_mode = keyboard_set_mode;
 
-    register_interrupt_handler(IRQ01, keyboard_handler);
+    register_interrupt_handler(IRQ01, default_kd.handler);
+}
+
+key_driver_t *get_default_kd() {
+    return &default_kd;
+}
+
+void set_term(term_t *t) {
+    output_terminal = t;
 }

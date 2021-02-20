@@ -1,6 +1,7 @@
 /* Streams are implemented by a circular queue as of now */
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include "stream.h"
 #include "../kernel/kalloc.h"
 #include <mem.h>
@@ -89,13 +90,27 @@ void flush_std(std_stream *stream) {
 /* puts the given char into the given std_stream */
 int put_std(std_stream *stream, char c) {
     if(stream->in == ((stream->out - 1 + STD_STREAM_SIZE) % STD_STREAM_SIZE))
-        return 0; /* Queue Full*/
+        return -1; /* Queue Full*/
 
     stream->stream[stream->in] = c;
 
     stream->in = (stream->in + 1) % STD_STREAM_SIZE;
 
-    return 1;
+    return 0;
+}
+
+int puts_std(std_stream *stream, char *s) {
+    stream->writing = true;
+
+    for (int i = 0; i < strlen(s); i++) {
+        if (put_std(stream, s[i]) == -1) {
+            stream->writing = false;
+            return -1;
+        }
+    }
+
+    stream->writing = true;
+    return 0;
 }
 
 /* returns the address of a char array that has the contents of the given char_stream in it */
@@ -115,4 +130,13 @@ char get_std(std_stream *stream) {
     stream->out = (stream->out + 1) % STD_STREAM_SIZE;
 
     return old;
+}
+
+/* returns whether the stream is being written to 
+   only used when more than individual chars are being written to
+   the stream */
+bool being_written(std_stream *stream) {
+    if (stream->writing == true)
+        return true;
+    return false;
 }

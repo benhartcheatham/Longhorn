@@ -1,4 +1,6 @@
+#include <stddef.h>
 #include <stdint.h>
+#include "display.h"
 #include "vesa.h"
 #include "vga_font.h"
 #include "../boot/multiboot.h"
@@ -48,9 +50,10 @@ void init_vesa(multiboot_info_t *mbi) {
 
     bg_color = BLACK;
     fg_color = WHITE;
+
 }
 
-void vesa_set_cursor(uint32_t x, uint32_t y) {
+void vesa_set_cursor(int x, int y) {
     if (y <= num_rows && x <= num_cols) {
         current_x = FONT_WIDTH * x;
         cursor_x = x;
@@ -60,12 +63,12 @@ void vesa_set_cursor(uint32_t x, uint32_t y) {
     }
 }
 
-uint32_t vesa_get_cursor_x() {
-    return cursor_x;
+int vesa_get_cursor_x() {
+    return (int) cursor_x;
 }
 
-uint32_t vesa_get_cursor_y() {
-    return cursor_y;
+int vesa_get_cursor_y() {
+    return (int) cursor_y;
 }
 
 void vesa_show_cursor() {

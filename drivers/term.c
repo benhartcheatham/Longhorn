@@ -22,43 +22,55 @@
 //         'H', 'J', 'K', 'L', ';', '\'', '`', '?', '\\', 'Z', 'X', 'C', 'V', 
 //         'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '};
 
-static int8_t capitalize = 0;
+static term_t *default_term;
 
-static term_t default_term;
-
+static int terminal_mode(term_t *t, key_modes_t mode);
+static int terminal_register(term_t *t, std_stream *in, char c);
+static char terminal_getc(term_t *t);
+static int terminal_writec(term_t *t, char c);
+static int terminal_display(term_t *t);
+static int terminal_flush(term_t *t);
+static int eval_escape(term_t *t, uint32_t buff_i);
 static int is_whitespace(char c);
 
-term_t terminal_init(key_modes_t mode, std_stream *in, key_driver_t *kd, dis_driver_t *dd, void *aux) {
-    term_t temp;
-    temp.terminal_init = terminal_init;
-    temp.terminal_mode = terminal_mode;
+int terminal_init(term_t *t, key_modes_t mode, std_stream *in, key_driver_t *kd, dis_driver_t *dd, void *aux __attribute__ ((unused))) {
+    t->init = NULL;
+    t->set_mode = terminal_mode;
+    t->registerk = terminal_register;
+    t->getc = terminal_getc;
+    t->writec = terminal_writec;
+    t->display = terminal_display;
+    t->flush = terminal_flush;
 
-    temp.kd = kd;
-    temp.dd = dd;
-    temp.terminal_mode(&temp, mode);
-    temp.buff_i = 0;
+    t->kd = kd;
+    t->dd = dd;
+    t->set_mode(t, mode);
+    t->buff_i = 0;
     
     // a buffer must be supplied for RAW mode, otherwise there is
     // undefined behavior
     if (in != NULL && mode == KRAW)
-        temp.reg_buff = in;
+        t->reg_buff = in;
     else
-        temp.reg_buff = NULL;
+        t->reg_buff = NULL;
     
-    temp.reg_key = 0;
-
-    temp.kd->keyboard_mode(mode);
-    return temp;
+    t->reg_key = 0;
+    t->kd->set_mode(mode);
+    
+    if (default_term == NULL)
+        default_term = t;
+    
+    return 0;
 }
 
 /* sets the mode of the terminal
    RAW does no input filtering from the keyboard driver and passes it on
    to the std process
    COOKED does filtering with some other extra options */
-int terminal_mode(term_t *t, key_modes_t mode) {
+static int terminal_mode(term_t *t, key_modes_t mode) {
     if (t) {
         t->mode = mode;
-        t->kd->keyboard_mode(mode);
+        t->kd->set_mode(mode);
     } else
         return -1;
     
@@ -68,7 +80,7 @@ int terminal_mode(term_t *t, key_modes_t mode) {
 /* registers a key that when pressed dumps the entire terminal buffer into a 
    specified buffer 
    only available in COOKED mode */
-int terminal_register(term_t *t, std_stream *in, char c) {
+static int terminal_register(term_t *t, std_stream *in, char c) {
     // this feature is only available in COOKED mode
     if (t->mode != KCOOKED)
         return -1;
@@ -78,9 +90,9 @@ int terminal_register(term_t *t, std_stream *in, char c) {
     return 0;
 }
 
-/* returns the lastest character in the terminal buffer, if it exists
-   does delete char from the buffer */
-char terminal_getc(term_t *t) {
+/* returns the lastest character in the terminal buffer and deletes it from the buffer
+   if it exists */
+static char terminal_getc(term_t *t) {
     char c = t->in_buff[t->buff_i];
 
     if (t->buff_i > 0)
@@ -97,14 +109,14 @@ char terminal_getc(term_t *t) {
    the input is then checked for special characters and if it is a regular character,
    it is put in the terminal buffer */
    
-int terminal_writec(term_t *t, char c) {
+static int terminal_writec(term_t *t, char c) {
     if (t->mode == KRAW)
         return put_std(t->reg_buff, c);
 
     // dump and flush buffer if registered key is hit
     if (c == t->reg_key && t->reg_buff != NULL) {
         for (int i = 0; i < TERM_BUFFER_SIZE; i++)
-            put_std(t->reg_buff, t->in_buff[i]);
+            puts_std(t->reg_buff, t->in_buff);
         terminal_flush(t);
 
         return 0;
@@ -114,7 +126,7 @@ int terminal_writec(term_t *t, char c) {
     if (c == ASCII_BACKSPACE) {
         if (t->buff_i > 0) {
             t->buff_i--;
-            t->dd->display_putb();
+            t->dd->putb();
         }
 
         return 0;
@@ -131,23 +143,25 @@ int terminal_writec(term_t *t, char c) {
 
 /* prints the terminal buffer to the screen 
    eventually want to be able to disable displaying input */
-int terminal_display(term_t *t) {
-    for (int i = 0; i < t->buff_i && t->in_buff[i] != 0; i++) {
+static int terminal_display(term_t *t) {
+    for (uint32_t i = 0; i < t->buff_i && t->in_buff[i] != 0; i++) {
         if (t->in_buff[i] == ASCII_ESCAPE) {
             i += eval_escape(t, i);
         }
 
         if (!is_whitespace(t->in_buff[i]))
-            t->dd->display_putc(t->in_buff[i]);
+            t->dd->putc(t->in_buff[i]);
     }
 
     return 0;
 }
 
-int terminal_flush(term_t *t) {
+/* sets the whole buffer to 0 and resets the buffer index */
+static int terminal_flush(term_t *t) {
     t->buff_i = 0;
-    t->in_buff[0] = 0;
-    t->in_buff[1] = 0;
+    
+    for (int i = 0; i < TERM_BUFFER_SIZE; i++)
+        t->in_buff[i] = 0;
 
     return 0;
 }
@@ -160,41 +174,44 @@ static int eval_escape(term_t *t, uint32_t buff_i) {
 
     if (t->in_buff[buff_i] == '[') {
         char option = t->in_buff[buff_i + 2]; // get the escape sequence option
-        uint32_t display_y = t->dd->display_getcury(t->dd);
-        uint32_t display_x  = t->dd->display_getcurx(t->dd);
+        uint32_t display_y = t->dd->getcury();
+        uint32_t display_x  = t->dd->getcurx();
 
+        int n = 0;
+        int m = 0;
+        int new_y = 0;
         switch (option) {
             case 'A':
-                int n = t->in_buff[buff_i + 1];
-                int new_y = display_y - n;
+                n = t->in_buff[buff_i + 1];
+                new_y = display_y - n;
                 new_y = new_y >= 0 ? new_y : 0;
-                t->dd->display_setcur(display_x, new_y);
+                t->dd->setcur(display_x, new_y);
                 break;
             case 'B':
-                int n = t->in_buff[buff_i + 1];
-                int new_y = display_y + n;
-                t->dd->display_setcur(display_x, new_y);
+                n = t->in_buff[buff_i + 1];
+                new_y = display_y + n;
+                t->dd->setcur(display_x, new_y);
                 break;
             case 'C':
-                int n = t->in_buff[buff_i + 1];
-                t->dd->display_setcur(display_x + n, display_y);
+                n = t->in_buff[buff_i + 1];
+                t->dd->setcur(display_x + n, display_y);
                 break;
             case 'D':
-                int n = t->in_buff[buff_i + 1];
-                t->dd->display_setcur(display_x - n, display_y);
+                n = t->in_buff[buff_i + 1];
+                t->dd->setcur(display_x - n, display_y);
                 break;
             case 'J': // this isn't techincally correct, should be able to clear portions of screen
-                t->dd->display_clear();
+                t->dd->clear();
                 break;
             case 'P':
-                int n = t->in_buff[buff_i + 1];
+                n = t->in_buff[buff_i + 1];
                 for (int i = 0; i < n; i++)
-                    t->terminal_writec(t, ASCII_BACKSPACE);
+                    t->writec(t, ASCII_BACKSPACE);
                 break;
             case ';':
-                int m = t->in_buff[buff_i + 1];
-                int n = t->in_buff[buff_i + 3];
-                t->dd->display_setcur(m,n);
+                m = t->in_buff[buff_i + 1];
+                n = t->in_buff[buff_i + 3];
+                t->dd->setcur(m,n);
                 break;
             default: // either not a valid escape sequence or not supported
                 break;

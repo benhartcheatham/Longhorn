@@ -1,10 +1,10 @@
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 #include "shell.h"
 #include "thread.h"
 #include "port_io.h"
 #include "proc.h"
-#include <stdio.h>
-#include <string.h>
 #include "../drivers/term.h"
 #include "../drivers/bmp.h"
 
@@ -34,7 +34,7 @@ static bool cursor_on = false;
 
 /* static functions */
 static void shell_waiter(void *aux);
-static void read_stdin(struct process *active);
+static void read_stdin(term_t *st, struct process *active);
 static void append_to_buffer(char c);
 static void shrink_buffer();
 static void flush_buffer();
@@ -67,28 +67,28 @@ void print_logo() {
 
 /* function for the shell process to use, constantly scans input */
 static void shell_waiter(void *aux __attribute__ ((unused))) {
-    struct terminal shell_term;
-    terminal_init(&shell_term);
 
     struct thread *term_thread = THREAD_CUR();
     uint32_t last_cursor_tick = -1u;
 
     struct process *active = proc_get_active();
-    
-    terminal_out(&shell_term, active);
-    terminal_dmode(&shell_term, D_CHAR_ONLY);
-    terminal_active(&shell_term);
-    
-    while (1) {
-        terminal_active(&shell_term);
 
-        read_stdin(active);
+    struct terminal shell_term;
+    set_term(&shell_term);
+    terminal_init(&shell_term, KCOOKED, &active->stdin, get_default_kd(), get_display_driver(), NULL);
+    shell_term.registerk(&shell_term, &active->stdin, '\n');   // right now this causes enter ('\n') to 
+                                                               // not do anything, will have to manually call
+                                                               // the display driver to go to next line
+
+    while (1) {
+
+        read_stdin(&shell_term, active);
         if (term_thread->ticks % 48 == 0 && term_thread->ticks != last_cursor_tick) {
             if (cursor_on) {
-                terminal_hcur();
+                shell_term.dd->hcur();
                 cursor_on = false;
             } else {
-                terminal_scur();
+                shell_term.dd->scur();
                 cursor_on = true;
             }
 
@@ -101,48 +101,51 @@ static void shell_waiter(void *aux __attribute__ ((unused))) {
 
 /* reads the active process' stdin stream for input from the user
    input is executed as a command, if available, when the ENTER key is pressed */ 
-static void read_stdin(struct process *active) {
+static void read_stdin(term_t *st, struct process *active) {
     
     std_stream *stdin = &active->stdin;
     
+    if (being_written(stdin) == true)
+        return;
+    
     char c = get_std(stdin);
     
-    while (c != -1) {
-        if (c == '\n') {
-            terminal_hcur();
+    // while (c != -1) {
+    //     if (c == '\n') {
+    //         st->dd->hcur();
             
-            int i;
-            for (i = 0; i < NUM_COMMANDS; i++)
-                if (strcmp(trim(key_buffer), commands[i]) == 0) {
-                    /* this should make a new process/thread, but I need semaphores
-                       to ensure the prompt shows up in the right place after it's
-                       done */
-                    terminal_p("\n");
+    //         int i;
+    //         for (i = 0; i < NUM_COMMANDS; i++)
+    //             if (strcmp(trim(key_buffer), commands[i]) == 0) {
+    //                 /* this should make a new process/thread, but I need semaphores
+    //                    to ensure the prompt shows up in the right place after it's
+    //                    done */
+    //                 st->("\n");
 
-                    command_functions[i](NULL);
-                    break;
-                }
+    //                 command_functions[i](NULL);
+    //                 break;
+    //             }
 
-            flush_buffer();
-            printf("\n> ");
-        } else if (c == '\b') {
-            if (key_buf_i > 0) {
-                //get rid of character the backspace is upposed to get rid of
-                terminal_hcur();
+    //         flush_buffer();
+    //         printf("\n> ");
+    //     } else if (c == '\b') {
+    //         if (key_buf_i > 0) {
+    //             //get rid of character the backspace is upposed to get rid of
+    //             terminal_hcur();
                 
-                get_std(stdin);
-                shrink_buffer(1);
-                terminal_pback();
-            }
-        } else {
-            append_to_buffer(c);
+    //             get_std(stdin);
+    //             shrink_buffer(1);
+    //             terminal_pback();
+    //         }
+    //     } else {
+    //         append_to_buffer(c);
 
-            terminal_scur();
-            cursor_on = true;
-        }
+    //         terminal_scur();
+    //         cursor_on = true;
+    //     }
         
-        c = get_std(stdin);
-    }
+    //     c = get_std(stdin);
+    // }
 }
 
 /* adds char c to the key buffer */

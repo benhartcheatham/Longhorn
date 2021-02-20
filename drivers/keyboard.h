@@ -35,15 +35,14 @@ enum keyboard_modes {KCOOKED = 0, KRAW = 1};
 
 struct keyboard_driver {
     enum keyboard_modes mode;
-    char *buff;
 
     bool capitalize;    // whether the next char should be captialized
     bool ctrl_pressed;  // whether the control key is pressed
     bool alt_pressed;   // whether the alt key is pressed
 
-    void (*keyboard_init) (void *aux);
-    int (*keyboard_mode) (enum keyboard_modes mode);
-    int (*keyboard_handler) (struct register_frame *r);
+    void (*init) (void *aux);
+    int (*set_mode) (enum keyboard_modes mode);
+    void (*handler) (struct register_frame *r);
 };
 
 
@@ -52,11 +51,9 @@ typedef struct keyboard_driver key_driver_t;
 typedef enum keyboard_modes key_modes_t;
 
 /* functions */
-void init_keyboard(void *aux);
-int keyboard_set_mode(key_modes_t mode);
-int keyboard_handler(struct register_frame *r);
-int keyboard_direct (std_stream *in);
-
+void init_keyboard();
+void keyboard_handler(struct register_frame *r);
+key_driver_t *get_default_kd();
 
 
 #endif

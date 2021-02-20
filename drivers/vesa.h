@@ -15,9 +15,9 @@
 #define BLUE 0x000000ff
 
 void init_vesa(multiboot_info_t *mbi);
-void vesa_set_cursor(uint32_t x, uint32_t y);
-uint32_t vesa_get_cursor_x();
-uint32_t vesa_get_cursor_y();
+void vesa_set_cursor(int x, int y);
+int vesa_get_cursor_x();
+int vesa_get_cursor_y();
 void vesa_show_cursor();
 void vesa_hide_cursor();
 void vesa_print_char(char c);
