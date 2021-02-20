@@ -4,7 +4,7 @@
 #include "../boot/multiboot.h"
 
 /* Drivers */
-#include "../drivers/vesa.h"
+#include "../drivers/display.h"
 
 /* libc */
 #include <stdio.h>
@@ -34,7 +34,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_alloc(mbi);
     init_processes();
     if (mbi->vbe_mode != 3)  {
-        init_vesa(mbi);
+        display_init((void *) mbi);
         shell_init();
     }
 

@@ -7,7 +7,7 @@ dis_driver_t default_dd;
 
 int display_init(void *aux) {
     multiboot_info_t *mbi = (multiboot_info_t *) aux;
-    vesa_init(mbi);
+    init_vesa(mbi);
 
     default_dd.init = NULL;
     default_dd.putc = vesa_print_char;
@@ -21,7 +21,7 @@ int display_init(void *aux) {
     default_dd.scur = vesa_show_cursor;
     default_dd.hcur = vesa_hide_cursor;
     default_dd.puts = vesa_print;
-    default_dd.putb = vesa_print_backspace;
+    default_dd.backspace = vesa_print_backspace;
     default_dd.clear = vesa_clear_screen;
     default_dd.putcp = NULL;    // need to go back and do this one as well
 
@@ -32,6 +32,6 @@ void set_display_driver(dis_driver_t *dd) {
     default_dd = *dd;
 }
 
-dis_driver_t *get_display_driver() {
+dis_driver_t *get_default_dd() {
     return &default_dd;
 }

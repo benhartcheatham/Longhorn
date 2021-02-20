@@ -47,6 +47,8 @@ static void grub(void *line);
 static void moon(void *line);
 shell_command *command_functions[NUM_COMMANDS] = {help, shutdown, ps, grub, moon};
 
+struct terminal shell_term;
+
 /* initializes a shell process */
 void shell_init() {
     shell_pid = proc_create("shell", shell_waiter, NULL);
@@ -73,12 +75,8 @@ static void shell_waiter(void *aux __attribute__ ((unused))) {
 
     struct process *active = proc_get_active();
 
-    struct terminal shell_term;
-    set_term(&shell_term);
-    terminal_init(&shell_term, KCOOKED, &active->stdin, get_default_kd(), get_display_driver(), NULL);
-    shell_term.registerk(&shell_term, &active->stdin, '\n');   // right now this causes enter ('\n') to 
-                                                               // not do anything, will have to manually call
-                                                               // the display driver to go to next line
+    terminal_init(&shell_term, KCOOKED, &active->stdin, get_default_kd(), get_default_dd(), NULL);
+    shell_term.kd->set_output(shell_term.kd, &shell_term);
 
     while (1) {
 
@@ -105,47 +103,45 @@ static void read_stdin(term_t *st, struct process *active) {
     
     std_stream *stdin = &active->stdin;
     
-    if (being_written(stdin) == true)
-        return;
+    char c = st->getc(st);
     
-    char c = get_std(stdin);
-    
-    // while (c != -1) {
-    //     if (c == '\n') {
-    //         st->dd->hcur();
+    while (c != -1) {
+        if (c == '\n') {
+            st->dd->hcur();
             
-    //         int i;
-    //         for (i = 0; i < NUM_COMMANDS; i++)
-    //             if (strcmp(trim(key_buffer), commands[i]) == 0) {
-    //                 /* this should make a new process/thread, but I need semaphores
-    //                    to ensure the prompt shows up in the right place after it's
-    //                    done */
-    //                 st->("\n");
+            int i;
+            for (i = 0; i < NUM_COMMANDS; i++)
+                if (strcmp(trim(key_buffer), commands[i]) == 0) {
+                    /* this should make a new process/thread, but I need semaphores
+                       to ensure the prompt shows up in the right place after it's
+                       done */
+                    st->dd->puts("\n");
 
-    //                 command_functions[i](NULL);
-    //                 break;
-    //             }
+                    command_functions[i](NULL);
+                    break;
+                }
 
-    //         flush_buffer();
-    //         printf("\n> ");
-    //     } else if (c == '\b') {
-    //         if (key_buf_i > 0) {
-    //             //get rid of character the backspace is upposed to get rid of
-    //             terminal_hcur();
+            flush_buffer();
+            st->dd->puts("\n");
+        } else if (c == '\b') {
+            if (key_buf_i > 0) {
+                //get rid of character the backspace is upposed to get rid of
+                st->dd->hcur();
                 
-    //             get_std(stdin);
-    //             shrink_buffer(1);
-    //             terminal_pback();
-    //         }
-    //     } else {
-    //         append_to_buffer(c);
+                st->getc(st);
+                shrink_buffer(1);
+                st->dd->backspace();
+            }
+        } else {
+            append_to_buffer(c);
 
-    //         terminal_scur();
-    //         cursor_on = true;
-    //     }
+            st->dd->scur();
+            cursor_on = true;
+        }
         
-    //     c = get_std(stdin);
-    // }
+        st->display(st);
+        c = st->getc(st);
+    }
 }
 
 /* adds char c to the key buffer */
@@ -234,10 +230,10 @@ static void grub(void *line __attribute__ ((unused))) {
 static void moon(void *line __attribute__ ((unused))) {
     printf("did you mean: ");
 
-    terminal_fgc(0xff0000);
+    shell_term.dd->setcol(0xff0000, 0);
     
     printf("\"GAMER GOD MOONMOON\"?\n");
     
-    terminal_fgc(0xffffff);
+    shell_term.dd->setcol(0xffffff, 0);
 
 }

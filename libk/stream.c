@@ -102,7 +102,7 @@ int put_std(std_stream *stream, char c) {
 int puts_std(std_stream *stream, char *s) {
     stream->writing = true;
 
-    for (int i = 0; i < strlen(s); i++) {
+    for (size_t i = 0; i < strlen(s); i++) {
         if (put_std(stream, s[i]) == -1) {
             stream->writing = false;
             return -1;

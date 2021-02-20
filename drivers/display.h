@@ -23,7 +23,7 @@ struct display_driver {
     int (*scur) (void);     //show cursor
     int (*hcur) (void);     // hide cursor
     int (*puts) (char *string); // put a null-terminated string of chars to the screen
-    int (*putb) (void);     // print a backspace to the screen
+    int (*backspace) (void);     // print a backspace to the screen
     int (*clear) (void);    // clear the screen, paints screen with background color
     int (*putcp) (char c, int x, int y);    // put a char at position (x,y)
 };
@@ -34,6 +34,6 @@ typedef struct display_driver dis_driver_t;
 /* functions */
 int display_init(void *aux);
 void set_display_driver(dis_driver_t *dd);
-dis_driver_t *get_display_driver();
+dis_driver_t *get_default_dd();
 
 #endif

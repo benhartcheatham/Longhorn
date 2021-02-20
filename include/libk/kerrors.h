@@ -32,7 +32,7 @@
 #define PROC_FAILURE 3      // that are one-offs or haven't been made yet
 
 /* thread errors */
-#define THREAD_SUCCESS 0
+#define THREAD_SUCC 0
 #define THREAD_FAILURE 1
 #define THREAD_CREATE_FAIL 2
 #define THREAD_KILL_SUCC 0
@@ -46,5 +46,11 @@
 #define LOCK_ACQ_SUCC 0
 #define LOCK_REL_FAIL 3
 #define LOCK_REL_SUCC 0
+
+/* vesa errors */
+#define VESA_SUCC 0
+#define VESA_CURSOR_FAIL 1
+#define VESA_PRINT_FAIL 2
+#define VESA_CLEAR_FAIL 3
 
 #endif

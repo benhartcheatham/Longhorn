@@ -16,6 +16,7 @@
 #define TERM_BUFFER_SIZE STD_STREAM_SIZE
 
 /* structs */
+enum terminal_modes {TCOOKED, TRAW};
 
 struct terminal {
     char in_buff[TERM_BUFFER_SIZE + 7]; // extra space if for null terminator and escape sequences
@@ -24,12 +25,12 @@ struct terminal {
     char reg_key;
     std_stream *reg_buff;
 
-    key_modes_t mode;
-    key_driver_t *kd;
+    enum terminal_modes mode;
+    struct keyboard_driver *kd;
     dis_driver_t *dd;
 
-    int (*init) (struct terminal *t, key_modes_t mode, std_stream *in, key_driver_t *kd, dis_driver_t *dd, void *aux);
-    int (*set_mode) (struct terminal *t, key_modes_t mode);
+    int (*init) (struct terminal *t, enum terminal_modes mode, std_stream *in, struct keyboard_driver *kd, dis_driver_t *dd, void *aux);
+    int (*set_mode) (struct terminal *t, enum terminal_modes mode);
     int (*registerk) (struct terminal *t, std_stream *in, char c); // registers the key press which sends the buffer to
                                                                            // the calling program when in COOKED mode
     char (*getc) (struct terminal *t);   // get input from terminal
@@ -40,12 +41,11 @@ struct terminal {
 
 /* typedefs */
 typedef struct terminal term_t;
+typedef enum terminal_modes term_modes_t;
 
 /* functions */
 
 /* our driver functions */
-int terminal_init(term_t *t, key_modes_t mode, std_stream *in, key_driver_t *kd, dis_driver_t *dd, void *aux);
+int terminal_init(term_t *t, enum terminal_modes mode, std_stream *in, struct keyboard_driver *kd, dis_driver_t *dd, void *aux);
 
-/* getter functions */
-term_t get_terminal();
 #endif

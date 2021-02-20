@@ -2,6 +2,7 @@
 #include <string.h>
 #include "keyboard.h"
 #include "term.h"
+#include "vesa.h"
 #include "../kernel/isr.h"
 #include "../kernel/port_io.h"
 
@@ -33,10 +34,11 @@ static const char *escape_sequences[] = { "[nA", // move up n lines
                                           "M"}; // scroll screen backward if cursor is at the top line
 
 static int keyboard_set_mode(key_modes_t mode);
+static int keyboard_set_output(key_driver_t *kd, term_t *t);
+
 static int ischar(uint8_t c);
 static int write_escape_sequence(term_t *t, const char *sequence, char param1, char param2);
 
-term_t *output_terminal = NULL;
 key_driver_t default_kd;
 
 /* keyboard interrupt handler
@@ -44,7 +46,7 @@ key_driver_t default_kd;
 void keyboard_handler(struct register_frame *r __attribute__ ((unused))) {
     uint8_t keycode = inb(0x60);
 
-    if (output_terminal == NULL)
+    if (default_kd.output == NULL)
         return;
     
     if (keycode == KC_LSHIFT || keycode == KC_RSHIFT|| keycode == KC_CAPS_LOCK || keycode == KC_LSHIFT_RELEASED || keycode == KC_RSHIFT_RELEASED) {
@@ -54,38 +56,40 @@ void keyboard_handler(struct register_frame *r __attribute__ ((unused))) {
 
     if (KRAW) {
         if (default_kd.capitalize == true)
-            output_terminal->writec(output_terminal, kc_ascii_cap[keycode]);
+            default_kd.output->writec(default_kd.output, kc_ascii_cap[keycode]);
         else
-            output_terminal->writec(output_terminal, kc_ascii[keycode]);
+            default_kd.output->writec(default_kd.output, kc_ascii[keycode]);
     } else {
         switch (keycode) {
             // need to figure out the keycodes for the arrow keys
             case KC_BACKSPACE:
-                write_escape_sequence(output_terminal, escape_sequences[9], 1, 0);
+                write_escape_sequence(default_kd.output, escape_sequences[9], 1, 0);
                 break;
             case KC_TAB:
-                write_escape_sequence(output_terminal, escape_sequences[10], 5, 0);
+                write_escape_sequence(default_kd.output, escape_sequences[10], 5, 0);
                 break;
             case KC_ENTER:
-                output_terminal->writec(output_terminal, '\n');
+                default_kd.output->writec(default_kd.output, '\n');
                 break;
-            default:    
+            default:
                 if (ischar(keycode)) {
                     if (default_kd.capitalize == true)
-                        output_terminal->writec(output_terminal, kc_ascii_cap[keycode]);
+                        default_kd.output->writec(default_kd.output, kc_ascii_cap[keycode]);
                     else
-                        output_terminal->writec(output_terminal, kc_ascii[keycode]);
+                        default_kd.output->writec(default_kd.output, kc_ascii[keycode]);
 
+                    return;
                 }
 
                 // if not supported just write out the keycode
-                char *hex_code = int_to_hexstring(keycode);
-                for (size_t i = 0; i < strlen(hex_code); i++)
-                    output_terminal->writec(output_terminal, hex_code[i]);
-                break;
-                
+                // char *hex_code = int_to_hexstring(keycode);
+                // for (size_t i = 0; i < strlen(hex_code); i++)
+                //     default_kd.output->writec(default_kd.output, hex_code[i]);
+                break;    
         }
     }
+
+
 }
 
 static int ischar(uint8_t c) {
@@ -117,20 +121,28 @@ static int keyboard_set_mode(key_modes_t mode) {
     return 0;
 }
 
+static int keyboard_set_output(key_driver_t *kd, term_t *t) {
+    kd->output = t;
+    return 0;
+}
+
 /* initializes keyboard interrupt handler and key buffer 
    takes in a void * to a terminal struct */
 void init_keyboard() {
-    default_kd.handler = keyboard_handler;
     default_kd.init = NULL;
+    default_kd.handler = keyboard_handler;
     default_kd.set_mode = keyboard_set_mode;
+    default_kd.set_output = keyboard_set_output;
+
+    default_kd.mode = KCOOKED;
+    default_kd.output = NULL;
+    default_kd.capitalize = false;
+    default_kd.ctrl_pressed = false;
+    default_kd.alt_pressed = false;
 
     register_interrupt_handler(IRQ01, default_kd.handler);
 }
 
 key_driver_t *get_default_kd() {
     return &default_kd;
-}
-
-void set_term(term_t *t) {
-    output_terminal = t;
 }

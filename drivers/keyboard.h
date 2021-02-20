@@ -4,6 +4,7 @@
 /* includes */
 #include <stdbool.h>
 #include <stream.h>
+#include "term.h"
 #include "../kernel/isr.h"
 
 /* defines */
@@ -31,17 +32,22 @@
 #define KC_RSHIFT_RELEASED 0xB6
 
 /* structs */
-enum keyboard_modes {KCOOKED = 0, KRAW = 1};
+enum keyboard_modes {KCOOKED, KRAW}; // viable modes for the line discipline
 
 struct keyboard_driver {
     enum keyboard_modes mode;
+    struct terminal *output;
 
+    // these shoud probably be in a kd state struct and 
+    // this struct should have a void * to a state struct
+    // for maximum flexibility
     bool capitalize;    // whether the next char should be captialized
     bool ctrl_pressed;  // whether the control key is pressed
     bool alt_pressed;   // whether the alt key is pressed
 
     void (*init) (void *aux);
     int (*set_mode) (enum keyboard_modes mode);
+    int (*set_output) (struct keyboard_driver *kd, struct terminal *t);
     void (*handler) (struct register_frame *r);
 };
 
@@ -54,6 +60,5 @@ typedef enum keyboard_modes key_modes_t;
 void init_keyboard();
 void keyboard_handler(struct register_frame *r);
 key_driver_t *get_default_kd();
-
 
 #endif

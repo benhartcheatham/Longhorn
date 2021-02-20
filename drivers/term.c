@@ -24,7 +24,7 @@
 
 static term_t *default_term;
 
-static int terminal_mode(term_t *t, key_modes_t mode);
+static int terminal_mode(term_t *t, term_modes_t mode);
 static int terminal_register(term_t *t, std_stream *in, char c);
 static char terminal_getc(term_t *t);
 static int terminal_writec(term_t *t, char c);
@@ -33,7 +33,7 @@ static int terminal_flush(term_t *t);
 static int eval_escape(term_t *t, uint32_t buff_i);
 static int is_whitespace(char c);
 
-int terminal_init(term_t *t, key_modes_t mode, std_stream *in, key_driver_t *kd, dis_driver_t *dd, void *aux __attribute__ ((unused))) {
+int terminal_init(term_t *t, term_modes_t mode, std_stream *in, key_driver_t *kd, dis_driver_t *dd, void *aux __attribute__ ((unused))) {
     t->init = NULL;
     t->set_mode = terminal_mode;
     t->registerk = terminal_register;
@@ -42,6 +42,7 @@ int terminal_init(term_t *t, key_modes_t mode, std_stream *in, key_driver_t *kd,
     t->display = terminal_display;
     t->flush = terminal_flush;
 
+    t->flush(t);
     t->kd = kd;
     t->dd = dd;
     t->set_mode(t, mode);
@@ -49,7 +50,7 @@ int terminal_init(term_t *t, key_modes_t mode, std_stream *in, key_driver_t *kd,
     
     // a buffer must be supplied for RAW mode, otherwise there is
     // undefined behavior
-    if (in != NULL && mode == KRAW)
+    if (in != NULL && mode == TRAW)
         t->reg_buff = in;
     else
         t->reg_buff = NULL;
@@ -67,7 +68,7 @@ int terminal_init(term_t *t, key_modes_t mode, std_stream *in, key_driver_t *kd,
    RAW does no input filtering from the keyboard driver and passes it on
    to the std process
    COOKED does filtering with some other extra options */
-static int terminal_mode(term_t *t, key_modes_t mode) {
+static int terminal_mode(term_t *t, term_modes_t mode) {
     if (t) {
         t->mode = mode;
         t->kd->set_mode(mode);
@@ -82,7 +83,7 @@ static int terminal_mode(term_t *t, key_modes_t mode) {
    only available in COOKED mode */
 static int terminal_register(term_t *t, std_stream *in, char c) {
     // this feature is only available in COOKED mode
-    if (t->mode != KCOOKED)
+    if (t->mode != TCOOKED)
         return -1;
     
     t->reg_key = c;
@@ -91,14 +92,17 @@ static int terminal_register(term_t *t, std_stream *in, char c) {
 }
 
 /* returns the lastest character in the terminal buffer and deletes it from the buffer
-   if it exists */
+   if it exists
+   if the char doesn't exists, returns -1 */
 static char terminal_getc(term_t *t) {
     char c = t->in_buff[t->buff_i];
 
-    if (t->buff_i > 0)
+    if (t->buff_i > 0) {
         t->buff_i--;
-    
-    return c;
+        return c;
+    }
+
+    return -1;
 }
 
 /* writes a char to the terminal buffer, with a few exceptions.
@@ -110,7 +114,8 @@ static char terminal_getc(term_t *t) {
    it is put in the terminal buffer */
    
 static int terminal_writec(term_t *t, char c) {
-    if (t->mode == KRAW)
+
+    if (t->mode == TRAW)
         return put_std(t->reg_buff, c);
 
     // dump and flush buffer if registered key is hit
@@ -126,7 +131,7 @@ static int terminal_writec(term_t *t, char c) {
     if (c == ASCII_BACKSPACE) {
         if (t->buff_i > 0) {
             t->buff_i--;
-            t->dd->putb();
+            t->dd->backspace();
         }
 
         return 0;
@@ -134,10 +139,10 @@ static int terminal_writec(term_t *t, char c) {
 
     // should probably check for actual escape codes, but that require extra
     // state to do so that i am not sure i want
-
     if (t->buff_i < TERM_BUFFER_SIZE)
         t->in_buff[t->buff_i++] = c;
     
+    t->dd->putc(c);
     return 0;
 }
 
@@ -149,10 +154,10 @@ static int terminal_display(term_t *t) {
             i += eval_escape(t, i);
         }
 
-        if (!is_whitespace(t->in_buff[i]))
-            t->dd->putc(t->in_buff[i]);
+        t->dd->putc(t->in_buff[i]);
     }
 
+    terminal_flush(t);
     return 0;
 }
 
