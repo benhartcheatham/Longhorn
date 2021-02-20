@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "../drivers/vesa.h"
+#include "../kernel/proc.h"
+#include "../kernel/thread.h"
 
 /* prints a string to the screen */
 void print(char *string) {

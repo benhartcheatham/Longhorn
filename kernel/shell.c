@@ -11,15 +11,15 @@
 #define GRAPHICS_MODE 0
 #define TEXT_MODE 1
 
-#define NUM_COMMANDS 5
+#define NUM_COMMANDS 6
 #define NUM_HELP_COMMANDS (NUM_COMMANDS - 2)
 
 #define LOGO_COLOR 0xBD5615
 
 /* shell info */
 size_t last_index = 0;
-char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "ps"};
-char *commands[NUM_COMMANDS] = {"help", "shutdown", "ps", "grub", "moon"};
+char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "exit", "ps"};
+char *commands[NUM_COMMANDS] = {"help", "shutdown", "exit", "ps", "grub", "moon"};
 uint32_t shell_pid;
 
 /* logo variables */
@@ -45,7 +45,7 @@ static void shutdown(void *line);
 static void ps(void *line);
 static void grub(void *line);
 static void moon(void *line);
-shell_command *command_functions[NUM_COMMANDS] = {help, shutdown, ps, grub, moon};
+shell_command *command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, grub, moon};
 
 /* initializes a shell process */
 void shell_init() {
@@ -103,7 +103,7 @@ static void shell_waiter(void *aux __attribute__ ((unused))) {
    input is executed as a command, if available, when the ENTER key is pressed */ 
 static void read_stdin(struct process *active) {
     
-    std_stream *stdin = &active->stdin;
+    std_stream *stdin = GET_STDIN(active);
     
     char c = get_std(stdin);
     

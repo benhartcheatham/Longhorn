@@ -92,22 +92,22 @@ int terminal_put(uint8_t c) {
 
     if (active_t->mode == FILTERED) {
         if (c == ENTER) {
-            put_std(&active_t->out->stdin, '\n');
+            put_std(GET_STDIN(active_t->out), '\n');
 
         } else if (c == BACKSPACE) {
-            put_std(&active_t->out->stdin, '\b');
+            put_std(GET_STDIN(active_t->out), '\b');
 
         } else if (c == SHIFT_PRESSED || c == SHIFT_RELEASED || c == CAPS_LOCK_PRESSED) {
             capitalize = !capitalize;
 
         } else if (c <= KC_MAX && c > 0) {
             if (capitalize == 0)
-                put_std(&active_t->out->stdin, kc_ascii[c]);
+                put_std(GET_STDIN(active_t->out), kc_ascii[c]);
             else
-                put_std(&active_t->out->stdin, kc_ascii_cap[c]);
+                put_std(GET_STDIN(active_t->out), kc_ascii_cap[c]);
         }
     } else if (active_t->mode == RAW) {
-        put_std(&active_t->out->stdin, (char) c);
+        put_std(GET_STDIN(active_t->out), (char) c);
     }
 
     if (active_t->dmode == D_RAW) {
