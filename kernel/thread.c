@@ -182,7 +182,7 @@ void thread_exit(int *ret) {
     enable_interrupts();
 
     if (ret != NULL)
-        *ret = THREAD_KILL_SUCCESS;
+        *ret = THREAD_KILL_SUCC;
     
     schedule();
 }
