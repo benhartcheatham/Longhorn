@@ -14,7 +14,6 @@
 
 /* defines */
 #define TERM_BUFFER_SIZE STD_STREAM_SIZE
-#define ESCAPE 27 // ASCII code for the ESCAPE key
 
 /* structs */
 
@@ -32,10 +31,11 @@ struct terminal {
     struct terminal (*terminal_init) (key_modes_t mode, std_stream *in, key_driver_t *kd, dis_driver_t *dd, void *aux);
     int (*terminal_mode) (struct terminal *t, key_modes_t mode);
     int (*terminal_register) (struct terminal *t, std_stream *in, char c); // registers the key press which sends the buffer to
-                                                                            // the calling program when in COOKED mode
+                                                                           // the calling program when in COOKED mode
     char (*terminal_getc) (void);   // get input from terminal
-    int (*terminal_writec) (struct terminal *t, char c);    // terminal display function
-    int (*terminal_display) (struct terminal *t);
+    int (*terminal_writec) (struct terminal *t, char c);    // write input to the terminal
+    int (*terminal_display) (struct terminal *t);   // display terminal buffer
+    int (*terminal_flush) (struct terminal *t); // flush the terminal buffer
 };
 
 /* typedefs */

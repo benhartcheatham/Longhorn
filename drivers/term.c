@@ -8,25 +8,24 @@
 #include "vga.h"
 #include <stdio.h>
 
-static const char kc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
-                          '7', '8', '9', '0', '-', '=', '?', '?', 
-                          'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 
-                          'o', 'p', '[', ']', '\n', '?', 'a', 's', 
-                          'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', 
-                          '\'', '`', '?', '\\', 'z', 'x', 'c', 'v', 
-                          'b', 'n', 'm', ',', '.', '/', '?', '?', '?', ' '};
+// static const char kc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
+//                           '7', '8', '9', '0', '-', '=', '?', '?', 
+//                           'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 
+//                           'o', 'p', '[', ']', '\n', '?', 'a', 's', 
+//                           'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', 
+//                           '\'', '`', '?', '\\', 'z', 'x', 'c', 'v', 
+//                           'b', 'n', 'm', ',', '.', '/', '?', '?', '?', ' '};
 
-static const char kc_ascii_cap[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
-    '7', '8', '9', '0', '-', '=', '?', '?', 'Q', 'W', 'E', 'R', 'T', 'Y', 
-        'U', 'I', 'O', 'P', '[', ']', '\n', '?', 'A', 'S', 'D', 'F', 'G', 
-        'H', 'J', 'K', 'L', ';', '\'', '`', '?', '\\', 'Z', 'X', 'C', 'V', 
-        'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '};
+// static const char kc_ascii_cap[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
+//     '7', '8', '9', '0', '-', '=', '?', '?', 'Q', 'W', 'E', 'R', 'T', 'Y', 
+//         'U', 'I', 'O', 'P', '[', ']', '\n', '?', 'A', 'S', 'D', 'F', 'G', 
+//         'H', 'J', 'K', 'L', ';', '\'', '`', '?', '\\', 'Z', 'X', 'C', 'V', 
+//         'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '};
 
 static int8_t capitalize = 0;
 
 static term_t default_term;
 
-static int terminal_flush(term_t *t);
 static int is_whitespace(char c);
 
 term_t terminal_init(key_modes_t mode, std_stream *in, key_driver_t *kd, dis_driver_t *dd, void *aux) {
@@ -41,7 +40,7 @@ term_t terminal_init(key_modes_t mode, std_stream *in, key_driver_t *kd, dis_dri
     
     // a buffer must be supplied for RAW mode, otherwise there is
     // undefined behavior
-    if (in != NULL && mode == RAW)
+    if (in != NULL && mode == KRAW)
         temp.reg_buff = in;
     else
         temp.reg_buff = NULL;
@@ -52,6 +51,10 @@ term_t terminal_init(key_modes_t mode, std_stream *in, key_driver_t *kd, dis_dri
     return temp;
 }
 
+/* sets the mode of the terminal
+   RAW does no input filtering from the keyboard driver and passes it on
+   to the std process
+   COOKED does filtering with some other extra options */
 int terminal_mode(term_t *t, key_modes_t mode) {
     if (t) {
         t->mode = mode;
@@ -62,9 +65,12 @@ int terminal_mode(term_t *t, key_modes_t mode) {
     return 0;
 }
 
+/* registers a key that when pressed dumps the entire terminal buffer into a 
+   specified buffer 
+   only available in COOKED mode */
 int terminal_register(term_t *t, std_stream *in, char c) {
     // this feature is only available in COOKED mode
-    if (t->mode != COOKED)
+    if (t->mode != KCOOKED)
         return -1;
     
     t->reg_key = c;
@@ -72,12 +78,27 @@ int terminal_register(term_t *t, std_stream *in, char c) {
     return 0;
 }
 
-char terminal_getc() {
+/* returns the lastest character in the terminal buffer, if it exists
+   does delete char from the buffer */
+char terminal_getc(term_t *t) {
+    char c = t->in_buff[t->buff_i];
 
+    if (t->buff_i > 0)
+        t->buff_i--;
+    
+    return c;
 }
 
+/* writes a char to the terminal buffer, with a few exceptions.
+   if the terminal is in raw mode, the char is written directly to the
+   stdin of the process and this function returns
+   if a key has been registered, the terminal buffer is dumped to the registered buffer 
+   and flushed and this function returns
+   the input is then checked for special characters and if it is a regular character,
+   it is put in the terminal buffer */
+   
 int terminal_writec(term_t *t, char c) {
-    if (t->mode == RAW)
+    if (t->mode == KRAW)
         return put_std(t->reg_buff, c);
 
     // dump and flush buffer if registered key is hit
@@ -85,10 +106,12 @@ int terminal_writec(term_t *t, char c) {
         for (int i = 0; i < TERM_BUFFER_SIZE; i++)
             put_std(t->reg_buff, t->in_buff[i]);
         terminal_flush(t);
+
+        return 0;
     }
 
     // if key pressed is BACKSPACE, delete last char in buffer
-    if (c == BACKSPACE) {
+    if (c == ASCII_BACKSPACE) {
         if (t->buff_i > 0) {
             t->buff_i--;
             t->dd->display_putb();
@@ -96,6 +119,9 @@ int terminal_writec(term_t *t, char c) {
 
         return 0;
     }
+
+    // should probably check for actual escape codes, but that require extra
+    // state to do so that i am not sure i want
 
     if (t->buff_i < TERM_BUFFER_SIZE)
         t->in_buff[t->buff_i++] = c;
@@ -107,7 +133,7 @@ int terminal_writec(term_t *t, char c) {
    eventually want to be able to disable displaying input */
 int terminal_display(term_t *t) {
     for (int i = 0; i < t->buff_i && t->in_buff[i] != 0; i++) {
-        if (t->in_buff[i] == ESCAPE) {
+        if (t->in_buff[i] == ASCII_ESCAPE) {
             i += eval_escape(t, i);
         }
 
@@ -118,7 +144,7 @@ int terminal_display(term_t *t) {
     return 0;
 }
 
-static int terminal_flush(term_t *t) {
+int terminal_flush(term_t *t) {
     t->buff_i = 0;
     t->in_buff[0] = 0;
     t->in_buff[1] = 0;
@@ -129,7 +155,7 @@ static int terminal_flush(term_t *t) {
 /* returns the number of chars to skip in buffer */
 static int eval_escape(term_t *t, uint32_t buff_i) {
     buff_i++;
-    if (t->in_buff[buff_i] == ESCAPE || t->in_buff[buff_i] == 'M')
+    if (t->in_buff[buff_i] == ASCII_ESCAPE || t->in_buff[buff_i] == 'M')
         return 2;
 
     if (t->in_buff[buff_i] == '[') {
@@ -159,6 +185,11 @@ static int eval_escape(term_t *t, uint32_t buff_i) {
                 break;
             case 'J': // this isn't techincally correct, should be able to clear portions of screen
                 t->dd->display_clear();
+                break;
+            case 'P':
+                int n = t->in_buff[buff_i + 1];
+                for (int i = 0; i < n; i++)
+                    t->terminal_writec(t, ASCII_BACKSPACE);
                 break;
             case ';':
                 int m = t->in_buff[buff_i + 1];
