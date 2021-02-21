@@ -4,63 +4,68 @@
 /* includes */
 #include <stdint.h>
 #include "keyboard.h"
-#include "../kernel/proc.h"
+#include "display.h"
+#include "line.h"
 
 /* defines */
+#define TERMINAL_BUFF_SIZE 1024
+#define TERMINAL_BUFF_TYPE char
+#define KC_MAX 57
+#define KC_TAB SC_TAB
+#define KC_LALT SC_LALT
+#define KC_LSHIFT SC_LSHIFT
+#define KC_LCTRL SC_LCTRL
+#define KC_CAPSLOCK SC_CAPSLOCK
+#define KC_RSHIFT SC_RSHIFT
+#define KC_ENTER SC_ENTER
+#define KC_BACKSPACE SC_BACKSPACE
+#define KC_ESCAPE SC_ESCAPE
+#define KC_NUMLOCK SC_NUMLOCK
+#define KC_RELEASED KC_MAX
+
 
 /* structs */
-enum TERMINAL_MODE {
-    RAW,
-    FILTERED,
-};
-
-enum TERMINAL_DIS_MODE {
-    D_RAW,
-    D_FILTERED,
-    D_CHAR_ONLY,
-    NONE,
-};
-
-enum TERMINAL_DRIVER_MODE {
-    VGA,
-    VESA,
-    DR_NONE,
-};
 
 struct terminal {
-    uint32_t term_id;
+// connected line discipline
+struct line_discipline *ld;
 
-    struct process *out;
+// input character buffer
+char *in;
 
-    enum TERMINAL_MODE mode;
-    enum TERMINAL_DIS_MODE dmode;
-    enum TERMINAL_DRIVER_MODE drmode;
+// output character buffer
+char *out;
+
+// optional extra terminal state
+void *term_state;
+
+// display driver
+struct display *dis;
+
+// input driver - not implemented
+
+// initialize the terminal
+int (*term_init)(struct terminal *t, struct line_discipline *ld, struct display *dd);
+
+// write to the screen
+int (*term_write)(struct terminal *t, char c);
+int (*term_writes)(struct terminal *t, char *s);    // doesn't have to be implemented
+int (*term_writebuf)(struct terminal *t);
+
+// input into terminal from keyboard driver
+int (*term_in)(struct terminal *t, char c);
+int (*term_ins)(struct terminal *t, char *s);   // doesn't have to be implemented
+
+// output from terminal to line discipline
+char (*term_outc)(struct terminal *t);
+char *(*term_outs)(struct terminal *t);
 
 };
 
 /* typedefs */
-typedef enum TERMINAL_MODE tmode_t;
-typedef enum TERMINAL_DIS_MODE tdmode_t;
-typedef enum TERMINAL_DRIVER_MODE tdrmode_t;
+typedef struct terminal term_t;
 
 /* functions */
-
-/* setter functions */
-void terminal_init(struct terminal *t);
-int terminal_out(struct terminal *t, struct process *out);
-int terminal_mode(struct terminal *t, tmode_t mode);
-int terminal_dmode(struct terminal *t, tdmode_t mode);
-int terminal_drmode(struct terminal *t, tdrmode_t mode);
-int terminal_active(struct terminal *t);
-
-/* driver functions */
-int terminal_put(uint8_t c);
-int terminal_scur();
-int terminal_hcur();
-int terminal_p(char *str);
-int terminal_pln(char *str);
-int terminal_pback();
-int terminal_fgc(uint32_t col);
-int terminal_bgc(uint32_t col);
+term_t *get_default_terminal();
 
 #endif

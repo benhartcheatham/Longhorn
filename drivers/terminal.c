@@ -1,12 +1,8 @@
-/* Terminal is only meant for input from the keyboard currently,
- * this should be expanded to be any hardware device later on.
- * There can also only be one terminal on the machine at once,
- * this should probably be changed. */
-
-#include "terminal.h"
-#include "vesa.h"
-#include "vga.h"
 #include <stdio.h>
+#include <stdbool.h>
+#include <kerrors.h>
+#include "terminal.h"
+#include "../kernel/kalloc.h"
 
 static const char kc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
                           '7', '8', '9', '0', '-', '=', '?', '?', 
@@ -22,209 +18,53 @@ static const char kc_ascii_cap[] = { '?', '?', '1', '2', '3', '4', '5', '6',
         'H', 'J', 'K', 'L', ';', '\'', '`', '?', '\\', 'Z', 'X', 'C', 'V', 
         'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '};
 
-static uint32_t next_id = 0;
-static struct terminal *active_t = NULL;
-static int8_t capitalize = 0; 
+static struct terminal dterm;
 
-static int is_whitespace(uint8_t keycode);
+struct terminal_state {
+    bool capitalize;
+    bool alt_pressed;
+    bool ctrl_pressed;
+};
 
-void terminal_init(struct terminal *t) {
-    t->out = PROC_CUR();
-    t->mode = FILTERED;
-    t->drmode = VESA;
-    t->dmode = D_FILTERED;
+static int terminal_init(term_t *t, line_disc_t *ld, struct display *dd);
+static int terminal_write(term_t *t, char c);
+static int terminal_writes(term_t *t, char *s);
+static int terminal_writebuf(term_t *t);
+static int terminal_in(term_t *t, char c);
+static int terminal_ins(term_t *t, char *s);
+static int terminal_outc(term_t *t);
+static int terminal_outs(term_t *t);
+static bool is_whitespace(uint8_t keycode);
 
-    t->term_id = next_id;
-    next_id++;
-
-    if (active_t == NULL)
-        active_t = t;
-}
-
-int terminal_out(struct terminal *t, struct process *out) {
-    if (out == NULL || t == NULL)
-        return -1;
+static int terminal_init(term_t *t, line_disc_t *ld, struct display *dd) {
+    if (t == NULL || ld == NULL)
+        return TERM_INIT_FAIL;
     
-    t->out = out;
-    return 0;
-}
+    struct terminal_state *ts = kmalloc(sizeof(struct terminal_state));
+    t->in = kcalloc(TERMINAL_BUFF_SIZE, sizeof(TERMINAL_BUFF_TYPE));
+    t->out = kcalloc(TERMINAL_BUFF_SIZE, sizeof(TERMINAL_BUFF_TYPE));
 
-int terminal_mode(struct terminal *t, tmode_t mode) {
-    if (mode > sizeof(enum TERMINAL_MODE))
-        return -1;
-    
-    t->mode = mode;
-    return 0;
-}
+    if (ts == NULL || t->in == NULL || t->out == NULL)
+        return TERM_INIT_FAIL;
 
-int terminal_dmode(struct terminal *t, tdmode_t mode) {
-    if (t == NULL || mode > sizeof(enum TERMINAL_DIS_MODE))
-        return -1;
+    ts->capitalize = false;
+    ts->alt_pressed = false;
+    ts->ctrl_pressed = false;
 
-    if (t->drmode != VESA && t->drmode != VGA)
-        return -2;
-    
-    t->dmode = mode;
-    return 0;
-}
-
-int terminal_drmode(struct terminal *t, tdrmode_t mode) {
-    if (mode > sizeof(enum TERMINAL_DRIVER_MODE))
-        return -1;
-
-    t->drmode = mode;
-    return 0;
-}
-
-int terminal_active(struct terminal *t) {
-    if (t == NULL)
-        return -1;
-    
-    active_t = t;
-    return 0;
-}
-
-/* puts the char into the stdin of out and sends the char to the 
-   configured driver */
-int terminal_put(uint8_t c) {
-    if (active_t == NULL)
-        return -1;
-
-    if (active_t->mode == FILTERED) {
-        if (c == ENTER) {
-            put_std(GET_STDIN(active_t->out), '\n');
-
-        } else if (c == BACKSPACE) {
-            put_std(GET_STDIN(active_t->out), '\b');
-
-        } else if (c == SHIFT_PRESSED || c == SHIFT_RELEASED || c == CAPS_LOCK_PRESSED) {
-            capitalize = !capitalize;
-
-        } else if (c <= KC_MAX && c > 0) {
-            if (capitalize == 0)
-                put_std(GET_STDIN(active_t->out), kc_ascii[c]);
-            else
-                put_std(GET_STDIN(active_t->out), kc_ascii_cap[c]);
-        }
-    } else if (active_t->mode == RAW) {
-        put_std(GET_STDIN(active_t->out), (char) c);
-    }
-
-    if (active_t->dmode == D_RAW) {
-        if (active_t->drmode == VESA)
-            vesa_print_char((char) c);
-        else if (active_t->drmode == VGA)
-            vga_print_char((char) c);
-    
-    } else if (active_t->dmode == D_FILTERED) {
-        if (c == BACKSPACE) {
-            if (active_t->drmode == VESA)
-                vesa_print_backspace();
-            else if (active_t->drmode == VGA)
-                vga_print_backspace();
-        } else if (c == SHIFT_PRESSED || c == SHIFT_RELEASED || c == CAPS_LOCK_PRESSED) {
-            capitalize = !capitalize;
-
-        }
-        
-    } 
-    
-    if (active_t->dmode == D_FILTERED || active_t->dmode == D_CHAR_ONLY) { 
-        if (c <= KC_MAX && c > 0 && !is_whitespace(c)) {
-            if (active_t->drmode == VESA) {
-                if (capitalize == 1)
-                    vesa_print_char(kc_ascii_cap[c]);
-                else if (capitalize == 0)
-                    vesa_print_char(kc_ascii[c]);
-            } else if (active_t->drmode == VGA) {
-                if (capitalize == 1)
-                    vga_print_char(kc_ascii_cap[c]);
-                else if (capitalize == 0)
-                    vga_print_char(kc_ascii[c]);
-            }
-
-        }
-    } else {
-        return -1;
-    }
-    
-    return 0;
-}
-
-int terminal_scur() {
-    if (active_t->drmode != VESA)
-        return -1;
-    
-    vesa_show_cursor();
-    return 0;
-}
-
-int terminal_hcur() {
-    if (active_t->drmode != VESA)
-        return -1;
-    
-    vesa_hide_cursor();
-    return 0;
-}
-
-int terminal_p(char *str) {
-    if (active_t->drmode == VESA)
-        vesa_print(str);
-    else if (active_t->drmode == VGA)
-        vga_print(str);
-    else 
-        return -1;
-    
-    return 0;
-}
-
-int terminal_pln(char *str) {
-    if (active_t->drmode == VESA)
-        vesa_println(str);
-    else if (active_t->drmode == VGA)
-        vga_println(str);
-    else 
-        return -1;
-    
-    return 0;
-}
-
-int terminal_pback() {
-    if (active_t->drmode == VESA)
-        vesa_print_backspace();
-    else if (active_t->drmode == VGA)
-        vga_print_backspace();
+    if (dd == NULL)
+        t->dis = get_default_dis_driver();
     else
-        return -1;
+        t->dis = dd;
     
-    return 0;
+    t->ld = ld;
+    return TERM_SUCC;
 }
 
-int terminal_fgc(uint32_t col) {
-    if (active_t->drmode == VESA)
-        vesa_set_fg_color(col);
-    else if (active_t->drmode == VGA)
-        vga_set_fg_color((enum vga_color) col);
-    else
-        return -1;
 
-    return 0;
-}
 
-int terminal_bgc(uint32_t col) {
-    if (active_t->drmode == VESA)
-        vesa_set_bg_color(col);
-    else if (active_t->drmode == VGA)
-        vga_set_bg_color((enum vga_color) col);
-    else
-        return -1;
-
-    return 0;
-}
-
-static int is_whitespace(uint8_t keycode) {
-    if (keycode == BACKSPACE || keycode == SHIFT_PRESSED || 
-            keycode == SHIFT_RELEASED || keycode == CAPS_LOCK_PRESSED || keycode == ENTER)
-        return 1;
-    return 0;
+static bool is_whitespace(uint8_t keycode) {
+    if (keycode == KC_LALT || keycode == KC_LSHIFT || 
+            keycode == KC_RELEASED || keycode == KC_CAPSLOCK || keycode == KC_ENTER)
+        return true;
+    return false;
 }

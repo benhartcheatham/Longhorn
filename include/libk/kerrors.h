@@ -47,4 +47,11 @@
 #define LOCK_REL_FAIL 3
 #define LOCK_REL_SUCC 0
 
+/* terminal errors */
+#define TERM_SUCC 0
+#define TERM_INIT_FAIL 1
+#define TERM_WRITE_FAIL 2
+#define TERM_OUT_FAIL 3
+#define TERM_IN_FAIL 4
+
 #endif

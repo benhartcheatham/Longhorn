@@ -4,14 +4,17 @@
 /* includes */
 
 /* defines */
-#define TERMINAL_LIMIT 256
-#define KC_MAX 57
-#define ENTER 0x1C
-#define BACKSPACE 0x0E
-#define SHIFT_PRESSED 0x2A
-#define SHIFT_RELEASED 0xAA
-#define CAPS_LOCK_PRESSED 0x3A
-#define SPACE 0x39
+#define SC_TAB 0x0D
+#define SC_LALT 0x11
+#define SC_LSHIFT 0x12
+#define SC_LCTRL 0x14
+#define SC_CAPSLOCK 0x58
+#define SC_RSHIFT 0x59
+#define SC_ENTER 0x5A
+#define SC_BACKSPACE 0x66
+#define SC_ESCAPE 0x76
+#define SC_NUMLOCK 0x77
+#define SC_RELEASED 0xF0
 
 /* structs */
 
