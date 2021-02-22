@@ -54,4 +54,10 @@
 #define TERM_OUT_FAIL 3
 #define TERM_IN_FAIL 4
 
+/* line discipline errors */
+#define LINE_SUCC 0
+#define LINE_INIT_FAIL 1
+#define LINE_IN_FAIL 2
+#define LINE_OUT_FAIL 3
+
 #endif

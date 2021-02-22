@@ -71,6 +71,8 @@ typedef struct terminal term_t;
 typedef enum terminal_modes term_mode_t;
 
 /* functions */
+int terminal_init(term_t *t, line_disc_t *ld, struct display *dd, term_mode_t m);
 term_t *get_default_terminal();
+void set_default_terminal(term_t *t);
 
 #endif

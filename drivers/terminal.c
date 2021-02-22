@@ -20,7 +20,7 @@ static const char kc_ascii_cap[] = { '?', '?', '1', '2', '3', '4', '5', '6',
         'H', 'J', 'K', 'L', ';', '\'', '`', '?', '\\', 'Z', 'X', 'C', 'V', 
         'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '};
 
-static struct terminal dterm;
+static struct terminal *dterm;
 
 struct terminal_state {
     uint32_t index;
@@ -31,7 +31,6 @@ struct terminal_state {
     bool ctrl_pressed;
 };
 
-static int terminal_init(term_t *t, line_disc_t *ld, struct display *dd);
 static int terminal_write(term_t *t, char c);
 static int terminal_writes(term_t *t, char *s);
 static int terminal_writebuf(term_t *t);
@@ -43,20 +42,20 @@ static char terminal_getchar(term_t *t, char c);
 static inline struct terminal_state *get_term_state(term_t *t);
 static char eval_kc(term_t *t, char keycode);
 
-static int terminal_init(term_t *t, line_disc_t *ld, struct display *dd) {
+int terminal_init(term_t *t, line_disc_t *ld, struct display *dd, term_mode_t m) {
     if (t == NULL || ld == NULL)
-        return TERM_INIT_FAIL;
+        return -TERM_INIT_FAIL;
     
     struct terminal_state *ts = kmalloc(sizeof(struct terminal_state));
     t->in = kcalloc(TERMINAL_BUFF_SIZE + 1, sizeof(TERMINAL_BUFF_TYPE));
 
     if (ts == NULL || t->in == NULL)
-        return TERM_INIT_FAIL;
+        return -TERM_INIT_FAIL;
 
     ts->capitalize = false;
     ts->alt_pressed = false;
     ts->ctrl_pressed = false;
-    ts->mode = COOKED;
+    ts->mode = m;
 
     if (dd == NULL)
         t->dis = get_default_dis_driver();
@@ -94,10 +93,10 @@ static int terminal_writebuf(term_t *t) {
 static int terminal_in(term_t *t, char c) {
     struct terminal_state *ts = get_term_state(t);
     if (ts == NULL)
-        return TERM_IN_FAIL;
+        return -TERM_IN_FAIL;
     
     if (ts->index > TERMINAL_BUFF_SIZE || ts->index < 0)
-        return TERM_IN_FAIL;
+        return -TERM_IN_FAIL;
     
     if (ts->mode == RAW)
         t->in[ts->index++] = c;
@@ -174,6 +173,14 @@ static char terminal_getchar(term_t *t, char c) {
 
 static inline struct terminal_state *get_term_state(term_t *t) {
     return (struct terminal_state *) t->term_state;
+}
+
+term_t *get_default_terminal() {
+    return dterm;
+}
+
+void set_default_terminal(term_t *t) {
+    dterm = t;
 }
 
 static char eval_kc(term_t *t, char keycode) {
