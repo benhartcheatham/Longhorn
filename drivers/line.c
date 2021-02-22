@@ -1,3 +1,6 @@
+/* THIS LINE DISCIPLINE IS MEANT FOR A COOKED MODE TERMINAL,
+   IT DOES NO ACTUAL LINE FILTERING */
+
 #include <kerrors.h>
 #include <mem.h>
 #include <string.h>
