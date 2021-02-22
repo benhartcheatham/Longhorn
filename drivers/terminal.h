@@ -8,8 +8,10 @@
 #include "line.h"
 
 /* defines */
-#define TERMINAL_BUFF_SIZE 1024
+#define TERMINAL_BUFF_SIZE 1023
 #define TERMINAL_BUFF_TYPE char
+#define TAB_WIDTH 4
+
 #define KC_MAX 57
 #define KC_TAB SC_TAB
 #define KC_LALT SC_LALT
@@ -23,6 +25,10 @@
 #define KC_NUMLOCK SC_NUMLOCK
 #define KC_RELEASED KC_MAX
 
+#define ASCII_BACKSPACE 8
+#define ASCII_HTAB 9
+#define ASCII_NEWLINE 10
+#define ASCII_CRETURN 15
 
 /* structs */
 
@@ -32,9 +38,6 @@ struct line_discipline *ld;
 
 // input character buffer
 char *in;
-
-// output character buffer
-char *out;
 
 // optional extra terminal state
 void *term_state;
@@ -57,7 +60,6 @@ int (*term_in)(struct terminal *t, char c);
 int (*term_ins)(struct terminal *t, char *s);   // doesn't have to be implemented
 
 // output from terminal to line discipline
-char (*term_outc)(struct terminal *t);
 char *(*term_outs)(struct terminal *t);
 
 };

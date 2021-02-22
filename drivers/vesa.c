@@ -104,10 +104,10 @@ void vesa_print_char(char c) {
         scroll();
         return;
     } else if (c == '\t') {
-        if (cursor_x <= num_cols - 5)
-            vesa_set_cursor(cursor_x + 5, cursor_y);
+        if (cursor_x <= num_cols - 4)
+            vesa_set_cursor(cursor_x + 4, cursor_y);
         else
-            vesa_set_cursor(cursor_x + (num_cols - 5), cursor_y);
+            vesa_set_cursor(cursor_x + (num_cols - 4), cursor_y);
         return;
     }
 
