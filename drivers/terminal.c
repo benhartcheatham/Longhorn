@@ -24,6 +24,7 @@ static struct terminal dterm;
 
 struct terminal_state {
     uint32_t index;
+    term_mode_t mode;
 
     bool capitalize;
     bool alt_pressed;
@@ -38,6 +39,7 @@ static int terminal_in(term_t *t, char c);
 static int terminal_ins(term_t *t, char *s);
 static int terminal_outs(term_t *t);
 static int terminal_flush(term_t *t, uint32_t from);
+static char terminal_getchar(term_t *t, char c);
 static inline struct terminal_state *get_term_state(term_t *t);
 static char eval_kc(term_t *t, char keycode);
 
@@ -54,6 +56,7 @@ static int terminal_init(term_t *t, line_disc_t *ld, struct display *dd) {
     ts->capitalize = false;
     ts->alt_pressed = false;
     ts->ctrl_pressed = false;
+    ts->mode = COOKED;
 
     if (dd == NULL)
         t->dis = get_default_dis_driver();
@@ -61,6 +64,15 @@ static int terminal_init(term_t *t, line_disc_t *ld, struct display *dd) {
         t->dis = dd;
     
     t->ld = ld;
+
+    t->term_init = NULL;
+    t->term_write = terminal_write;
+    t->term_writes = terminal_writes;
+    t->term_writebuf = terminal_writebuf;
+    t->term_in = terminal_in;
+    t->term_ins = terminal_ins;
+    t->term_outs = terminal_outs;
+
     return TERM_SUCC;
 }
 
@@ -87,11 +99,18 @@ static int terminal_in(term_t *t, char c) {
     if (ts->index > TERMINAL_BUFF_SIZE || ts->index < 0)
         return TERM_IN_FAIL;
     
-    if (eval_kc(t, c) == 0)
+    if (ts->mode == RAW)
+        t->in[ts->index++] = c;
+    
+    if (eval_kc(t, c) == 0) {
         return TERM_SUCC;
+    }
     
     if (c == KC_BACKSPACE) {
-        t->in[ts->index--] = 0;
+        if (ts->mode == COOKED)
+            t->in[ts->index--] = 0;
+        
+        t->dis->dis_backspace();
         return TERM_SUCC;
     }
 
@@ -100,8 +119,11 @@ static int terminal_in(term_t *t, char c) {
         return TERM_SUCC;
     }
 
-    t->in[ts->index++] = c;
-    t->term_write(t, c);
+    char ascii = terminal_getchar(t, c);
+
+    if (ts->mode == COOKED) // don't want to double write characters
+        t->in[ts->index++] = ascii;
+    t->term_write(t, ascii);
     return TERM_SUCC;
 }
 
@@ -139,6 +161,17 @@ static int terminal_flush(term_t *t, uint32_t from) {
     return TERM_SUCC;
 }
 
+static char terminal_getchar(term_t *t, char c) {
+    struct terminal_state *ts = get_term_state(t);
+    if (ts == NULL)
+        return 0;
+    
+    if (ts->capitalize == true) 
+        return kc_ascii_cap[c];
+    else
+        return kc_ascii[c];
+}
+
 static inline struct terminal_state *get_term_state(term_t *t) {
     return (struct terminal_state *) t->term_state;
 }
@@ -160,12 +193,6 @@ static char eval_kc(term_t *t, char keycode) {
             return 0;
         case KC_LCTRL:
             ts->ctrl_pressed = !ts->ctrl_pressed;
-            return 0;
-        case KC_BACKSPACE:
-            if (ts->index > 0) {
-                t->dis->dis_backspace();
-                return KC_BACKSPACE;
-            }
             return 0;
         case KC_ESCAPE:
         case KC_NUMLOCK:

@@ -32,6 +32,8 @@
 
 /* structs */
 
+enum terminal_modes {COOKED, RAW};
+
 struct terminal {
 // connected line discipline
 struct line_discipline *ld;
@@ -66,6 +68,7 @@ char *(*term_outs)(struct terminal *t);
 
 /* typedefs */
 typedef struct terminal term_t;
+typedef enum terminal_modes term_mode_t;
 
 /* functions */
 term_t *get_default_terminal();
