@@ -62,7 +62,7 @@ int (*term_in)(struct terminal *t, char c);
 int (*term_ins)(struct terminal *t, char *s);   // doesn't have to be implemented
 
 // output from terminal to line discipline
-char *(*term_outs)(struct terminal *t);
+int (*term_outs)(struct terminal *t);
 
 };
 
@@ -71,7 +71,7 @@ typedef struct terminal term_t;
 typedef enum terminal_modes term_mode_t;
 
 /* functions */
-int terminal_init(term_t *t, line_disc_t *ld, struct display *dd, term_mode_t m);
+int terminal_init(term_t *t, struct line_discipline *ld, struct display *dd, term_mode_t m);
 term_t *get_default_terminal();
 void set_default_terminal(term_t *t);
 

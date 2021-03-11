@@ -38,7 +38,7 @@ static int terminal_in(term_t *t, char c);
 static int terminal_ins(term_t *t, char *s);
 static int terminal_outs(term_t *t);
 static int terminal_flush(term_t *t, uint32_t from);
-static char terminal_getchar(term_t *t, char c);
+static char terminal_getchar(term_t *t, unsigned char c);
 static inline struct terminal_state *get_term_state(term_t *t);
 static char eval_kc(term_t *t, char keycode);
 
@@ -72,6 +72,9 @@ int terminal_init(term_t *t, line_disc_t *ld, struct display *dd, term_mode_t m)
     t->term_ins = terminal_ins;
     t->term_outs = terminal_outs;
 
+    if (dterm == NULL)
+        dterm = t;
+    
     return TERM_SUCC;
 }
 
@@ -95,7 +98,7 @@ static int terminal_in(term_t *t, char c) {
     if (ts == NULL)
         return -TERM_IN_FAIL;
     
-    if (ts->index > TERMINAL_BUFF_SIZE || ts->index < 0)
+    if (ts->index > TERMINAL_BUFF_SIZE)
         return -TERM_IN_FAIL;
     
     if (ts->mode == RAW)
@@ -160,7 +163,7 @@ static int terminal_flush(term_t *t, uint32_t from) {
     return TERM_SUCC;
 }
 
-static char terminal_getchar(term_t *t, char c) {
+static char terminal_getchar(term_t *t, unsigned char c) {
     struct terminal_state *ts = get_term_state(t);
     if (ts == NULL)
         return 0;

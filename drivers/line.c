@@ -19,7 +19,7 @@ static int line_recv(line_disc_t *ld, char c);
 static int line_recs(line_disc_t *ld, char *s);
 static int line_recst(line_disc_t *ld, std_stream *s);
 
-static int line_init(line_disc_t *ld, term_t *t, std_stream *in, std_stream *out) {
+int line_init(line_disc_t *ld, term_t *t, std_stream *in, std_stream *out) {
     if (ld == NULL || t == NULL)
         return -LINE_INIT_FAIL;
     
@@ -46,10 +46,13 @@ static int line_init(line_disc_t *ld, term_t *t, std_stream *in, std_stream *out
     ld->line_recs = line_recs;
     ld->line_recst = line_recst;
 
+    if (dline == NULL)
+        dline = ld;
+    
     return LINE_SUCC;
 }
 
-static int line_in(line_disc_t *ld, char c) {
+static int line_in(line_disc_t *ld __attribute__ ((unused)), char c __attribute__ ((unused))) {
     return -LINE_IN_FAIL;
 }
 
@@ -58,7 +61,7 @@ static int line_ins(line_disc_t *ld, char *s) {
     return LINE_SUCC;
 }
 
-static int line_out(line_disc_t *ld, char c) {
+static int line_out(line_disc_t *ld __attribute__ ((unused)), char c __attribute__ ((unused))) {
     return -LINE_OUT_FAIL;
 }
 
@@ -88,7 +91,7 @@ static int line_sendst(line_disc_t *ld, std_stream *s) {
     return LINE_SUCC;
 }
 
-static int line_recv(line_disc_t *ld, char c) {
+static int line_recv(line_disc_t *ld __attribute__ ((unused)), char c __attribute__ ((unused))) {
     return -LINE_IN_FAIL;
 }
 
