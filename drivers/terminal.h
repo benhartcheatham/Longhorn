@@ -3,6 +3,7 @@
 
 /* includes */
 #include <stdint.h>
+#include <stdbool.h>
 #include "keyboard.h"
 #include "display.h"
 #include "line.h"
@@ -30,19 +31,34 @@
 #define ASCII_NEWLINE 10
 #define ASCII_CRETURN 15
 
-/* structs */
 
-enum terminal_modes {COOKED, RAW};
+const char kc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
+                          '7', '8', '9', '0', '-', '=', '?', '?', 
+                          'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 
+                          'o', 'p', '[', ']', '\n', '?', 'a', 's', 
+                          'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', 
+                          '\'', '`', '?', '\\', 'z', 'x', 'c', 'v', 
+                          'b', 'n', 'm', ',', '.', '/', '?', '?', '?', ' '};
+
+const char kc_ascii_cap[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
+    '7', '8', '9', '0', '-', '=', '?', '?', 'Q', 'W', 'E', 'R', 'T', 'Y', 
+        'U', 'I', 'O', 'P', '[', ']', '\n', '?', 'A', 'S', 'D', 'F', 'G', 
+        'H', 'J', 'K', 'L', ';', '\'', '`', '?', '\\', 'Z', 'X', 'C', 'V', 
+        'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '};
+
+/* structs */
+struct terminal_state {
+    bool capitalize;
+    bool alt_pressed;
+    bool ctrl_pressed;
+};
 
 struct terminal {
 // connected line discipline
 struct line_discipline *ld;
 
-// input character buffer
-char *in;
-
-// optional extra terminal state
-void *term_state;
+// state
+struct terminal_state ts;
 
 // display driver
 struct display *dis;
@@ -55,24 +71,23 @@ int (*term_init)(struct terminal *t, struct line_discipline *ld, struct display 
 // write to the screen
 int (*term_write)(struct terminal *t, char c);
 int (*term_writes)(struct terminal *t, char *s);    // doesn't have to be implemented
-int (*term_writebuf)(struct terminal *t);
 
 // input into terminal from keyboard driver
 int (*term_in)(struct terminal *t, char c);
 int (*term_ins)(struct terminal *t, char *s);   // doesn't have to be implemented
 
-// output from terminal to line discipline
-int (*term_outs)(struct terminal *t);
-
 };
 
 /* typedefs */
 typedef struct terminal term_t;
-typedef enum terminal_modes term_mode_t;
 
 /* functions */
-int terminal_init(term_t *t, struct line_discipline *ld, struct display *dd, term_mode_t m);
+int terminal_init(term_t *t, struct line_discipline *ld, struct display *dd);
 term_t *get_default_terminal();
 void set_default_terminal(term_t *t);
+
+inline struct terminal_state *get_term_state(term_t *t) {
+    return &t->ts;
+}
 
 #endif
