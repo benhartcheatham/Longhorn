@@ -26,7 +26,7 @@ struct mem_arena_g {
 
 /* static data */
 static bitmap_t free_map;
-static char *start_addr = (char *) (2*MB);
+static char *start_addr = (char *) (4*MB);
 static struct mem_arena_g malloc_g;
 static spin_lock_t malloc_lock;
 static spin_lock_t palloc_lock;
@@ -39,7 +39,7 @@ static size_t power_2(size_t n);
 
 /* initializes kmalloc and palloc */
 void init_alloc(multiboot_info_t *mb) {
-    size_t num_pages = (size_t) (((mb->mem_upper * 1024) - 2*MB) / PG_SIZE);
+    size_t num_pages = (size_t) (((mb->mem_upper * 1024) - 4*MB) / PG_SIZE);
     bitmap_init_s(&free_map, num_pages, start_addr);
     bitmap_set_range(&free_map, 0, num_pages / PG_SIZE + 1, true);
 

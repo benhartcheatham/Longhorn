@@ -59,5 +59,4 @@ typedef enum ld_modes ld_modes_t;
 
 int line_init(line_disc_t *ld, std_stream *out, ld_modes_t m);
 line_disc_t *get_default_line_disc();
-void set_default_line_disc(line_disc_t *ld);
 #endif

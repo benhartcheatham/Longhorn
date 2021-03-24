@@ -7,7 +7,21 @@
 #include "line.h"
 #include "../kernel/kalloc.h"
 
-static struct line_discipline *dline;
+static struct line_discipline dline;
+
+const char kc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
+                          '7', '8', '9', '0', '-', '=', '?', '?', 
+                          'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 
+                          'o', 'p', '[', ']', '\n', '?', 'a', 's', 
+                          'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', 
+                          '\'', '`', '?', '\\', 'z', 'x', 'c', 'v', 
+                          'b', 'n', 'm', ',', '.', '/', '?', '?', '?', ' '};
+
+const char kc_ascii_cap[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
+    '7', '8', '9', '0', '-', '=', '?', '?', 'Q', 'W', 'E', 'R', 'T', 'Y', 
+        'U', 'I', 'O', 'P', '[', ']', '\n', '?', 'A', 'S', 'D', 'F', 'G', 
+        'H', 'J', 'K', 'L', ';', '\'', '`', '?', '\\', 'Z', 'X', 'C', 'V', 
+        'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '};
 
 static int line_in(line_disc_t *ld, char c);
 static size_t line_ins(line_disc_t *ld, char *s);
@@ -26,13 +40,14 @@ int line_init(line_disc_t *ld, std_stream *out, ld_modes_t m) {
     if (ld == NULL)
         return -LINE_INIT_FAIL;
     
-    ld->line_buffer = kcalloc(TERMINAL_BUFF_SIZE + 1, sizeof(TERMINAL_BUFF_TYPE));
+    ld->line_buffer = kcalloc(LINE_BUFFER_SIZE, sizeof(LINE_BUFFER_SIZE));
     ld->buffer_i = 0;
     if (ld->line_buffer == NULL)
         return -LINE_INIT_FAIL;
     
-    ld->term = (term_t *) kcalloc(1, sizeof(term_t));   // setup terminal
+    ld->term = (term_t *) kmalloc(sizeof(term_t));   // setup terminal
     terminal_init(ld->term, ld, NULL);  // use default display driver
+
     if (out)
         ld->out = out;
     
@@ -47,9 +62,6 @@ int line_init(line_disc_t *ld, std_stream *out, ld_modes_t m) {
     ld->line_sendv = line_sendv;
     ld->line_recv = line_recv;
     ld->line_recs = line_recs;
-
-    if (dline == NULL)
-        dline = ld;
     
     return LINE_SUCC;
 }
@@ -90,6 +102,7 @@ static int line_in(line_disc_t *ld, char c) {
             if (ld->buffer_i > 0) {
                 ld->line_buffer[ld->buffer_i--] = '\0';
                 ld->term->dis->dis_backspace(); // should have a function in terminal for this
+                return LINE_SUCC;
             }
         }
 
@@ -216,11 +229,7 @@ static size_t line_recs(line_disc_t *ld, char *s) {
 }
 
 line_disc_t *get_default_line_disc() {
-    return dline;
-}
-
-void set_default_line_disc(line_disc_t *ld) {
-    dline = ld;
+    return &dline;
 }
 
 static char eval_kc(term_t *t, char keycode) {

@@ -6,7 +6,7 @@
 #include "terminal.h"
 #include "../kernel/kalloc.h"
 
-static struct terminal *dterm;
+static term_t *dterm = NULL;
 
 
 static int terminal_write(term_t *t, char c);

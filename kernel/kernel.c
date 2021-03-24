@@ -5,6 +5,7 @@
 
 /* Drivers */
 #include "../drivers/vesa.h"
+#include "../drivers/line.h"
 
 /* libc */
 #include <stdio.h>
@@ -33,11 +34,11 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_idt();
     init_alloc(mbi);
     init_processes();
-    if (mbi->vbe_mode != 3)  {
-        init_vesa(mbi);
-        shell_init();
-    }
 
+    init_display((void *) mbi);
+
+    shell_init();
+    line_init(get_default_line_disc(), GET_STDIN(PROC_CUR()), COOKED);
     #ifdef TESTS
         init_testing(true);
         RUN_ALL_TESTS();
@@ -47,8 +48,8 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
         print_logo(HALF_LOGO);
         printf("\nWelcome to Longhorn!\nVersion no.: %s.%s.%s\nType <help> for a list of commands.\n> ", major_version_no, minor_version_no, build_version_no);
     #endif
-    enable_interrupts();
 
+    enable_interrupts();
     //shouldn't get to this point again
     
     // while (1) {

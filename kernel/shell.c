@@ -5,6 +5,7 @@
 #include "proc.h"
 #include <stdio.h>
 #include <string.h>
+#include <mem.h>
 #include "../drivers/terminal.h"
 #include "../drivers/bmp.h"
 
@@ -28,16 +29,16 @@ uint8_t *header_addr = (uint8_t *) &_binary_assets_longhorn_logo_bmp_start;
 bmp_file_header_t header;
 
 /* key buffer info */
-static char key_buffer[TERMINAL_LIMIT + 1];
-static uint32_t key_buf_i = 0;
+static char key_buffer[LINE_BUFFER_SIZE];
+//static uint32_t key_buf_i = 0;
 static bool cursor_on = false;
 
 /* static functions */
 static void shell_waiter(void *aux);
 static void read_stdin(struct process *active);
-static void append_to_buffer(char c);
-static void shrink_buffer();
-static void flush_buffer();
+//static void append_to_buffer(char c);
+//static void shrink_buffer();
+//static void flush_buffer();
 
 /* command functions */
 static void help(void *line);
@@ -51,7 +52,7 @@ shell_command *command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, 
 void shell_init() {
     shell_pid = proc_create("shell", shell_waiter, NULL);
     proc_set_active(shell_pid);
-    flush_buffer();
+    //flush_buffer();
 
     read_bmp_header(header_addr, &header);
     bmp_change_color(&header, 0xFFFFFF, 0x0);
@@ -67,33 +68,23 @@ void print_logo() {
 
 /* function for the shell process to use, constantly scans input */
 static void shell_waiter(void *aux __attribute__ ((unused))) {
-    struct terminal shell_term;
-    terminal_init(&shell_term);
+    uint32_t last_cursor_tick = 0;
 
-    struct thread *term_thread = THREAD_CUR();
-    uint32_t last_cursor_tick = -1u;
-
-    struct process *active = proc_get_active();
-    
-    terminal_out(&shell_term, active);
-    terminal_dmode(&shell_term, D_CHAR_ONLY);
-    terminal_active(&shell_term);
-    
     while (1) {
-        terminal_active(&shell_term);
-
-        read_stdin(active);
-        if (term_thread->ticks % 48 == 0 && term_thread->ticks != last_cursor_tick) {
+        if (THREAD_CUR()->ticks % 48 == 0 && THREAD_CUR()->ticks != last_cursor_tick) {
             if (cursor_on) {
-                terminal_hcur();
+                get_default_dis_driver()->dis_hcur();
                 cursor_on = false;
             } else {
-                terminal_scur();
+                get_default_dis_driver()->dis_scur();
                 cursor_on = true;
             }
 
-            last_cursor_tick = term_thread->ticks;
+            last_cursor_tick = THREAD_CUR()->ticks;
         }
+
+        if (proc_get_active()->pid == shell_pid)
+            read_stdin(proc_get_active());
 
     }
 
@@ -102,73 +93,62 @@ static void shell_waiter(void *aux __attribute__ ((unused))) {
 /* reads the active process' stdin stream for input from the user
    input is executed as a command, if available, when the ENTER key is pressed */ 
 static void read_stdin(struct process *active) {
-    
+    line_disc_t *ld = get_default_line_disc();
     std_stream *stdin = GET_STDIN(active);
-    
+    display_t *dis = get_default_dis_driver();
+
     char c = get_std(stdin);
-    
+    //printf("hello %d\n", THREAD_CUR()->ticks);
     while (c != -1) {
+        printf("fuck\n");
         if (c == '\n') {
-            terminal_hcur();
-            
+            dis->dis_hcur();
+            ld->line_send(ld);
+            memcpy(key_buffer, stdin->stream, STD_STREAM_SIZE);
+
             int i;
             for (i = 0; i < NUM_COMMANDS; i++)
                 if (strcmp(trim(key_buffer), commands[i]) == 0) {
-                    /* this should make a new process/thread, but I need semaphores
-                       to ensure the prompt shows up in the right place after it's
-                       done */
-                    terminal_p("\n");
+                    /* this should make a new process/thread, but I need to be able
+                    *  to wait on child processes  */
 
                     command_functions[i](NULL);
                     break;
                 }
 
-            flush_buffer();
+            flush_std(stdin);
+            ld->line_flush(ld);
             printf("\n> ");
-        } else if (c == '\b') {
-            if (key_buf_i > 0) {
-                //get rid of character the backspace is upposed to get rid of
-                terminal_hcur();
-                
-                get_std(stdin);
-                shrink_buffer(1);
-                terminal_pback();
-            }
-        } else {
-            append_to_buffer(c);
-
-            terminal_scur();
-            cursor_on = true;
         }
         
         c = get_std(stdin);
     }
 }
 
-/* adds char c to the key buffer */
-static void append_to_buffer(char c) {
-    if (key_buf_i < TERMINAL_LIMIT)
-        key_buffer[key_buf_i++] = c;
-}
+// /* adds char c to the key buffer */
+// static void append_to_buffer(char c) {
+//     if (key_buf_i < LINE_BUFFER_SIZE)
+//         key_buffer[key_buf_i++] = c;
+// }
 
-/* deletes the last size characters from the buffer
-   size must be less than or equal to the current index of the buffer and greater
-   than 0 */
-static void shrink_buffer() {
-    if (key_buf_i > 0)
-        key_buffer[--key_buf_i] = '\0';
-    else
-        key_buffer[key_buf_i] = '\0';
-}
+// /* deletes the last size characters from the buffer
+//    size must be less than or equal to the current index of the buffer and greater
+//    than 0 */
+// static void shrink_buffer() {
+//     if (key_buf_i > 0)
+//         key_buffer[--key_buf_i] = '\0';
+//     else
+//         key_buffer[key_buf_i] = '\0';
+// }
 
-/* flushes/clears the key buffer */
-static void flush_buffer() {
-    key_buf_i = 0;
+// /* flushes/clears the key buffer */
+// static void flush_buffer() {
+//     key_buf_i = 0;
 
-    int i;
-    for (i = 0; i < TERMINAL_LIMIT + 1; i++)
-        key_buffer[i] = 0;
-}
+//     int i;
+//     for (i = 0; i < LINE_BUFFER_SIZE + 1; i++)
+//         key_buffer[i] = 0;
+// }
 
 /* prints a list of available commands */
 static void help(void *line __attribute__ ((unused))) {
@@ -231,10 +211,10 @@ static void grub(void *line __attribute__ ((unused))) {
 static void moon(void *line __attribute__ ((unused))) {
     printf("did you mean: ");
 
-    terminal_fgc(0xff0000);
+    get_default_dis_driver()->dis_setcol(0xff0000, 0x0);
     
     printf("\"GAMER GOD MOONMOON\"?\n");
     
-    terminal_fgc(0xffffff);
+    get_default_dis_driver()->dis_setcol(0xffffff, 0x0);
 
 }

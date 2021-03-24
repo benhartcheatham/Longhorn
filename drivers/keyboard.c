@@ -13,7 +13,7 @@ static bool rel_flag;
    writes characters pressed to the screen */
 static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) {
     uint8_t scancode = inb(0x60);
-    
+    out_term = get_default_terminal();
     if (scancode != SC_RELEASED && !rel_flag)
         out_term->term_in(out_term, scancode);
     else if (rel_flag) {
@@ -27,8 +27,6 @@ static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) 
 
 /* initializes keyboard interrupt handler and key buffer */
 void init_keyboard() {
-    out_term = get_default_terminal();
-
     rel_buff[0] = KC_RELEASED;
     rel_buff[2] = 0;
     rel_flag = false;

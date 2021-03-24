@@ -151,20 +151,20 @@ void vesa_print_backspace() {
     scroll();
 }
 
-void vesa_print(char *string) {
+void vesa_print(const char *string) {
     int i;
     for (i = 0; string[i] != 0; i++)
         vesa_print_char(string[i]);
 }
 
-void vesa_println(char *string) {
+void vesa_println(const char *string) {
     int i;
     for (i = 0; string[i] != 0; i++)
         vesa_print_char(string[i]);
     vesa_print_char('\n');
 }
 
-void vesa_print_align(char *string, uint16_t alignment) {
+void vesa_print_align(const char *string, uint16_t alignment) {
     alignment = alignment % 8;
     vesa_set_cursor(alignment * (num_cols / 8), cursor_y);
     vesa_print(string);

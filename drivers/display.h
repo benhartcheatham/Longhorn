@@ -3,7 +3,6 @@
 
 /* includes */
 #include <stdint.h>
-#include "vesa.h"
 
 /* structs */
 struct display {
@@ -14,8 +13,8 @@ struct display {
     void (*dis_scur)(void);
     void (*dis_hcur)(void);
     void (*dis_putc)(char c);
-    void (*dis_puts)(char *s);
-    void (*dis_putat)(char c, uint32_t x, uint32_t y);  // doesn't have to be implemented
+    void (*dis_puts)(const char *s);
+    void (*dis_putats)(const char *s, uint32_t x, uint32_t y);  // doesn't have to be implemented
     void (*dis_backspace)(void);    // doesn't have to be implemented
     void (*dis_draw)(void *buf, uint32_t x, uint32_t y);    // doesn't have to be implemented
     void (*dis_clear)(void);
@@ -27,4 +26,6 @@ typedef struct display display_t;
 
 /* functions */
 display_t *get_default_dis_driver();
+void init_display(void *aux);
+
 #endif
