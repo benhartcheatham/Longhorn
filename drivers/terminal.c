@@ -56,13 +56,7 @@ static int terminal_writes(term_t *t, char *s) {
 
 /* outputs the given keycode to the line discipline */
 static int terminal_in(term_t *t, char c) {
-    struct terminal_state *ts = get_term_state(t);
-    if (ts == NULL)
-        return -TERM_IN_FAIL;
-
-    // don't let the line discipline see shift and such
     t->ld->line_in(t->ld, c);
-
     return TERM_SUCC;
 }
 

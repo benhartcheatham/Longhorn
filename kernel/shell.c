@@ -98,9 +98,7 @@ static void read_stdin(struct process *active) {
     display_t *dis = get_default_dis_driver();
 
     char c = get_std(stdin);
-    //printf("hello %d\n", THREAD_CUR()->ticks);
     while (c != -1) {
-        printf("fuck\n");
         if (c == '\n') {
             dis->dis_hcur();
             ld->line_send(ld);

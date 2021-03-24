@@ -91,11 +91,11 @@ static int line_in(line_disc_t *ld, char c) {
     if (ld->mode == RAW) {
         // put char into buffer and send to process
         c = kc_getchar(ld->term, c);
-        ld->line_buffer[ld->buffer_i++] = c;
+        ld->line_buffer[ld->buffer_i] = c;
         line_sendv(ld);
 
     } else if (ld->mode == COOKED) {
-        if (!kc_ret)
+        if (kc_ret == 0)
             return LINE_SUCC;
         
         if (c == KC_BACKSPACE) {
@@ -107,11 +107,12 @@ static int line_in(line_disc_t *ld, char c) {
         }
 
         c = kc_getchar(ld->term, c);
-        ld->line_buffer[ld->buffer_i++] = c;
+        ld->line_buffer[ld->buffer_i] = c;
         line_sendv(ld);
     }
 
     ld->term->term_write(ld->term, ld->line_buffer[ld->buffer_i]);
+    ld->buffer_i++;
     
     return LINE_SUCC;
 }
@@ -261,9 +262,7 @@ static char eval_kc(term_t *t, char keycode) {
 
 static char kc_getchar(term_t *t, unsigned char c) {
     struct terminal_state *ts = get_term_state(t);
-    if (ts == NULL)
-        return 0;
-    
+
     if (ts->capitalize == true) 
         return kc_ascii_cap[c];
     else
