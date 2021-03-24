@@ -111,9 +111,7 @@ static int line_in(line_disc_t *ld, char c) {
         line_sendv(ld);
     }
 
-    ld->term->term_write(ld->term, ld->line_buffer[ld->buffer_i]);
-    ld->buffer_i++;
-    
+    ld->term->term_write(ld->term, ld->line_buffer[ld->buffer_i++]);
     return LINE_SUCC;
 }
 
@@ -190,7 +188,6 @@ static size_t line_send(line_disc_t *ld) {
 static int line_sendv(line_disc_t *ld) {
     if (ld->buffer_i > 0) {
         put_std(ld->out, ld->line_buffer[ld->buffer_i]);
-        ld->line_buffer[ld->buffer_i--] = 0;
         return LINE_SUCC;
     }
 

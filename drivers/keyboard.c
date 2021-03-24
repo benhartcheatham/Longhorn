@@ -15,6 +15,8 @@ static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) 
     uint8_t scancode = inb(0x60);
     out_term = get_default_terminal();
 
+    // if this is below KC_MAX i get another event going through for
+    // release scancodes, need to fix
     if (scancode < KC_MAX)
         out_term->term_in(out_term, scancode);
     // else if (rel_flag) {
