@@ -15,14 +15,14 @@ static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) 
     uint8_t scancode = inb(0x60);
     out_term = get_default_terminal();
 
-    if (scancode != SC_RELEASED && !rel_flag)
+    if (scancode < KC_MAX)
         out_term->term_in(out_term, scancode);
-    else if (rel_flag) {
-        rel_buff[1] = scancode;
-        out_term->term_ins(out_term, rel_buff);
-        rel_flag = false;
-    } else
-        rel_flag = true;
+    // else if (rel_flag) {
+    //     rel_buff[1] = scancode;
+    //     out_term->term_ins(out_term, rel_buff);
+    //     rel_flag = false;
+    // } else
+    //     rel_flag = true;
 
 }
 
