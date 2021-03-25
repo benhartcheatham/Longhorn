@@ -109,20 +109,18 @@ static void read_stdin(struct process *active) {
             uint32_t argc = 0;
             char *temp = strtok(key_buffer, " ");
             args[0] = kmalloc(strlen(temp));
-            printf("%s len: %d\n", args[0], strlen(temp));
-            strcpy(args[0], temp);
+            memcpy(args[argc], temp, strlen(temp) + 1);
             argc++;
 
             while ((temp = strtok(NULL, " ")) != NULL && argc < MAX_NUM_ARGS) {
                 args[argc] = kmalloc(strlen(temp));
-                printf("%s len: %d\n", args[argc], strlen(temp));
-                strcpy(args[argc], temp);
+                memcpy(args[argc], temp, strlen(temp));
                 argc++;
             }
 
-            // for (int i = 0; i < argc; i++) {
-            //     printf("args[%d]: %s\n", i, args[i]);
-            // }
+            for (int i = 0; i < argc; i++) {
+                printf("args[%d]: %s\n", i, args[i]);
+            }
             int i;
             for (i = 0; i < NUM_COMMANDS; i++)
                 if (strcmp(trim(args[0]), commands[i]) == 0) {

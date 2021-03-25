@@ -41,7 +41,7 @@ char *int_to_hexstring(int n) {
 }
 
 /* STANDARD LIBRARY FUNCTIONS */
-
+static char *oldstr;
 
 void *memchr(const void *ptr, int c, size_t num) {
     size_t i;
@@ -70,17 +70,20 @@ char *strrchr(const char *str, int c) {
     return NULL;
 }
 
+// this function is ripped from GNU GLibC (version 2.22)
 size_t strspn(const char *str1, const char *str2) {
     size_t num = 0;
     size_t i;
     size_t j;
-    for (i = 0; i < strlen(str1); i++) {
-        for (j = 0; j < strlen(str2); j++)
+    for (i = 0; str1[i] != '\0'; i++) {
+        for (j = 0; str2[j] != '\0'; j++)
             if (str1[i] == str2[j])
-                num++;
+                break;
             
-        if (num == 0)
-            return 0;
+        if (str2[j] == 0)
+            return num;
+        else
+            ++num;
     }
 
     return num;
@@ -116,20 +119,47 @@ char *strstr(const char *str1, const char *str2) {
     return NULL;
 }
 
-//this may not work, it's a weird function
+// pretty much riped from GNU GlibC (lines 139-142 are different, but not in effect)
 char *strtok(char *str, const char *delimeters) {
-    str = NULL;
-    *str = "unimplemented";
-    return NULL;
+    char *token;
+
+    if (str == NULL)
+        str = oldstr;
+    
+    str += strspn(str, delimeters);
+    if (*str == 0) {
+        oldstr = str;
+        return NULL;
+    }
+
+    token = str;
+    str = strpbrk(token, delimeters);
+    if (str == NULL) {
+        // finish token string
+        char *c = token;
+        while (*c != '\0')
+            c++;
+        oldstr = c;
+    } else {
+        *str = 0;
+        oldstr = str + 1;
+    }
+
+    return token;
 }
 
+// this function is ripped from GNU GLibC (version 2.22)
 char *strpbrk(const char *str1, const char *str2) {
-    for (; *str1 != '\0'; str1++)
-        for (; *str2 != '\0'; str2++)
-            if (*str1 == *str2)
+    while (*str1 != '\0') {
+        const char *s2 = str2;
+
+        while (*s2 != '\0')
+            if (*s2++ == *str1)
                 return (char *) str1;
-    
-    return NULL;
+        ++str1;
+    }
+
+  return NULL;
 }
 
 /* reverses a null terminated string */
@@ -197,9 +227,7 @@ int strncmp(const char *s1, const char *s2, size_t num) {
 
 
 char *strcpy(char *dest, const char *src) {
-    int i;
-    for (i = 0; (dest[i] = src[i]) != '\0'; i++);
-    return dest;
+    return memcpy (dest, src, strlen(src) + 1);
 }
 
 /* copies num chars from source to destination
