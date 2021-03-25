@@ -32,7 +32,7 @@ bmp_file_header_t header;
 /* key buffer info */
 static char key_buffer[LINE_BUFFER_SIZE];
 static bool cursor_on = false;
-static char **args;
+static char *args[MAX_NUM_ARGS];
 
 /* static functions */
 static void shell_waiter(void *aux);
@@ -42,12 +42,12 @@ static void read_stdin(struct process *active);
 //static void flush_buffer();
 
 /* command functions */
-static void help(void *line, uint32_t argc);
-static void shutdown(void *line, uint32_t argc);
-static void ps(void *line, uint32_t argc);
-static void getbuf(void *line, uint32_t argc);
-static void grub(void *line, uint32_t argc);
-static void moon(void *line, uint32_t argc);
+static void help(char **line, uint32_t argc);
+static void shutdown(char **line, uint32_t argc);
+static void ps(char **line, uint32_t argc);
+static void getbuf(char **line, uint32_t argc);
+static void grub(char **line, uint32_t argc);
+static void moon(char **line, uint32_t argc);
 shell_command command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, grub, moon, getbuf};
 
 /* initializes a shell process */
@@ -58,8 +58,6 @@ void shell_init() {
     line_init(get_default_line_disc(), GET_STDIN(proc_get_active()), COOKED);
     read_bmp_header(header_addr, &header);
     bmp_change_color(&header, 0xFFFFFF, 0x0);
-
-    *args = kcalloc(1, MAX_NUM_ARGS);
 }
 
 /* prints the logo of the correpsonding size to the screen
@@ -109,23 +107,29 @@ static void read_stdin(struct process *active) {
             key_buffer[strlen(key_buffer) - 1] = 0; // remove the newline
 
             uint32_t argc = 0;
-            char *temp= strtok(key_buffer, " ");
-            char *arg;
-            while (temp != NULL && argc < MAX_NUM_ARGS) {
-                printf("arg%d: %s\n", argc, temp);
-                arg = kmalloc(strlen(temp));
-                args[argc] = arg;
+            char *temp = strtok(key_buffer, " ");
+            args[0] = kmalloc(strlen(temp));
+            printf("%s len: %d\n", args[0], strlen(temp));
+            strcpy(args[0], temp);
+            argc++;
+
+            while ((temp = strtok(NULL, " ")) != NULL && argc < MAX_NUM_ARGS) {
+                args[argc] = kmalloc(strlen(temp));
+                printf("%s len: %d\n", args[argc], strlen(temp));
+                strcpy(args[argc], temp);
                 argc++;
-                strtok(NULL, " ");
             }
 
+            // for (int i = 0; i < argc; i++) {
+            //     printf("args[%d]: %s\n", i, args[i]);
+            // }
             int i;
             for (i = 0; i < NUM_COMMANDS; i++)
-                if (strcmp(args[0], commands[i]) == 0) {
+                if (strcmp(trim(args[0]), commands[i]) == 0) {
                     /* this should make a new process/thread, but I need to be able
                     *  to wait on child processes  */
 
-                    command_functions[i]((void *) key_buffer, argc);
+                    command_functions[i](args, argc);
                     break;
                 }
 
@@ -133,9 +137,10 @@ static void read_stdin(struct process *active) {
             ld->line_flush(ld);
 
             for (uint32_t i = 0; i < argc; i++) {
+                printf("freeing: %x\n", args[i]);
                 kfree(args[i]);
             }
-
+            memset(args, 0, MAX_NUM_ARGS * sizeof(char *));
             printf("> ");
         }
         
@@ -169,7 +174,7 @@ static void read_stdin(struct process *active) {
 // }
 
 /* prints a list of available commands */
-static void help(void *line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+static void help(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
     printf("Available Commands:\n");
     int i;
     for (i = 0; i < NUM_HELP_COMMANDS; i++) {
@@ -177,13 +182,14 @@ static void help(void *line __attribute__ ((unused)), uint32_t argc __attribute_
     }
 }
 /* shuts down the machine gracefully (only works for qemu) */
-static void shutdown(void *line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+static void shutdown(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
     outw(0x604, 0x2000);
 }
 
-static void getbuf(void *line, uint32_t argc) {
-    char *buf = line;
-    printf("keybuffer: %s\n", buf);
+static void getbuf(char **line, uint32_t argc) {
+    for (uint32_t i = 0; i < argc; i++)
+        printf("%s ", line[i]);
+    printf("\n");
 }
 
 static char *p_state_to_string(enum thread_states s) {
@@ -204,7 +210,7 @@ static char *p_state_to_string(enum thread_states s) {
     }
 }
 
-static void ps(void *line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+static void ps(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
     const list_node *node = proc_peek_all_list();
     
     printf("name");
@@ -225,12 +231,12 @@ static void ps(void *line __attribute__ ((unused)), uint32_t argc __attribute__ 
 }
 
 /* novelty command */
-static void grub(void *line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+static void grub(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
     printf("GRUB is ok\n\n\n\ni guess...\n");
 }
 
 /* novelty command */
-static void moon(void *line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+static void moon(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
     printf("did you mean: ");
 
     get_default_dis_driver()->dis_setcol(0xff0000, 0x0);

@@ -118,50 +118,8 @@ char *strstr(const char *str1, const char *str2) {
 
 //this may not work, it's a weird function
 char *strtok(char *str, const char *delimeters) {
-    static char *tok = NULL;
-
-    if (tok == NULL && str != NULL)
-        tok = str;
-    
-    if (tok == NULL)
-        return NULL;
-    
-    //scan for the first non-delimeter character
-    bool delim = true;
-    int i;
-    int j;
-    for (i = 0; tok[i] != '\0' && delim; i++)
-        for (j = 0; delimeters[j] != '\0'; j++)
-            if (tok[i] == delimeters[j]) {
-                tok += i;
-                delim = false;
-            }
-
-    //find the end of the first token
-    for (i = 0; tok[i] != '\0'; i++)
-        for (j = 0; delimeters[j] != '\0'; j++)
-            if (tok[i] == delimeters[j]) {
-                //get pointer to the beginning of the token
-                char *p = tok;
-
-                //move to next token
-                tok += i + 1;
-
-                //set the end of this token to null-terminator
-                tok[i] = '\0';
-                return p;
-            }
-
-    //special logic for the last token
-    if (*tok != '\0') {
-        //get pointer to the beginning of the token
-        char *p = tok;
-
-        //set the end of this token to null-terminator
-        tok[i] = '\0';
-        return p;
-    }
-
+    str = NULL;
+    *str = "unimplemented";
     return NULL;
 }
 
@@ -240,10 +198,7 @@ int strncmp(const char *s1, const char *s2, size_t num) {
 
 char *strcpy(char *dest, const char *src) {
     int i;
-    for (i = 0; src[i] != '\0'; i++)
-        dest[i] = src[i];
-    
-    dest[i] = '\0';
+    for (i = 0; (dest[i] = src[i]) != '\0'; i++);
     return dest;
 }
 
