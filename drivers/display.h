@@ -8,6 +8,7 @@
 struct display {
     void (*dis_init)(void *aux);
     void (*dis_setcur)(uint32_t x, uint32_t y);
+    uint32_t (*dis_getcur_vis)(void);
     uint32_t (*dis_getx)(void);
     uint32_t (*dis_gety)(void);
     void (*dis_scur)(void);

@@ -17,7 +17,7 @@ static void keyboard_handler(struct register_frame *r __attribute__ ((unused))) 
 
     // if this is below KC_MAX i get another event going through for
     // release scancodes, need to fix
-    if (scancode < KC_MAX)
+    if (scancode < SC_RELEASED)
         out_term->term_in(out_term, scancode);
     // else if (rel_flag) {
     //     rel_buff[1] = scancode;

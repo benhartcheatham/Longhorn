@@ -116,7 +116,7 @@ char *strstr(const char *str1, const char *str2) {
     return NULL;
 }
 
-//this may not work, it's a weird functions
+//this may not work, it's a weird function
 char *strtok(char *str, const char *delimeters) {
     static char *tok = NULL;
 

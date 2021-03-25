@@ -2,6 +2,7 @@
 #define _SHELL_H
 
 /* includes */
+#include <stdint.h>
 
 /* defines */
 #define FULL_LOGO 2
@@ -9,7 +10,7 @@
 /* structs */
 
 /* typedefs */
-typedef void (shell_command) (void *line);
+typedef void (*shell_command) (void *line, uint32_t argc);
 
 /* functions */
 void shell_init();

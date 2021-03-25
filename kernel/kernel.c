@@ -38,7 +38,6 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_display((void *) mbi);
 
     shell_init();
-    line_init(get_default_line_disc(), GET_STDIN(PROC_CUR()), COOKED);
     #ifdef TESTS
         init_testing(true);
         RUN_ALL_TESTS();

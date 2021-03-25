@@ -31,8 +31,10 @@ static int line_sendv(line_disc_t *ld);
 static int line_recv(line_disc_t *ld, char c);
 static size_t line_recs(line_disc_t *ld, char *s);
 static int line_flush(line_disc_t *ld);
+static int line_outbuf(line_disc_t *ld, char *buf);
+static int line_outbufn(line_disc_t *ld, char *buf, uint32_t n);
 
-static char eval_kc(term_t *t, char keycode);
+static char eval_kc(term_t *t, unsigned char keycode);
 static char kc_getchar(term_t *t, unsigned char c);
 
 /* init the line discipline */
@@ -48,8 +50,7 @@ int line_init(line_disc_t *ld, std_stream *out, ld_modes_t m) {
     ld->term = (term_t *) kmalloc(sizeof(term_t));   // setup terminal
     terminal_init(ld->term, ld, NULL);  // use default display driver
 
-    if (out)
-        ld->out = out;
+    ld->out = out;
     
     ld->mode = m;
 
@@ -62,6 +63,8 @@ int line_init(line_disc_t *ld, std_stream *out, ld_modes_t m) {
     ld->line_sendv = line_sendv;
     ld->line_recv = line_recv;
     ld->line_recs = line_recs;
+    ld->line_outbuf = line_outbuf;
+    ld->line_outbufn = line_outbufn;
     
     return LINE_SUCC;
 }
@@ -101,9 +104,11 @@ static int line_in(line_disc_t *ld, char c) {
         if (c == KC_BACKSPACE) {
             if (ld->buffer_i > 0) {
                 ld->line_buffer[ld->buffer_i--] = '\0';
-                ld->term->dis->dis_backspace(); // should have a function in terminal for this
-                return LINE_SUCC;
+                ld->term->dis->dis_backspace();
+                ld->term->dis->dis_scur();
             }
+
+            return LINE_SUCC;
         }
 
         c = kc_getchar(ld->term, c);
@@ -112,6 +117,7 @@ static int line_in(line_disc_t *ld, char c) {
     }
 
     ld->term->term_write(ld->term, ld->line_buffer[ld->buffer_i++]);
+    ld->term->dis->dis_scur();
     return LINE_SUCC;
 }
 
@@ -174,11 +180,9 @@ static size_t line_out(line_disc_t *ld) {
  * returns number of chars written */
 static size_t line_send(line_disc_t *ld) {
     size_t i;
-    for (i = 0; i < ld->buffer_i && i < LINE_BUFFER_SIZE; i++) {
+    for (i = 0; i < ld->buffer_i && i < LINE_BUFFER_SIZE && ld->line_buffer[i] != 0; i++)
         put_std(ld->out, ld->line_buffer[i]);
-        ld->line_buffer[i] = 0;
-    }
-    
+
     ld->buffer_i = 0;
     return i;
 }
@@ -186,7 +190,7 @@ static size_t line_send(line_disc_t *ld) {
 /* send a char from the line_buffer to the connected process
  * doesn't output the character to the terminal */
 static int line_sendv(line_disc_t *ld) {
-    if (ld->buffer_i > 0) {
+    if (ld->line_buffer[ld->buffer_i] != 0) {
         put_std(ld->out, ld->line_buffer[ld->buffer_i]);
         return LINE_SUCC;
     }
@@ -211,6 +215,33 @@ static int line_recv(line_disc_t *ld, char c) {
     return LINE_SUCC;
 }
 
+/* outputs the line buffer to a specified buffer 
+ * returns the number of chars written */
+static int line_outbuf(line_disc_t *ld, char *buf) {
+    if (buf == NULL)
+        return 0;
+    
+    memcpy(buf, ld->line_buffer, ld->buffer_i);
+    return ld->buffer_i;
+}
+
+/* outputs the first n chars of the line buffer to a specified buffer 
+ * if n is greater tamount of chars in the buffer, only the amount
+ * of chars in the buffer are written
+ * returns the number of chars written */
+static int line_outbufn(line_disc_t *ld, char *buf, uint32_t n) {
+    if (buf == NULL)
+        return 0;
+    
+    if (n > LINE_BUFFER_SIZE)
+        n = LINE_BUFFER_SIZE;
+    
+    size_t size = n < ld->buffer_i ? n : ld->buffer_i;
+    memcpy(buf, ld->line_buffer, size);
+
+    return size;
+}
+
 /* input a string into line buffer from a process
  * char shouldn't be a KC, but an actual character
  * only inputs the string until the end of the buffer is reached
@@ -230,7 +261,7 @@ line_disc_t *get_default_line_disc() {
     return &dline;
 }
 
-static char eval_kc(term_t *t, char keycode) {
+static char eval_kc(term_t *t, unsigned char keycode) {
     struct terminal_state *ts = get_term_state(t);
 
     if (ts == NULL)
@@ -253,7 +284,10 @@ static char eval_kc(term_t *t, char keycode) {
         case KC_RELEASED:
             return 0;
         default:
-            return keycode;
+            if (keycode <= KC_MAX)
+                return keycode;
+            else
+                return 0;
     }
 }
 

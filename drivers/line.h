@@ -40,11 +40,6 @@ struct line_discipline {
     // write to terminal
     size_t (*line_out)(struct line_discipline *ld);
 
-    // ouput to terminal from process
-    // these aren't needed currently, but the would be faster
-    //int (*line_proc_in)(struct line_discipline *ld, char c);
-    //int (*line_proc_ins)(struct line_discipline *ld, char *s);
-
     // output to std_out, doesn't send to terminal
     size_t (*line_send)(struct line_discipline *ld);
     int (*line_sendv) (struct line_discipline *ld);
@@ -52,6 +47,10 @@ struct line_discipline {
     // input from process, doesn't send to terminal
     int (*line_recv)(struct line_discipline *ld, char c);
     size_t (*line_recs)(struct line_discipline *ld, char *s);
+
+    // output to buffer
+    int (*line_outbuf)(struct line_discipline *ld, char *buf);
+    int (*line_outbufn)(struct line_discipline *ld, char *buf, uint32_t n);
 };
 
 typedef struct line_discipline line_disc_t;

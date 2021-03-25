@@ -16,12 +16,14 @@ static uint32_t num_cols;
 
 static uint32_t cursor_x;
 static uint32_t cursor_y;
+static uint32_t cursor_on;
 static uint32_t current_x;
 static uint32_t current_y;
 
 static uint32_t bg_color;
 static uint32_t fg_color;
 
+static void vesa_set_cursor_vis(uint8_t state);
 static void scroll();
 
 void init_vesa(multiboot_info_t *mbi) {
@@ -68,6 +70,17 @@ uint32_t vesa_get_cursor_y() {
     return cursor_y;
 }
 
+uint32_t vesa_get_cursor_vis() {
+    return cursor_on;
+}
+
+static void vesa_set_cursor_vis(uint8_t state) {
+    if (state == 1)
+        vesa_show_cursor();
+    else
+        vesa_hide_cursor();
+}
+
 void vesa_show_cursor() {
     uint32_t *pixel_pos = framebuffer_addr + (current_y * width) + current_x;
 
@@ -82,6 +95,8 @@ void vesa_show_cursor() {
         
         pixel_pos += width;
     }
+
+    cursor_on = 1;
 }
 
 void vesa_hide_cursor() {
@@ -96,18 +111,24 @@ void vesa_hide_cursor() {
         
         pixel_pos += width;
     }
+
+    cursor_on = 0;
 }
 
 void vesa_print_char(char c) {
     if (c == '\n') {
+        vesa_hide_cursor();
         vesa_set_cursor(0, cursor_y + 1);
         scroll();
         return;
     } else if (c == '\t') {
+        vesa_hide_cursor();
+
         if (cursor_x <= num_cols - 4)
             vesa_set_cursor(cursor_x + 4, cursor_y);
         else
             vesa_set_cursor(cursor_x + (num_cols - 4), cursor_y);
+
         return;
     }
 
@@ -134,6 +155,8 @@ void vesa_print_char(char c) {
 }
 
 void vesa_print_backspace() {
+    uint8_t old_vis = vesa_get_cursor_vis();
+    vesa_hide_cursor();
     vesa_set_cursor(--cursor_x, cursor_y);
 
     uint32_t *pixel_pos = framebuffer_addr + (current_y * width) + current_x;
@@ -147,6 +170,8 @@ void vesa_print_backspace() {
         
         pixel_pos += width;
     }
+
+    vesa_set_cursor_vis(old_vis);
 
     scroll();
 }
@@ -221,4 +246,3 @@ void vesa_set_default_color() {
     fg_color = WHITE;
     bg_color = BLACK;
 }
-

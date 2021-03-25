@@ -8,6 +8,7 @@ static void display_putats(const char *s, uint32_t x, uint32_t y);
 void init_display(void *aux) {
     default_dis.dis_init = NULL;
     default_dis.dis_setcur = vesa_set_cursor;
+    default_dis.dis_getcur_vis = vesa_get_cursor_vis;
     default_dis.dis_getx = vesa_get_cursor_x;
     default_dis.dis_gety = vesa_get_cursor_y;
     default_dis.dis_scur = vesa_show_cursor;
@@ -19,7 +20,6 @@ void init_display(void *aux) {
     default_dis.dis_draw = NULL;    // not implemented
     default_dis.dis_clear = vesa_clear_screen;
     default_dis.dis_setcol = vesa_set_color;
-
     init_vesa(aux);
 }
 
