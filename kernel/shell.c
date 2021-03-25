@@ -17,6 +17,7 @@
 #define NUM_HELP_COMMANDS (NUM_COMMANDS - 2)
 
 #define LOGO_COLOR 0xBD5615
+#define MIN_ARG_MEM 16  //small strings really screw up arg-making
 
 /* shell info */
 size_t last_index = 0;
@@ -32,7 +33,6 @@ bmp_file_header_t header;
 /* key buffer info */
 static char key_buffer[LINE_BUFFER_SIZE];
 static bool cursor_on = false;
-static char *args[MAX_NUM_ARGS];
 
 /* static functions */
 static void shell_waiter(void *aux);
@@ -106,21 +106,31 @@ static void read_stdin(struct process *active) {
             ld->line_outbufn(ld, key_buffer, LINE_BUFFER_SIZE);
             key_buffer[strlen(key_buffer) - 1] = 0; // remove the newline
 
+            char *args[MAX_NUM_ARGS];
             uint32_t argc = 0;
-            char *temp = strtok(key_buffer, " ");
-            args[0] = kmalloc(strlen(temp));
-            memcpy(args[argc], temp, strlen(temp) + 1);
+            char *token = strtok(key_buffer, " ");
+            size_t arg_length = strlen(token);
+
+            // kmalloc is apparently still really buggy with small allocations
+            if (arg_length < MIN_ARG_MEM)
+                arg_length = MIN_ARG_MEM;
+            
+            args[0] = kmalloc(arg_length);
+            memcpy(args[0], token, strlen(token) + 1);
             argc++;
 
-            while ((temp = strtok(NULL, " ")) != NULL && argc < MAX_NUM_ARGS) {
-                args[argc] = kmalloc(strlen(temp));
-                memcpy(args[argc], temp, strlen(temp));
+            while ((token = strtok(NULL, " ")) != NULL && argc < MAX_NUM_ARGS) {
+                arg_length = strlen(token);
+
+                if (arg_length < MIN_ARG_MEM)
+                    arg_length = MIN_ARG_MEM;
+                
+                args[argc] = kmalloc(arg_length);
+                memcpy(args[argc], token, strlen(token) + 1);
                 argc++;
             }
+            //printf("args[0]: %s\n", args[0]);
 
-            for (int i = 0; i < argc; i++) {
-                printf("args[%d]: %s\n", i, args[i]);
-            }
             int i;
             for (i = 0; i < NUM_COMMANDS; i++)
                 if (strcmp(trim(args[0]), commands[i]) == 0) {
@@ -135,7 +145,6 @@ static void read_stdin(struct process *active) {
             ld->line_flush(ld);
 
             for (uint32_t i = 0; i < argc; i++) {
-                printf("freeing: %x\n", args[i]);
                 kfree(args[i]);
             }
             memset(args, 0, MAX_NUM_ARGS * sizeof(char *));
@@ -185,6 +194,7 @@ static void shutdown(char **line __attribute__ ((unused)), uint32_t argc __attri
 }
 
 static void getbuf(char **line, uint32_t argc) {
+    printf("buffer: ");
     for (uint32_t i = 0; i < argc; i++)
         printf("%s ", line[i]);
     printf("\n");

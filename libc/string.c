@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <string.h>
+#include <mem.h>
 
 /* THIS FILE NEEDS TO BE REVISED TO CONFORM TO C99 */
 
