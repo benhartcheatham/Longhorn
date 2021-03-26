@@ -37,9 +37,7 @@ static bool cursor_on = false;
 /* static functions */
 static void shell_waiter(void *aux);
 static void read_stdin(struct process *active);
-//static void append_to_buffer(char c);
-//static void shrink_buffer();
-//static void flush_buffer();
+static uint32_t ps_get_alignment(display_t *dis, uint32_t *alignment);
 
 /* command functions */
 static void help(char **line, uint32_t argc);
@@ -114,25 +112,25 @@ static void read_stdin(struct process *active) {
             // kmalloc is apparently still really buggy with small allocations
             if (arg_length < MIN_ARG_MEM)
                 arg_length = MIN_ARG_MEM;
-            
+
             args[0] = kmalloc(arg_length);
-            memcpy(args[0], token, strlen(token) + 1);
+            strcpy(args[0], token);
             argc++;
 
             while ((token = strtok(NULL, " ")) != NULL && argc < MAX_NUM_ARGS) {
                 arg_length = strlen(token);
-
+                
                 if (arg_length < MIN_ARG_MEM)
                     arg_length = MIN_ARG_MEM;
-                
+
                 args[argc] = kmalloc(arg_length);
-                memcpy(args[argc], token, strlen(token) + 1);
+                strcpy(args[argc], token);
                 argc++;
             }
-            //printf("args[0]: %s\n", args[0]);
 
             int i;
-            for (i = 0; i < NUM_COMMANDS; i++)
+            for (i = 0; i < NUM_COMMANDS; i++) {
+
                 if (strcmp(trim(args[0]), commands[i]) == 0) {
                     /* this should make a new process/thread, but I need to be able
                     *  to wait on child processes  */
@@ -140,14 +138,17 @@ static void read_stdin(struct process *active) {
                     command_functions[i](args, argc);
                     break;
                 }
-
+            }
             flush_std(stdin);
             ld->line_flush(ld);
 
             for (uint32_t i = 0; i < argc; i++) {
+                memset(args[i], 0, strlen(args[i]));
                 kfree(args[i]);
             }
+
             memset(args, 0, MAX_NUM_ARGS * sizeof(char *));
+            memset(key_buffer, 0, LINE_BUFFER_SIZE);
             printf("> ");
         }
         
@@ -218,24 +219,35 @@ static char *p_state_to_string(enum thread_states s) {
     }
 }
 
+
+/* TODO - update this function to use print_at/set_cursor calls */
 static void ps(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+    display_t *dis = get_default_dis_driver();
     const list_node *node = proc_peek_all_list();
+    uint32_t alignment = 0;
+
+    char *headers[4] = {"name", "pid", "state", "active thread\n"};
+    for (int i = 0; i < 4; i++)
+        dis->dis_putats(headers[i], ps_get_alignment(dis, &alignment), dis->dis_gety());
     
-    printf("name");
-    print_align("pid", 2);
-    print_align("state", 3);
-    print_align("active thread\n", 4);
     while (list_hasNext(node)) {
+        alignment = 0;
         struct process *proc = LIST_ENTRY(node, struct process, node);
-        printf("%s", proc->name);
-        print_align(int_to_string(proc->pid), 2);
-        print_align(p_state_to_string(proc_get_state(proc)), 3);
-        print_align(proc->active_thread->name, 4);
+        dis->dis_putats(proc->name, ps_get_alignment(dis, &alignment), dis->dis_gety());
+        dis->dis_putats(int_to_string(proc->pid), ps_get_alignment(dis, &alignment), dis->dis_gety());
+        dis->dis_putats(p_state_to_string(proc_get_state(proc)), ps_get_alignment(dis, &alignment), dis->dis_gety());
+        dis->dis_putats(proc->active_thread->name, ps_get_alignment(dis, &alignment), dis->dis_gety());
         printf("\n");
 
         node = list_get_next(node);
     }
 
+}
+
+static uint32_t ps_get_alignment(display_t *dis, uint32_t *a) {
+    uint32_t next_y = (*a) * (dis->dis_getn_cols() / 8);
+    *a = *a + 1;    // done this way so compiler doesn't complain
+    return next_y;
 }
 
 /* novelty command */

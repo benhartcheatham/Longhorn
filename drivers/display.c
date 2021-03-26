@@ -11,6 +11,8 @@ void init_display(void *aux) {
     default_dis.dis_getcur_vis = vesa_get_cursor_vis;
     default_dis.dis_getx = vesa_get_cursor_x;
     default_dis.dis_gety = vesa_get_cursor_y;
+    default_dis.dis_getn_cols = vesa_get_num_cols;
+    default_dis.dis_getn_rows = vesa_get_num_rows;
     default_dis.dis_scur = vesa_show_cursor;
     default_dis.dis_hcur = vesa_hide_cursor;
     default_dis.dis_putc = vesa_print_char;

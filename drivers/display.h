@@ -8,9 +8,11 @@
 struct display {
     void (*dis_init)(void *aux);
     void (*dis_setcur)(uint32_t x, uint32_t y);
-    uint32_t (*dis_getcur_vis)(void);
+    uint32_t (*dis_getcur_vis)(void);    // doesn't have to be implemented
     uint32_t (*dis_getx)(void);
     uint32_t (*dis_gety)(void);
+    uint32_t (*dis_getn_cols)(void);    // doesn't have to be implemented
+    uint32_t (*dis_getn_rows)(void);    // doesn't have to be implemented
     void (*dis_scur)(void);
     void (*dis_hcur)(void);
     void (*dis_putc)(char c);

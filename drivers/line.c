@@ -74,7 +74,7 @@ static int line_flush(line_disc_t *ld) {
     if (ld->line_buffer == NULL)
         return -LINE_INIT_FAIL;
     
-    for (size_t i = 0; i < ld->buffer_i && i < LINE_BUFFER_SIZE; i++)
+    for (uint32_t i = 0; i < LINE_BUFFER_SIZE; i++)
         ld->line_buffer[i] = 0;
 
     ld->buffer_i = 0;
@@ -153,28 +153,6 @@ static size_t line_out(line_disc_t *ld) {
     return i;
 }
 
-// /* writes a char directly to the terminal from a process 
-//  * returns LINE_SUCC on success, failure otherwise */
-// static int line_proc_in(line_disc_t *ld, char c) {
-//     if (c == '\b') {
-//         ld->term->dis->dis_backspace();
-//         return LINE_SUCC;
-//     }
-
-//     return ld->term->term_write(ld->term, c);
-// }
-
-// /* write a string directly to the terminal from a process 
-//  * returns amount of chars written */
-// static int line_proc_ins(line_disc_t *ld, char *s) {
-//     int i;
-//     for (i = 0; i < ld->buffer_i && i < LINE_BUFFER_SIZE)
-//         if (ld->line_proc_in(ld, s[i]) != LINE_SUCC)
-//             return i;
-    
-//     return i;
-// }
-
 /* send the entire line_buffer to the connected process
  * doesn't output the buffer to the terminal 
  * returns number of chars written */
@@ -216,18 +194,18 @@ static int line_recv(line_disc_t *ld, char c) {
 }
 
 /* outputs the line buffer to a specified buffer 
+ * output buffer should be at least LINE_BUFFER_SIZE chars long
  * returns the number of chars written */
 static int line_outbuf(line_disc_t *ld, char *buf) {
     if (buf == NULL)
         return 0;
     
-    memcpy(buf, ld->line_buffer, ld->buffer_i);
-    return ld->buffer_i;
+    memcpy(buf, ld->line_buffer, LINE_BUFFER_SIZE);
+    return LINE_BUFFER_SIZE;
 }
 
 /* outputs the first n chars of the line buffer to a specified buffer 
- * if n is greater tamount of chars in the buffer, only the amount
- * of chars in the buffer are written
+ * if n is greater than LINE_BUFFER_SIZE, only LINE_BUFFER_SIZE chars are written
  * returns the number of chars written */
 static int line_outbufn(line_disc_t *ld, char *buf, uint32_t n) {
     if (buf == NULL)
@@ -236,10 +214,9 @@ static int line_outbufn(line_disc_t *ld, char *buf, uint32_t n) {
     if (n > LINE_BUFFER_SIZE)
         n = LINE_BUFFER_SIZE;
     
-    size_t size = n < ld->buffer_i ? n : ld->buffer_i;
-    memcpy(buf, ld->line_buffer, size);
+    memcpy(buf, ld->line_buffer, n);
 
-    return size;
+    return n;
 }
 
 /* input a string into line buffer from a process

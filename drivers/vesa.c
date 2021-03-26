@@ -81,6 +81,14 @@ static void vesa_set_cursor_vis(uint8_t state) {
         vesa_hide_cursor();
 }
 
+uint32_t vesa_get_num_cols() {
+    return num_cols;
+}
+
+uint32_t vesa_get_num_rows() {
+    return num_rows;
+}
+
 void vesa_show_cursor() {
     uint32_t *pixel_pos = framebuffer_addr + (current_y * width) + current_x;
 
