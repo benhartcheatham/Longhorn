@@ -1,13 +1,16 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include "test.h"
-#include "kalloc.h"
-#include "proc.h"
-#include "thread.h"
 #include <stdio.h>
 #include <mem.h>
 #include <string.h>
 #include <list.h>
+#include <slab.h>
+#include <kerrors.h>
+#include "test.h"
+#include "kalloc.h"
+#include "proc.h"
+#include "thread.h"
+
 
 #define NUM_MODULES 10
 
@@ -20,23 +23,38 @@ void proc_test_func(void *aux);
    all tests should be in this function */
 void init_testing(bool enable_test_prints) {
     test_prints = enable_test_prints;
+    slab_alloc_t *slab_allocator = get_default_slab_allocator();
+    void *slab_alloc_mem = NULL;
+    void *slab_ret = NULL;
+    void *slab_ret2 = NULL;
 
     struct test_module kalloc = make_module("Kalloc");
     // the + 6 is 1 for the free_map, 1 for malloc arena, and 4 for starting procs and threads 
     add_test(&kalloc, make_test(true, num_allocated() == (map_size() / PG_SIZE + 6), "Initialization"));
+    add_test(&kalloc, make_test(true, (slab_alloc_mem = palloc()) != NULL, "Allocate mem for slab allocator"));
     add_module(&kalloc);
 
-    struct test_module procs = make_module("Processes");
+    struct test_module slab_alloc = make_module("Slab Alloc");
+    add_test(&slab_alloc, make_test(true, slab_init(slab_allocator, slab_alloc_mem, 4096, 32, NULL) == SLAB_SUCC, "slab alloctor initialization"));
+    
+    slab_ret = slab_allocator->alloc(slab_allocator, 1);
+    add_test(&slab_alloc, make_test(true, slab_ret != NULL, "Slab allocator allocation 1"));
+    slab_ret2 = slab_allocator->alloc(slab_allocator, 30);
+    add_test(&slab_alloc, make_test(true, slab_ret2 != NULL, "Slab allocator allocation 2"));
+    add_test(&slab_alloc, make_test(true, slab_allocator->free(slab_allocator, slab_ret, 1) == SLAB_SUCC, "Slab allocator free 1"));
+    add_test(&slab_alloc, make_test(true, slab_allocator->free(slab_allocator, slab_ret2, 30) == SLAB_SUCC, "Slab allocator free 2"));
+    add_module(&slab_alloc);
 
-    int pid = proc_create("test", proc_test_func, NULL);
-    add_test(&procs, make_test(true, pid == 2, "Create1"));
-    add_test(&procs, make_test(true, num_allocated() == (map_size() / PG_SIZE + 8), "Create2"));
-    add_test(&procs, make_test(true, num_threads() == 3, "Create3"));
+    // struct test_module procs = make_module("Processes");
+    // int pid = proc_create("test", proc_test_func, NULL);
+    // add_test(&procs, make_test(true, pid == 2, "Create1"));
+    // add_test(&procs, make_test(true, num_allocated() == (map_size() / PG_SIZE + 8), "Create2"));
+    // add_test(&procs, make_test(true, num_threads() == 3, "Create3"));
 
     // const list_node *proc_node = proc_peek_all_list();
     // while (proc_node != NULL && LIST_ENTRY(proc_node, struct process, node)->pid != pid)
     //     proc_node = proc_node->next;
-    add_module(&procs);
+    // add_module(&procs);
 }
 
 void proc_test_func(void *aux __attribute__ ((unused))) {

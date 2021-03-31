@@ -11,6 +11,9 @@
 #ifndef _ERROR_H
 #define _ERROR_H
 
+/* includes */
+#include <stdint.h>
+
 /* defines */
 
 /* general error numbers */
@@ -59,5 +62,13 @@
 #define LINE_INIT_FAIL 1
 #define LINE_IN_FAIL 2
 #define LINE_OUT_FAIL 3
+
+/* slab allocator errors */
+#define SLAB_SUCC 0
+#define SLAB_FREE_FAIL 1
+#define SLAB_INIT_FAIL 2
+
+/* typedefs */
+typedef int32_t err_t;
 
 #endif

@@ -26,9 +26,7 @@
 #endif
 
 /* Kernel data */
-char *major_version_no = "0";
-char *minor_version_no = "1";
-char *build_version_no = "x";
+char *version_no = "0.3.0";
 
 void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_idt();
@@ -45,7 +43,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
 
     #ifndef TESTS
         print_logo(HALF_LOGO);
-        printf("\nWelcome to Longhorn!\nVersion no.: %s.%s.%s\nType <help> for a list of commands.\n> ", major_version_no, minor_version_no, build_version_no);
+        printf("\nWelcome to Longhorn!\nVersion no.: %s\nType <help> for a list of commands.\n> ", version_no);
     #endif
 
     enable_interrupts();
