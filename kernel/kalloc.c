@@ -4,32 +4,28 @@
 #include "kalloc.h"
 #include "../boot/multiboot.h"
 #include <bitmap.h>
+#include <list.h>
 #include <synch.h>
 #include <kerrors.h>
+#include <slab.h>
 
 /* defines */
-#define MAX_ARENA_UNIT (PG_SIZE / 4)
-#define MIN_ARENA_UNIT 8
-#define MEM_ARENA_SIZE (PG_SIZE / 8)
-#define ARENAS_PER_PAGE (PG_SIZE / MEM_ARENA_SIZE)
+#define ROUND_UP(x, size) (((x + size - 1) / size) * size)
 
 /* structs */
-struct mem_arena {
-    char *mem;
-    size_t unit;
-};
+struct allocation {
+    void *addr;
+    size_t size;
 
-struct mem_arena_g {
-    bitmap_t map;
-    struct mem_arena arenas[ARENAS_PER_PAGE];
+    struct list_node node;
 };
 
 /* static data */
 static bitmap_t free_map;
 static char *start_addr = (char *) (4*MB);
-static struct mem_arena_g malloc_g;
 static spin_lock_t malloc_lock;
 static spin_lock_t palloc_lock;
+static list allocations;
 
 /* static funcion declarations */
 static size_t round_power_2(size_t n);
@@ -43,14 +39,8 @@ void init_alloc(multiboot_info_t *mb) {
     bitmap_init_s(&free_map, num_pages, start_addr);
     bitmap_set_range(&free_map, 0, num_pages / PG_SIZE + 1, true);
 
-    bitmap_init(&malloc_g.map, PG_SIZE);
-
-    int i;
-    int j;
-    for (i = 0, j = 8; i < ARENAS_PER_PAGE; i++, j *= 2) {
-        malloc_g.arenas[i].unit = j;
-        malloc_g.arenas[i].mem = ((char *) malloc_g.map.map_p) + (i * MEM_ARENA_SIZE); 
-    }
+    list_init(&allocations);
+    slab_init(get_default_slab_allocator(), palloc_mult(10), 10 * PG_SIZE, sizeof(uint64_t), NULL);
 
     spin_lock_init(&malloc_lock);
     spin_lock_init(&palloc_lock);
@@ -106,41 +96,14 @@ int pfree_mult(void *addr, size_t cnt) {
 /* obtains the memory address of a memory area of at least size and no greater than PG_SIZE from the memory manager
    returns NULL if no memory area exists */
 void *kmalloc(size_t size) {
-    if (size < MIN_ARENA_UNIT)
-        size = MIN_ARENA_UNIT;
-    else if (size > MAX_ARENA_UNIT) {
-        size += PG_SIZE - (size % PG_SIZE);
-        return palloc();
-    } else 
-        size = round_power_2(size);
 
-    if (spin_lock_acquire(&malloc_lock) != LOCK_ACQ_SUCC)
-        return NULL;
-    
-    /* looks for a free slot of memory in malloc_g of size and moves up a power of 2
-       if that size has no space left */
-    int i;
-    for (i = size; i <= MAX_ARENA_UNIT; i *= 2) {
-        size_t m_idx = power_2(i) - power_2(MIN_ARENA_UNIT);
-        size_t unit = malloc_g.arenas[m_idx].unit;
-        size_t idx = bitmap_find_range(&malloc_g.map, m_idx * MEM_ARENA_SIZE, MEM_ARENA_SIZE, unit, false);
-
-        if (idx != bitmap_get_size(&malloc_g.map) + 1) {
-            bitmap_set_range(&malloc_g.map, idx, unit, true);
-            spin_lock_release(&malloc_lock);
-            return (void *) malloc_g.arenas[m_idx].mem + (idx - (m_idx * MEM_ARENA_SIZE));
-        }
-
-    }
-
-    spin_lock_release(&malloc_lock);
     return NULL;
 }
 
 /* obtains the memory address of a zeroed memory area of at least num * size from the memory manager
    returns NULL if no memory area exists */
 void *kcalloc(size_t num, size_t size) {
-    //caste mem to a uint64_t since the mem kmalloc returns can't be less than 8 bytes
+    //cast mem to a uint64_t since the mem kmalloc returns can't be less than 8 bytes
     uint64_t *mem = (uint64_t *) kmalloc(num * size);
     size_t i;
     for (i = 0; i < round_power_2(num * size) / 8; i++)
@@ -152,23 +115,7 @@ void *kcalloc(size_t num, size_t size) {
 /* frees a unit of memory gotten from kmalloc or kcalloc
    returns -MEM_FREE_FAIL if memory wasn't obtained from kmalloc or kcalloc and num bytes freed otherwise */
 int kfree(void *addr) {
-    uint32_t a_addr = (uint32_t) addr;
-    //round addr down to an arena mem address
-    a_addr = a_addr - (a_addr % MEM_ARENA_SIZE);
-
-    if (spin_lock_acquire(&malloc_lock) != LOCK_ACQ_SUCC)
-        return -MEM_FREE_FAIL;
     
-    int i;
-    for (i = 0; i < ARENAS_PER_PAGE; i++)
-        if (malloc_g.arenas[i].mem == (char *) a_addr) {
-            uint32_t idx = a_addr % MEM_ARENA_SIZE;
-            bitmap_set_range(&malloc_g.map, i * MEM_ARENA_SIZE + idx, malloc_g.arenas[i].unit, false);
-            spin_lock_release(&malloc_lock);
-            return malloc_g.arenas[i].unit;
-        }
-    
-    spin_lock_release(&malloc_lock);
     return pfree(addr);
 }
 
