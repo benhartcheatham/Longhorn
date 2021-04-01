@@ -11,7 +11,7 @@
 
 /* defines */
 #define ROUND_UP(x, size) (((x + size - 1) / size) * size)
-#define SLAB_TYPE uint64_t
+#define SLAB_SIZE 64
 /* structs */
 struct allocation {
     void *addr;
@@ -36,7 +36,7 @@ void init_alloc(multiboot_info_t *mb) {
     bitmap_set_range(&free_map, 0, num_pages / PG_SIZE + 1, true);
 
     list_init(&allocations);
-    slab_init(get_default_slab_allocator(), palloc_mult(10), 10 * PG_SIZE, sizeof(SLAB_TYPE), NULL);
+    slab_init(get_default_slab_allocator(), palloc_mult(10), 10 * PG_SIZE, SLAB_SIZE, NULL);
 
     spin_lock_init(&malloc_lock);
     spin_lock_init(&palloc_lock);
@@ -94,8 +94,14 @@ int pfree_mult(void *addr, size_t cnt) {
 void *kmalloc(size_t size) {
     slab_alloc_t *allocator = get_default_slab_allocator();
     void *ret = NULL;
-    size_t num_slabs = ROUND_UP(size / allocator->slab_size, allocator->slab_size);
+
+    size_t num_slabs = num_slabs = ROUND_UP(size / allocator->slab_size, allocator->slab_size);
+    if (num_slabs == 0)
+        num_slabs++;
+    
     size_t num_alloc_slabs = ROUND_UP(sizeof(struct allocation) / allocator->slab_size, allocator->slab_size);
+    if (num_alloc_slabs == 0)
+        num_alloc_slabs++;
     
     if (spin_lock_acquire(&malloc_lock) != LOCK_ACQ_SUCC)
         return NULL;
@@ -125,19 +131,19 @@ void *kmalloc(size_t size) {
     list_insert(&allocations, &a->node);
 
     spin_lock_release(&malloc_lock);
-    return NULL;
+    return ret;
 }
 
 /* obtains the memory address of a zeroed memory area of at least num * size from the memory manager
    returns NULL if no memory area exists */
 void *kcalloc(size_t num, size_t size) {
-    SLAB_TYPE *mem = (SLAB_TYPE *) kmalloc(num * size);
+    uint64_t *mem = (uint64_t *) kmalloc(num * size);
     if (mem == NULL)
         return NULL;
     
-    SLAB_TYPE i;
+    uint64_t i;
     // zero out the whole memory region kmalloc gives us
-    for (i = 0; i < ROUND_UP(num * size / sizeof(SLAB_TYPE), get_default_slab_allocator()->slab_size); i++)
+    for (i = 0; i < ROUND_UP(num * size / SLAB_SIZE, SLAB_SIZE); i++)
         mem[i] = 0;
     
     return (void *) mem;

@@ -24,7 +24,7 @@ void proc_test_func(void *aux);
 void init_testing(bool enable_test_prints) {
     test_prints = enable_test_prints;
     slab_alloc_t *slab_allocator = get_default_slab_allocator();
-    printf("slab allocator addr: %x mem size: %d free size: %d\n", slab_allocator->mem, slab_allocator->mem_size, slab_allocator->free_mem_size);
+    printf("slab allocator addr: %x\n", slab_allocator->mem);
     void *slab_alloc_mem = NULL;
     void *slab_ret = NULL;
     void *slab_ret2 = NULL;
