@@ -24,13 +24,14 @@ void proc_test_func(void *aux);
 void init_testing(bool enable_test_prints) {
     test_prints = enable_test_prints;
     slab_alloc_t *slab_allocator = get_default_slab_allocator();
+    printf("slab allocator addr: %x mem size: %d free size: %d\n", slab_allocator->mem, slab_allocator->mem_size, slab_allocator->free_mem_size);
     void *slab_alloc_mem = NULL;
     void *slab_ret = NULL;
     void *slab_ret2 = NULL;
 
     struct test_module kalloc = make_module("Kalloc");
     // the + 6 is 1 for the free_map, 1 for malloc arena, and 4 for starting procs and threads 
-    add_test(&kalloc, make_test(true, num_allocated() == (map_size() / PG_SIZE + 6), "Initialization"));
+    add_test(&kalloc, make_test(true, num_allocated() == (map_size() / PG_SIZE + 8), "Initialization"));
     add_test(&kalloc, make_test(true, (slab_alloc_mem = palloc()) != NULL, "Allocate mem for slab allocator"));
     add_module(&kalloc);
 

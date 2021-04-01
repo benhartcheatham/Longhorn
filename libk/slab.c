@@ -99,13 +99,12 @@ int slab_init(slab_alloc_t *s, void *mem, size_t mem_size, size_t slab_size, voi
     if (mem == NULL)
         return -SLAB_INIT_FAIL;
     
-
     // make sure there is enough memory for the bookkeeping list
     if (mem_size < sizeof(struct slab_node) * num_slabs)
         return -SLAB_INIT_FAIL;
 
     // get the starting address for the free memory after the list
-    char *starting_addr = mem + SLAB_ROUND_UP((num_slabs * sizeof(struct slab_node)), slab_size);
+    char *starting_addr = mem + SLAB_ROUND_UP(((num_slabs / 2) * sizeof(struct slab_node)), slab_size);
 
     // set up the allocator
     struct slab_node *node = mem;
@@ -125,7 +124,7 @@ int slab_init(slab_alloc_t *s, void *mem, size_t mem_size, size_t slab_size, voi
 
     s->mem = mem;
     s->mem_size = mem_size;
-    s->free_mem_size = mem_size - SLAB_ROUND_UP((num_slabs * sizeof(struct slab_node)), slab_size);
+    s->free_mem_size = mem_size - SLAB_ROUND_UP(((num_slabs / 2) * sizeof(struct slab_node)), slab_size);
     s->slab_size = slab_size;
     s->data = mem;
 

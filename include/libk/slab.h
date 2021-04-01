@@ -12,7 +12,7 @@ struct slab_allocator {
 
     void *mem;  // pointer to the memory region
     size_t mem_size;    // size of the memory region
-    size_t free_mem_size;   // not used internally, just for debugging later
+    size_t free_mem_size;   // size of the free memory in the memory region
     size_t slab_size;   // size of the slabs to allocate
 
     void *data;    // pointer to the start of the underlying bookkeeping struct

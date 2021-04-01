@@ -46,7 +46,7 @@ int line_init(line_disc_t *ld, std_stream *out, ld_modes_t m) {
     ld->buffer_i = 0;
     if (ld->line_buffer == NULL)
         return -LINE_INIT_FAIL;
-    
+
     ld->term = (term_t *) kmalloc(sizeof(term_t));   // setup terminal
     terminal_init(ld->term, ld, NULL);  // use default display driver
 
