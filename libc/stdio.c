@@ -97,11 +97,6 @@ void println(char *string) {
     vesa_println(string);
 }
 
-/* prints an aligned string to the screen*/
-void print_align(char *string, uint16_t alignment) {
-    vesa_print_align(string, alignment);
-}
-
 /* clears the screen */
 void clear_screen() {
     vesa_clear_screen();

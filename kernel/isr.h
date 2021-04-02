@@ -1,12 +1,35 @@
-#include <stddef.h>
-#include <stdint.h>
-
+/* Defines functions to set up ISRs and the IDT. */
 #ifndef _ISR_H
 #define _ISR_H
 
+/* includes */
+#include <stddef.h>
+#include <stdint.h>
+
+/* defines */
 #define IDT_SIZE 256
 
-/* IA-32 Interrupt/Exception routines */
+/* for ease of use accessing hardware interrupts */
+#define IRQ00 32
+#define IRQ01 33
+#define IRQ02 34
+#define IRQ03 35
+#define IRQ04 36
+#define IRQ05 37
+#define IRQ06 38
+#define IRQ07 39
+#define IRQ08 40
+#define IRQ09 41
+#define IRQ10 42
+#define IRQ11 43
+#define IRQ12 44
+#define IRQ13 45
+#define IRQ14 46
+#define IRQ15 47
+
+/* prototypes */
+
+/* IA-32 interrupt/exception routines */
 extern void isr00();
 extern void isr01();
 extern void isr02();
@@ -40,7 +63,7 @@ extern void isr29();
 extern void isr30();
 extern void isr31();
 
-/* Hardware Interrupts (Interrupt Requests) */
+/* hardware interrupts (interrupt requests) */
 extern void irq00();
 extern void irq01();
 extern void irq02();
@@ -58,23 +81,7 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
-/* For ease of use accessing Hardware Interrupts */
-#define IRQ00 32
-#define IRQ01 33
-#define IRQ02 34
-#define IRQ03 35
-#define IRQ04 36
-#define IRQ05 37
-#define IRQ06 38
-#define IRQ07 39
-#define IRQ08 40
-#define IRQ09 41
-#define IRQ10 42
-#define IRQ11 43
-#define IRQ12 44
-#define IRQ13 45
-#define IRQ14 46
-#define IRQ15 47
+/* structs */
 
 /* struct for data pushed during an isr */
 struct register_frame {
@@ -84,8 +91,10 @@ struct register_frame {
     uint32_t eip, cs, eflags, esp, ss;                      //pushed by cpu automatically
 };
 
+/* typedefs */
 typedef void (*isr_frame)(struct register_frame *);
 
+/* functions */
 void init_idt();
 void install_isrs();
 void install_irqs();

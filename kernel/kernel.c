@@ -33,7 +33,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_alloc(mbi);
     init_processes();
 
-    init_display((void *) mbi);
+    display_init((void *) mbi);
 
     shell_init();
     #ifdef TESTS

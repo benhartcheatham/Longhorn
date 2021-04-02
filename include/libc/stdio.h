@@ -31,7 +31,6 @@ extern void print(char *string);
 extern void println(char *string);
 extern int printf(const char *string, ...);
 extern int sprintf(char *str, const char *format, ...);
-extern void print_align(char *string, uint16_t alignment);
 
 /* shouldn't strictly be in this file 
    but are included for right now */

@@ -53,7 +53,7 @@ void shell_init() {
     shell_pid = proc_create("shell", shell_waiter, NULL);
     proc_set_active(shell_pid);
 
-    line_init(get_default_line_disc(), GET_STDIN(proc_get_active()), COOKED);
+    line_init(get_default_line_disc(), NULL, GET_STDOUT(proc_get_active()), GET_STDIN(proc_get_active()), COOKED);
     read_bmp_header(header_addr, &header);
     bmp_change_color(&header, 0xFFFFFF, 0x0);
 }

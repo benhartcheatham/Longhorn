@@ -136,6 +136,6 @@ typedef struct line_discipline line_disc_t;
 typedef enum ld_modes ld_modes_t;
 
 /* functions */
-int line_init(line_disc_t *ld, term_t *t, std_stream *in, std_stream *out, ld_modes_t m);
+int line_init(line_disc_t *ld, struct terminal *t, std_stream *in, std_stream *out, ld_modes_t m);
 line_disc_t *get_default_line_disc();
 #endif

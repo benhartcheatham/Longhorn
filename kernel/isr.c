@@ -1,8 +1,13 @@
-#include "isr.h"
-#include "port_io.h"
+/* Implements Interrupt Service Routines for the Kernel. */
+
+/* includes */
+#include <stdio.h>
 #include "../drivers/timer.h"
 #include "../drivers/keyboard.h"
-#include <stdio.h>
+#include "isr.h"
+#include "port_io.h"
+
+/* defines */
 
 /* IDT structs */
 /*struct for an IDT interrupt call gate */
@@ -20,11 +25,13 @@ struct __attribute__ ((packed)) idt_info {
     uint32_t addr;      //base address of IDT structure
 };
 
+/* globals */
+
 /* IDT data */
 struct idt_entry idt[IDT_SIZE];
 struct idt_info idt_i;
 
-/* Interrupt Service Rountines data */
+/* interrupt service routines data */
 char *exception_messages[] = {
     "Division By Zero", "Debug", "Non Maskable Interrupt",  "Breakpoint", "Into Detected Overflow", "Out of Bounds",
     "Invalid Opcode", "Device Not Available", "Double Fault", "Coprocessor Segment Overrun", "Invalid TSS",
@@ -35,7 +42,13 @@ char *exception_messages[] = {
 
 isr_frame interrupt_handlers[IDT_SIZE];
 
-/* sets up an interrupt vector in the IDT with handler at handler_addr */
+/* functions */
+
+/** sets up an interrupt vector in the IDT with handler at handler_addr
+ * 
+ * @param n: interrupt number in IDT
+ * @param handler_addr: address of interrupt handler
+ */
 void set_idt_gate(uint8_t n, uint32_t handler_addr) {
     idt[n].offset_low = (uint16_t) (handler_addr & 0xFFFF);
     idt[n].selector = 0x08;     //kernel code selector
@@ -44,14 +57,14 @@ void set_idt_gate(uint8_t n, uint32_t handler_addr) {
     idt[n].offset_high = (uint16_t) ((handler_addr >> 16) & 0xFFFF);
 }
 
-/* loads a set up IDT into the IDT register */
+/** loads an IDT into the IDT register */
 void load_idt() {
     idt_i.addr = (uint32_t) &idt;
     idt_i.limit = (uint16_t) ((sizeof(struct idt_entry) * IDT_SIZE) - 1);
     asm volatile("lidtl (%0)" : : "r" (&idt_i));
 }
 
-/* sets PICs to handle hardware interrupts on vectors 33-47 */
+/** sets PICs to handle hardware interrupts on vectors 33-47 */
 void remap_pics() {
     outb(0x20, 0x11);
     outb(0xA0, 0x11);
@@ -65,7 +78,7 @@ void remap_pics() {
     outb(0xA1, 0x0); 
 }
 
-/* sets up IA-32 reserved interrupt service routine gates*/
+/** sets up IA-32 reserved interrupt service routine gates*/
 void install_isrs() {
     set_idt_gate(0, (uint32_t) isr00);
     set_idt_gate(1, (uint32_t) isr01);
@@ -101,7 +114,7 @@ void install_isrs() {
     set_idt_gate(31, (uint32_t) isr31);
 }
 
-/* sets up hardware interrupt gates */
+/** sets up hardware interrupt gates */
 void install_irqs() {
     set_idt_gate(32, (uint32_t)irq00);
     set_idt_gate(33, (uint32_t)irq01);
@@ -121,14 +134,21 @@ void install_irqs() {
     set_idt_gate(47, (uint32_t)irq15);
 }
 
-/* IA-32 Reserved Interrupt General Handler */
+/** IA-32 reserved interrupt general handler
+ * currently just stops execution on of the machine
+ * 
+ * @param r: interrupt register frame
+ */
 void isr_handler(struct register_frame *r) {
     printf("Recieved Interrupt: %d %s\n", r->int_no, exception_messages[r->int_no]);
     asm volatile("cli");
     asm volatile("hlt");
 }
 
-/* Hardware Interrupt General Handler */
+/** hardware interrupt general handler 
+ * 
+ * @param r: interrupt register frame
+ */
 void irq_handler(struct register_frame *r) {
     if (interrupt_handlers[r->int_no] != 0) {
         isr_frame handler = interrupt_handlers[r->int_no];
@@ -140,17 +160,22 @@ void irq_handler(struct register_frame *r) {
     outb(0x20, 0x20);       //send an EOI to master PIC
 }
 
-/* Sets a Hardware Interrupt vector to a handler */
+/** sets a hardware interrupt vector to a handler 
+ * 
+ * @param n: handler number to set
+ * @param handler: handler to set for hardware interrupt n
+ */
 void register_interrupt_handler(uint8_t n, isr_frame handler) {
     interrupt_handlers[n] = handler;
 }
 
-/* Initializes Hardware Interrupt handlers */
+/** initializes hardware interrupt handlers */
 void init_irqs() {
     init_timer(R_FREQ);
     init_keyboard();
 }
 
+/** initializes IDT */
 void init_idt() {
     install_isrs();
     remap_pics();
@@ -160,10 +185,12 @@ void init_idt() {
     load_idt();
 }
 
+/** enables interrupts on the machine */
 void enable_interrupts() {
     asm volatile("sti");
 }
 
+/** enables interrupts on the machine */
 void disable_interrupts() {
     asm volatile("cli");
 }
