@@ -1,3 +1,4 @@
+/* Defines constants and functions for the default keyboard driver. */
 #ifndef _KEYBOARD_H
 #define _KEYBOARD_H
 

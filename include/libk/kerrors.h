@@ -41,7 +41,6 @@
 #define THREAD_KILL_SUCC 0
 #define THREAD_KILL_FAIL 3
 
-
 /* synchronization errors */
 #define LOCK_INIT_FAIL 1
 #define LOCK_INIT_SUCC 0
@@ -60,8 +59,9 @@
 /* line discipline errors */
 #define LINE_SUCC 0
 #define LINE_INIT_FAIL 1
-#define LINE_IN_FAIL 2
-#define LINE_OUT_FAIL 3
+#define LINE_FLUSH_FAIL 2
+#define LINE_IN_FAIL 3
+#define LINE_OUT_FAIL 4
 
 /* slab allocator errors */
 #define SLAB_SUCC 0

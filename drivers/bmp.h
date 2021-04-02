@@ -1,3 +1,5 @@
+/* This file declares the functionality to read and manipulate .bmp files. */
+
 #ifndef BMP_H
 #define BMP_H
 
@@ -13,7 +15,6 @@
 #define FILE_HEADER_SIZE sizeof(struct bmp_file_header)
 
 /* structs */
-
 struct bmp_info_header {
     uint32_t size;
     uint32_t width;
@@ -57,9 +58,10 @@ typedef struct bmp_file_header bmp_file_header_t;
 
 /* functions */
 int read_bmp_header(uint8_t *file, bmp_file_header_t *buf);
-int read_bmp_data(bmp_file_header_t *header, std_stream *in); // this should be updated to write to a file or stream
+int read_bmp_data(bmp_file_header_t *header, std_stream *in);
 void draw_bmp_data(bmp_file_header_t *header, uint32_t x, uint32_t y);
 void print_bmp_header(bmp_file_header_t *header);
 void bmp_change_color(bmp_file_header_t *header, uint32_t old, uint32_t new);
 void bmp_remove_all(bmp_file_header_t *header, uint32_t color);
+
 #endif

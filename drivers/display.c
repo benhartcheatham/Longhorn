@@ -1,11 +1,21 @@
+/* Implements the default VESA display driver for the system. */
+
+/* includes */
 #include <stddef.h>
 #include "display.h"
 #include "vesa.h"
 
+/* prototypes */
 static display_t default_dis;
 static void display_putats(const char *s, uint32_t x, uint32_t y);
 
-void init_display(void *aux) {
+/* functions */
+
+/** Intializes the default VESA display driver 
+ * 
+ * @param aux: a pointer to the mbi struct given by GRUB2
+ */
+void display_init(void *aux) {
     default_dis.dis_init = NULL;
     default_dis.dis_setcur = vesa_set_cursor;
     default_dis.dis_getcur_vis = vesa_get_cursor_vis;
@@ -25,11 +35,21 @@ void init_display(void *aux) {
     init_vesa(aux);
 }
 
+/** utility function for putting a string at location (x,y) on the screen
+ * 
+ * @param s: null-terminated string to be printed
+ * @param x: x coordinate (in cursor coordinates) to write the string
+ * @param y: y coordinate (in cursor coordinates) to write the string
+ */
 static void display_putats(const char *s, uint32_t x, uint32_t y) {
     default_dis.dis_setcur(x,y);
     default_dis.dis_puts(s);
 }
 
+/** returns the default display driver initialized by the system 
+ * 
+ * @return a pointer to the default display driver
+ */
 display_t *get_default_dis_driver() {
     return &default_dis;
 }

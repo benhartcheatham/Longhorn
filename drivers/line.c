@@ -1,12 +1,16 @@
-/* THIS LINE DISCIPLINE IS MEANT FOR A COOKED MODE TERMINAL,
-   IT DOES NO ACTUAL LINE FILTERING */
+/* Implements the line discipline interface for the default line discipline. This implementation supports 
+ * two modes: COOKED and RAW. COOKED mode does all line editing and sends the resulting buffer/character to the
+ * output process (if specified). RAW mode sends raw keycodes to the output process, which must be specified in this mode.
+ */
 
-#include <kerrors.h>
-#include <mem.h>
+/* includes */
 #include <string.h>
-#include "line.h"
+#include <mem.h>
+#include <kerrors.h>
 #include "../kernel/kalloc.h"
+#include "line.h"
 
+/* globals */
 static struct line_discipline dline;
 
 const char kc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
@@ -23,6 +27,7 @@ const char kc_ascii_cap[] = { '?', '?', '1', '2', '3', '4', '5', '6',
         'H', 'J', 'K', 'L', ';', '\'', '`', '?', '\\', 'Z', 'X', 'C', 'V', 
         'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '};
 
+/* prototypes */
 static int line_in(line_disc_t *ld, char c);
 static size_t line_ins(line_disc_t *ld, char *s);
 static size_t line_out(line_disc_t *ld);
@@ -37,8 +42,19 @@ static int line_outbufn(line_disc_t *ld, char *buf, uint32_t n);
 static char eval_kc(term_t *t, unsigned char keycode);
 static char kc_getchar(term_t *t, unsigned char c);
 
-/* init the line discipline */
-int line_init(line_disc_t *ld, std_stream *out, ld_modes_t m) {
+/* functions */
+
+/** inits the given line discipline 
+ * 
+ * @param ld: pointer to the line_discipline struct
+ * @param t: if non-NULL, terminal to connect to ld, otherwise a terminal is made
+ * @param in: unused
+ * @param out: output process to be connected to this ld, must be non-NULL in RAW mode
+ * @param m: one of two modes, COOKED or RAW
+ * 
+ * @return -LINE_INIT_FAIL on failure to initialize, LINE_SUCC otherwise
+ */
+int line_init(line_disc_t *ld, term_t *t, std_stream *in __attribute__ ((unused)), std_stream *out, ld_modes_t m) {
     if (ld == NULL)
         return -LINE_INIT_FAIL;
     
@@ -47,8 +63,11 @@ int line_init(line_disc_t *ld, std_stream *out, ld_modes_t m) {
     if (ld->line_buffer == NULL)
         return -LINE_INIT_FAIL;
 
-    ld->term = (term_t *) kmalloc(sizeof(term_t));   // setup terminal
-    terminal_init(ld->term, ld, NULL);  // use default display driver
+    if (t == NULL) {
+        ld->term = (term_t *) kmalloc(sizeof(term_t));   // set up terminal
+        terminal_init(ld->term, ld, NULL);  // use default display driver
+    } else
+        ld->term = t;   // assume terminal is already set up
 
     ld->out = out;
     
@@ -69,10 +88,15 @@ int line_init(line_disc_t *ld, std_stream *out, ld_modes_t m) {
     return LINE_SUCC;
 }
 
-/* flushes the line buffer */
+/** flushes the line buffer 
+ * 
+ * @param ld: pointer to line discipline to flush
+ * 
+ * @return -LINE_FLUSH_FAIL opn failure, LINE_SUCC otherwise
+ */
 static int line_flush(line_disc_t *ld) {
     if (ld->line_buffer == NULL)
-        return -LINE_INIT_FAIL;
+        return -LINE_FLUSH_FAIL;
     
     for (uint32_t i = 0; i < LINE_BUFFER_SIZE; i++)
         ld->line_buffer[i] = 0;
@@ -81,9 +105,14 @@ static int line_flush(line_disc_t *ld) {
     return LINE_SUCC;
 }
 
-/* writes a KC to the line buffer to be output 
- * also sends the corresponding char to the connected process
- * returns the amount of chars written */
+/** writes a keycode to the line buffer to be output and 
+ * sends the corresponding char to the connected process
+ *
+ * @param ld: line discipline to write to
+ * @param c: keycode to write to specified ld
+ *
+ * @return -LINE_INIT_FAIL on failure, LINE_SUCC otherwise
+ */
 static int line_in(line_disc_t *ld, char c) {
     // update terminal state
     char kc_ret = eval_kc(ld->term, c);
@@ -121,9 +150,14 @@ static int line_in(line_disc_t *ld, char c) {
     return LINE_SUCC;
 }
 
-/* writes a string of keycodes to the line buffer to be output 
- * also sends the corresponding string to the connected process
- * returns the amount of chars written */
+/** writes a string of keycodes to the line buffer to be output and
+ * sends the corresponding string to the connected process
+ * 
+ * @param ld: line discipline to write to
+ * @param s: null-terminated string to write
+ * 
+ * @return returns the number of chars written
+ */
 static size_t line_ins(line_disc_t *ld, char *s) {
     size_t i;
     for (i = 0; i < strlen(s) && i < LINE_BUFFER_SIZE; i++)
@@ -133,9 +167,13 @@ static size_t line_ins(line_disc_t *ld, char *s) {
     return i;
 }
 
-/* writes the line buffer to the terminal
- * returns the amount of chars written
- * doesn't flush the line buffer */
+/** writes the line buffer to the terminal
+ * doesn't flush the line buffer
+ * 
+ * @param ld: line discipline to send the buffer of
+ * 
+ * @return returns the number of chars written
+ */
 static size_t line_out(line_disc_t *ld) {
     size_t i;
     for (i = 0; i < LINE_BUFFER_SIZE && i < ld->buffer_i; i++) {
@@ -153,9 +191,13 @@ static size_t line_out(line_disc_t *ld) {
     return i;
 }
 
-/* send the entire line_buffer to the connected process
- * doesn't output the buffer to the terminal 
- * returns number of chars written */
+/** send the entire line_buffer to the connected process
+ * doesn't output the buffer to the terminal
+ * 
+ * @param ld: line discipline to send the buffer of
+ * 
+ * @return returns the number of characters written
+ */
 static size_t line_send(line_disc_t *ld) {
     size_t i;
     for (i = 0; i < ld->buffer_i && i < LINE_BUFFER_SIZE && ld->line_buffer[i] != 0; i++)
@@ -165,8 +207,13 @@ static size_t line_send(line_disc_t *ld) {
     return i;
 }
 
-/* send a char from the line_buffer to the connected process
- * doesn't output the character to the terminal */
+/** send a char from the line_buffer to the connected process
+ * doesn't output the character to the terminal 
+ * 
+ * @param ld: line discipline to send a character from
+ * 
+ * @return -LINE_OUT_FAIL on failure, LINE_SUCC otherwise 
+ */
 static int line_sendv(line_disc_t *ld) {
     if (ld->line_buffer[ld->buffer_i] != 0) {
         put_std(ld->out, ld->line_buffer[ld->buffer_i]);
@@ -176,9 +223,15 @@ static int line_sendv(line_disc_t *ld) {
     return -LINE_OUT_FAIL;
 }
 
-/* input a char into line buffer from a process
+/** input a char into line buffer from a process
  * char shouldn't be a KC, but an actual character
- * returns LINE_SUCC on success, otherwise failure */
+ * 
+ * @param ld: line discipline to write character to
+ * @param c: character to write to line discipline, if c is '\b', then 
+ *           the last character in the buffer is erased
+ * 
+ * @return -LINE_IN_FAIL on failure, LINE_SUCC otherwise
+ */
 static int line_recv(line_disc_t *ld, char c) {
     if (ld->buffer_i == LINE_BUFFER_SIZE - 1)
         return -LINE_IN_FAIL;
@@ -193,9 +246,14 @@ static int line_recv(line_disc_t *ld, char c) {
     return LINE_SUCC;
 }
 
-/* outputs the line buffer to a specified buffer 
+/** outputs the line buffer to a specified buffer 
  * output buffer should be at least LINE_BUFFER_SIZE chars long
- * returns the number of chars written */
+ * 
+ * @param ld: line discipline to output from
+ * @param buf: buffer to write ld's line buffer into
+ * 
+ * @return number of characters written
+ */
 static int line_outbuf(line_disc_t *ld, char *buf) {
     if (buf == NULL)
         return 0;
@@ -204,9 +262,15 @@ static int line_outbuf(line_disc_t *ld, char *buf) {
     return LINE_BUFFER_SIZE;
 }
 
-/* outputs the first n chars of the line buffer to a specified buffer 
+/** outputs the first n chars of the line buffer to a specified buffer 
  * if n is greater than LINE_BUFFER_SIZE, only LINE_BUFFER_SIZE chars are written
- * returns the number of chars written */
+ *
+ * @param ld: line discipline to output from
+ * @param buf: buffer to output ld's line buffer to
+ * @param n: number of characters to write to buf
+ * 
+ * @return number of characters written
+ */
 static int line_outbufn(line_disc_t *ld, char *buf, uint32_t n) {
     if (buf == NULL)
         return 0;
@@ -219,10 +283,15 @@ static int line_outbufn(line_disc_t *ld, char *buf, uint32_t n) {
     return n;
 }
 
-/* input a string into line buffer from a process
- * char shouldn't be a KC, but an actual character
+/** input a string into line buffer from a process
+ * char shouldn't be a keycode, but an actual character
  * only inputs the string until the end of the buffer is reached
- * returns the number of chars written */
+ * 
+ * @param ld: line discipline to write to
+ * @param s: null-terminated string to write to ld
+ * 
+ * @return number of characters written to ld
+ */
 static size_t line_recs(line_disc_t *ld, char *s) {
     // calculate amount of buffer left
     size_t s_size = strlen(s) < LINE_BUFFER_SIZE - ld->buffer_i  ? strlen(s) : LINE_BUFFER_SIZE - ld->buffer_i + 1;
@@ -234,10 +303,22 @@ static size_t line_recs(line_disc_t *ld, char *s) {
     return s_size;
 }
 
+/** returns the default line discipline
+ * 
+ * @return pointer to the default line discipline
+ */
 line_disc_t *get_default_line_disc() {
     return &dline;
 }
 
+/** utility function that checks if a given keycode is whitespace
+ * also updates the state of the specified terminal in some cases
+ * 
+ * @param t: terminal to get the state from
+ * @param keycode: keycode to evaluate
+ * 
+ * @return 0 if keycode was whitespace, keycode otherwise
+ */
 static char eval_kc(term_t *t, unsigned char keycode) {
     struct terminal_state *ts = get_term_state(t);
 
@@ -268,6 +349,15 @@ static char eval_kc(term_t *t, unsigned char keycode) {
     }
 }
 
+/** get the ASCII character of a given keycode
+ * dependent on the state of the given terminal
+ * in the case of unspported keycodes, behavior is undefined
+ * 
+ * @param t: terminal to get state from
+ * @param c: keycode to evaluate
+ * 
+ * @return ASCII keycode of c, if supported
+ */
 static char kc_getchar(term_t *t, unsigned char c) {
     struct terminal_state *ts = get_term_state(t);
 

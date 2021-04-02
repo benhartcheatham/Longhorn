@@ -1,9 +1,16 @@
+/* This file is for reading a .bmp file for an image. */
 #include "bmp.h"
 
 static uint8_t *start_pos = NULL;
 static uint32_t img_size = 0;
 
-/* reads the header of a bmp file at file into buf */
+/** reads the header of a bmp file at file into buf
+ * 
+ * @param file: pointer to the beginning of the .bmp file
+ * @param buf: pointer to a bmp_file_header for the contents of the file
+ * 
+ * @return -1 if the file wasn't read correctly, otherwise the amount of bytes read
+ */
 int read_bmp_header(uint8_t *file, bmp_file_header_t *buf) {
     int num_read = 0;
 
@@ -61,10 +68,16 @@ int read_bmp_header(uint8_t *file, bmp_file_header_t *buf) {
     return num_read;
 }
 
-/* reads in a bmp image STD_STREAM_SIZE bytes at a time to a std_stream 
-   num_read is < STD_STREAM_SIZE when either an error occured or EOI is reached 
-   the pointer to the bits of the image is destroyed while reading and restored
-   after reading is done or an error occurs */
+/** reads in a bmp image STD_STREAM_SIZE bytes at a time to a std_stream 
+ * num_read is < STD_STREAM_SIZE when either an error occured or EOI is reached 
+ * the pointer to the bits of the image is destroyed while reading and restored
+ * after reading is done or an error occurs 
+ * 
+ * @param header: pointer to the bmp_file_header for the previously read file
+ * @param in: stream to output .bmp contents to
+ * 
+ * @return returns the number of bytes read into in
+ */
 int read_bmp_data(bmp_file_header_t *header, std_stream *in) {
     if (start_pos == NULL) {
         start_pos = header->data;
@@ -86,7 +99,13 @@ int read_bmp_data(bmp_file_header_t *header, std_stream *in) {
     return num_read;
 }
 
-/* draws the bmp image pointed to by header at coordinate (x,y) */
+/** draws the bmp image pointed to by header at coordinate (x,y)
+ *  
+ * @param header: pointer to bmp_file_header for previously read in .bmp file
+ * @param x: x coordinate to draw the picture starting at the top left of the picture
+ * @param y: y coordinate to draw the picture starting at the top left of the picture
+ * 
+ */
 void draw_bmp_data(bmp_file_header_t *header, uint32_t x, uint32_t y) {
     uint8_t *pixel = header->data;
 
@@ -107,7 +126,13 @@ void draw_bmp_data(bmp_file_header_t *header, uint32_t x, uint32_t y) {
     }
 }
 
-/* changes color old to color new in the bmp image pointed to by header */
+/** changes color old to color new in the bmp image pointed to by header
+ * 
+ * @param header: pointer to the bmp_file_header of a previously read in .bmp file
+ * @param old: color to replace as a 32 bit RGB value
+ * @param new: color to replace old with as a 32 bit RGB value
+ * 
+ */
 void bmp_change_color(bmp_file_header_t *header, uint32_t old, uint32_t new) {
     uint8_t *pixel = header->data;
 
@@ -135,7 +160,12 @@ void bmp_change_color(bmp_file_header_t *header, uint32_t old, uint32_t new) {
     }
 }
 
-/* sets all colors other than color to black in the bmp image pointed to by header*/
+/** sets all colors other than color to black in the bmp image pointed to by header
+ * 
+ * @param header: pointer to the bmp_file_header of a previously read in .bmp file
+ * @param color: color to keep in the image as a 32 bit RGB value
+ * 
+ */
 void bmp_remove_all(bmp_file_header_t *header, uint32_t color) {
     uint8_t *pixel = header->data;
 

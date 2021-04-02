@@ -45,12 +45,15 @@ comments:
         - the content of the comment should start on the same column over multiple lines, ex.:
             /* this is
              * a comment */
-    - every function must be commented with an explanation of the function, then an @param section, then an @ret section
+    - every function must be commented with an explanation of the function, then an @param section, then an @return section
+        - when the return type of the function is void, the @return section doesn't need to be specified
+        - when a function has no parameters, there should be no @param section
         - Ex: /** This function is an example for commenting functions
-                *
-                * @param foo: first parameter
-                *
-                * @ret a return value */
+               *
+               * @param foo: first parameter
+               *
+               * @return a return value 
+               */
               int foobar(int foo) {}
     - every file must have a comment at the top of the file explaining the contents of the file
 file names:
