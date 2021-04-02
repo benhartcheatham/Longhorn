@@ -94,18 +94,18 @@ static int slab_free(slab_alloc_t *s, void *addr, size_t num_slabs) {
 }
 
 
+/* Initializes a new slab allocator at memory location s.
+ * NOTE: slab_size must be greater than or equal to the sizeof(struct slab_node), otherwise
+ *       the allocator won't initialize properly */
 int slab_init(slab_alloc_t *s, void *mem, size_t mem_size, size_t slab_size, void *aux __attribute__ ((unused))) {
     uint32_t num_slabs = mem_size / slab_size;
 
-    if (mem == NULL)
+    if (slab_size < sizeof(struct slab_node))
         return -SLAB_INIT_FAIL;
-    // this doesn't work for small sizes, needs to be updated
-    // make sure there is enough memory for the bookkeeping list
-    if (mem_size < sizeof(struct slab_node) * num_slabs)
+    
+    if (mem == NULL && mem_size < sizeof(struct slab_node) * num_slabs)
         return -SLAB_INIT_FAIL;
 
-    // this doesn't work for small sizes, needs to be updated
-    // get the starting address for the free memory after the list
     char *starting_addr = mem + SLAB_ROUND_UP(((num_slabs / 2) * sizeof(struct slab_node)), slab_size);
 
     // set up the allocator
@@ -126,7 +126,6 @@ int slab_init(slab_alloc_t *s, void *mem, size_t mem_size, size_t slab_size, voi
 
     s->mem = mem;
     s->mem_size = mem_size;
-    // this doesn't work for small sizes, needs to be updated
     s->free_mem_size = mem_size - SLAB_ROUND_UP(((num_slabs / 2) * sizeof(struct slab_node)), slab_size);
     s->slab_size = slab_size;
     s->data = mem;
