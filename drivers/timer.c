@@ -1,11 +1,14 @@
+/* Implements the timer interrupts for the system. Currently only PIT is supported */
 #include <stdint.h>
-#include "timer.h"
 #include "../kernel/isr.h"
 #include "../kernel/port_io.h"
 #include "../kernel/thread.h"
-#include <stdio.h>
+#include "timer.h"
 
-/* Initializes timer interrupt */
+/** Initializes timer interrupt 
+ * 
+ * @param freq: frequency of timer interrupt
+ */
 void init_timer(uint32_t freq) {
     /* Install the function we just wrote */
     register_interrupt_handler(IRQ00, timer_interrupt_handler);

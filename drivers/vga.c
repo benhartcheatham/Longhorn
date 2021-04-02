@@ -1,15 +1,29 @@
+/* Implements the VGA driver for writing text to the screen. This driver is currently deprecated in favor of the VESA driver. */
+
+/* includes */
 #include <stdint.h>
-#include "vga.h"
-#include "../kernel/port_io.h"
 #include <mem.h>
+#include "../kernel/port_io.h"
+#include "vga.h"
 
-void scroll();
+/* defines */
 
+/* globals */
 static uint16_t cursor_x;
 static uint16_t cursor_y;
 static uint16_t color = DEFAULT_BACKGROUND;
 
-/* sets the cursor to x,y on the screen */
+/* prototypes */
+void scroll();
+
+/* functions */
+
+/** --deprecated-- 
+ * sets the cursor to x,y on the screen
+ * 
+ * @param x: x position to set the cursor to
+ * @param y: y position to set the cursor to
+ */
 void vga_set_cursor(uint16_t x, uint16_t y) {
 
     if (y <= MAX_ROWS && x <= MAX_COLS) {
@@ -24,15 +38,25 @@ void vga_set_cursor(uint16_t x, uint16_t y) {
     }
 }
 
+/** --deprecated--
+ * makes the cursor visible
+ */
 void vga_show_cursor() {
     return;
 }
 
+/** --deprecated--
+ * makes the cursor visible
+ */
 void vga_hide_cursor() {
     return;
 }
 
-/* gets the offest of the cursor */
+/** --deprecated--
+ * gets the offest of the cursor 
+ * 
+ * @return the offset of the cursor
+ */
 uint16_t get_offset() {
     uint32_t pos = 0;
     outb(0x3D4, 0x0F);
@@ -42,7 +66,11 @@ uint16_t get_offset() {
     return pos;
 }
 
-/* prints char c to the current cursor position */
+/** --deprecated--
+ * prints char c to the current cursor position 
+ * 
+ * @param c: ASCII character to print
+ */
 void vga_print_char(char c) {
     if (c == '\n') {
         cursor_y++;
@@ -77,8 +105,9 @@ void vga_print_char(char c) {
     scroll();
 }
 
-/* removes the char before the current cursor position and prints a space
-   at the current position */
+/** --deprecated--
+ * removes the char before the current cursor position and prints a space
+ * at the current position */
 void vga_print_backspace() {
     vga_set_cursor(--cursor_x, cursor_y);
     
@@ -91,7 +120,13 @@ void vga_print_backspace() {
     scroll();
 }
 
-/* prints char c at position x,y */
+/** --deprecated-- 
+ * prints char c at position x,y
+ * 
+ * @param c: ASCII character to write to the screen
+ * @param x: x coordinate to write character to 
+ * @param y: y coordinate to write character to 
+ */
 void print_at(char c, uint16_t x, uint16_t y) {
     if (x <= MAX_COLS && y < MAX_ROWS) {
         vga_set_cursor(x, y);
@@ -99,14 +134,22 @@ void print_at(char c, uint16_t x, uint16_t y) {
     }
 }
 
-/* prints string to the current cursor position */
+/** --deprecated--
+ * prints string to the current cursor position
+ * 
+ * @param string: null-terminated string to write to screen
+ */
 void vga_print(char *string) {
     int i;
     for (i = 0; string[i] != 0; i++)
         vga_print_char(string[i]);
 }
 
-/* prints string to the current cursor position and then a newline */
+/** --deprecated--
+ * prints string to the current cursor position and then a newline 
+ * 
+ * @param string: null-terminated string to write to screen
+ */
 void vga_println(char *string) {
     int i;
     for (i = 0; string[i] != 0; i++)
@@ -114,7 +157,12 @@ void vga_println(char *string) {
     vga_print_char('\n');
 }
 
-/* prints string to the position x,(alignment * 10) */
+/** --deprecated--
+ * prints string to the position x,(alignment * 10)
+ * 
+ * @param string: null-terminated string to write to screen
+ * @param alignment: alingment of string
+ */
 void vga_print_align(char *string, uint16_t alignment) {
     alignment = alignment % 8;  //mod 8 so that we don't align off screen
     vga_set_cursor(alignment * 10, cursor_y);
@@ -122,7 +170,8 @@ void vga_print_align(char *string, uint16_t alignment) {
     vga_print(string);
 }
 
-/* clears the screen */
+/** --deprecated--
+ * clears the screen */
 void vga_clear_screen() {
     uint16_t space = (color << 8) | ' ';
     uint16_t *videomem = (uint16_t *) VIDEO_ADDRESS;
@@ -134,7 +183,8 @@ void vga_clear_screen() {
     vga_set_cursor(0,0);
 }
 
-/* scrolls the screen */
+/** --deprecated--
+ * scrolls the screen */
 void scroll() {
     if (cursor_y >= MAX_ROWS) {
 
@@ -152,23 +202,48 @@ void scroll() {
     }
 }
 
-/* copies the contents of the screen into buffer */
+/** --deprecated--
+ * copies the contents of the screen into buffer 
+ * 
+ * @param buffer: buffer to copy framebuffer into
+ */
 void vga_copy_screen(char *buffer) {
     memcpy((void *) buffer, (const void *) VIDEO_ADDRESS, MAX_COLS*MAX_ROWS);
 }
 
+/** --deprecated--
+ * sets the foreground color of the text
+ * 
+ * @param c: color to set text to
+ */
 void vga_set_fg_color(enum vga_color c) {
     color = (color & 0xff00) | c;
 }
 
+/** --deprecated--
+ * sets the background color of the text
+ * 
+ * @param c: color to set background of text to
+ */
 void vga_set_bg_color(enum vga_color c) {
     color = (color & 0x00ff) | c;
 }
 
+/** --deprecated--
+ * sets the color of the text
+ * 
+ * @param fg: color to set text to
+ * @param bg: color to set background of text to
+ */
 void vga_set_color(enum vga_color fg, enum vga_color bg) {
     color = fg | bg << 4;
 }
 
+/** --deprecated--
+ * gets the color of text
+ * 
+ * @return color of text
+ */
 uint16_t vga_get_color() {
     return color;
 }

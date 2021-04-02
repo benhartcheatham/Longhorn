@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "errno.h": "c",
-        "kalloc.h": "c"
+        "kalloc.h": "c",
+        "stdint.h": "c",
+        "vga_font.h": "c"
     }
 }

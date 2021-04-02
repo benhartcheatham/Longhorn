@@ -1,3 +1,4 @@
+/* Defines the terminal interface and some extra terminal functionality */
 #ifndef _TERMINAL_H
 #define _TERMINAL_H
 
@@ -39,27 +40,63 @@ struct terminal_state {
 };
 
 struct terminal {
-// connected line discipline
-struct line_discipline *ld;
+    /* connected line discipline */
+    struct line_discipline *ld;
 
-// state
-struct terminal_state ts;
+    /* terminal state */
+    struct terminal_state ts;
 
-// display driver
-struct display *dis;
+    /* connected display driver */
+    struct display *dis;
 
-// input driver - not implemented
+    /** function to initialize a terminal
+     * 
+     * @param t: pointer to terminal to initialize
+     * @param ld: pointer to line discipline to connect this terminal to
+     * @param dd: pointer to display driver to connect this terminal to
+     * 
+     * @return implementation dependent
+     */
+    int (*term_init)(struct terminal *t, struct line_discipline *ld, struct display *dd);
 
-// initialize the terminal
-int (*term_init)(struct terminal *t, struct line_discipline *ld, struct display *dd);
+    /** write a character to the terminal to be output to the display device
+     * 
+     * @param t: terminal to write to
+     * @param c: character to write to terminal
+     * 
+     * @return implementation dependent
+     */
+    int (*term_write)(struct terminal *t, char c);
 
-// write to the screen
-int (*term_write)(struct terminal *t, char c);
-int (*term_writes)(struct terminal *t, char *s);    // doesn't have to be implemented
+    /** write a null-terminated string to the terminal
+     * not garunteed to be implemented
+     * 
+     * @param t: terminal to write to
+     * @param s: null-terminated string to write to terminal
+     * 
+     * @return implementation dependent
+     */
+    int (*term_writes)(struct terminal *t, char *s);
 
-// input into terminal from keyboard driver
-int (*term_in)(struct terminal *t, char c);
-int (*term_ins)(struct terminal *t, char *s);   // doesn't have to be implemented
+    /** write a character to the terminal to be input to the connected line discipline
+     * 
+     * @param t: terminal to write to
+     * @param c: character to write to terminal
+     * 
+     * @return implementation dependent
+     */
+    int (*term_in)(struct terminal *t, char c);
+
+    /** write a null-terminated string to the terminal to be input to 
+     * the connected line discipline
+     * not garunteed to be implemented
+     * 
+     * @param t: terminal to write to
+     * @param s: null-terminated string to write to terminal
+     * 
+     * @return implementation dependent
+     */
+    int (*term_ins)(struct terminal *t, char *s);
 
 };
 
@@ -69,7 +106,6 @@ typedef struct terminal term_t;
 /* functions */
 int terminal_init(term_t *t, struct line_discipline *ld, struct display *dd);
 term_t *get_default_terminal();
-void set_default_terminal(term_t *t);
 
 inline struct terminal_state *get_term_state(term_t *t) {
     return &t->ts;

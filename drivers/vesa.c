@@ -1,9 +1,14 @@
+/* Implements the VESA driver for drawing text and single pixels to the screen. 
+ * Writes directly to the framebuffer and does no buffering itself */
+
+/* includes */
 #include <stdint.h>
-#include "vesa.h"
-#include "vga_font.h"
 #include "../boot/multiboot.h"
 #include "../kernel/port_io.h"
+#include "vesa.h"
+#include "vga_font.h"
 
+/* globals */
 static uint32_t *framebuffer_addr;
 static uint32_t width;
 static uint32_t height;
@@ -23,9 +28,16 @@ static uint32_t current_y;
 static uint32_t bg_color;
 static uint32_t fg_color;
 
+/* prototypes */
 static void vesa_set_cursor_vis(uint8_t state);
 static void scroll();
 
+/* functions */
+
+/** Initialize the vesa driver 
+ * 
+ * @param mbi: pointer to the mbi given by GRUB2
+ */
 void init_vesa(multiboot_info_t *mbi) {
     framebuffer_addr = (uint32_t *) ((uint32_t) mbi->framebuffer_addr);
     width = mbi->framebuffer_width;
@@ -52,6 +64,11 @@ void init_vesa(multiboot_info_t *mbi) {
     fg_color = WHITE;
 }
 
+/** sets the position of the cursor
+ * 
+ * @param x: x coordinate to set the cursor to
+ * @param y: y coordinate to set the cursor to
+ */
 void vesa_set_cursor(uint32_t x, uint32_t y) {
     if (y <= num_rows && x <= num_cols) {
         current_x = FONT_WIDTH * x;
@@ -62,18 +79,34 @@ void vesa_set_cursor(uint32_t x, uint32_t y) {
     }
 }
 
+/** gets the x coordinate of the cursor
+ * 
+ * @return x coordinate of cursor
+ */
 uint32_t vesa_get_cursor_x() {
     return cursor_x;
 }
 
+/** gets the y coordinate of the cursor
+ * 
+ * @return y coordinate of cursor
+ */
 uint32_t vesa_get_cursor_y() {
     return cursor_y;
 }
 
+/** gets whether the cursor is currently visible
+ * 
+ * @return 1 if cursor is visble, 0 otherwise
+ */
 uint32_t vesa_get_cursor_vis() {
     return cursor_on;
 }
 
+/** sets the visibility of the cursor
+ * 
+ * @param state: state to set the cursor to: 1 for on, 0 for off
+ */
 static void vesa_set_cursor_vis(uint8_t state) {
     if (state == 1)
         vesa_show_cursor();
@@ -81,14 +114,23 @@ static void vesa_set_cursor_vis(uint8_t state) {
         vesa_hide_cursor();
 }
 
+/** gets the number of cursor columns
+ * 
+ * @return number of cursor columns
+ */
 uint32_t vesa_get_num_cols() {
     return num_cols;
 }
 
+/** gets the number of cursor rows
+ * 
+ * @return number of cursor rows
+ */
 uint32_t vesa_get_num_rows() {
     return num_rows;
 }
 
+/** turns on the cursor */
 void vesa_show_cursor() {
     uint32_t *pixel_pos = framebuffer_addr + (current_y * width) + current_x;
 
@@ -107,6 +149,7 @@ void vesa_show_cursor() {
     cursor_on = 1;
 }
 
+/** hides the cursor */
 void vesa_hide_cursor() {
     uint32_t *pixel_pos = framebuffer_addr + (current_y * width) + current_x;
 
@@ -123,6 +166,10 @@ void vesa_hide_cursor() {
     cursor_on = 0;
 }
 
+/** prints an ASCII character to the current cursor position
+ * 
+ * @param c: character to print
+ */
 void vesa_print_char(char c) {
     if (c == '\n') {
         vesa_hide_cursor();
@@ -162,6 +209,7 @@ void vesa_print_char(char c) {
     scroll();
 }
 
+/** prints a backspace to the current cursor position */
 void vesa_print_backspace() {
     uint8_t old_vis = vesa_get_cursor_vis();
     vesa_hide_cursor();
@@ -184,12 +232,21 @@ void vesa_print_backspace() {
     scroll();
 }
 
+/** prints a null-terminated string to the current cursor position
+ * 
+ * @param s: null-terminated string to print
+ */
 void vesa_print(const char *string) {
     int i;
     for (i = 0; string[i] != 0; i++)
         vesa_print_char(string[i]);
 }
 
+/** prints a null-terminated string to the current cursor position
+ * with an ensuing newline
+ * 
+ * @param s: null-terminated string to print
+ */
 void vesa_println(const char *string) {
     int i;
     for (i = 0; string[i] != 0; i++)
@@ -197,17 +254,18 @@ void vesa_println(const char *string) {
     vesa_print_char('\n');
 }
 
-void vesa_print_align(const char *string, uint16_t alignment) {
-    alignment = alignment % 8;
-    vesa_set_cursor(alignment * (num_cols / 8), cursor_y);
-    vesa_print(string);
-}
-
+/** draws a pixel on the screen
+ * 
+ * @param x: x coordinate to draw at
+ * @param y: y coordinate to draw at
+ * @param col: color to draw as a 32 bit RGB value
+ */
 void vesa_draw(uint32_t x, uint32_t y, uint32_t col) {
     uint32_t *pixel_pos = framebuffer_addr + (y * width) + x;
     *pixel_pos = col;
 }
 
+/** clears the screen */
 void vesa_clear_screen() {
     uint32_t x;
     uint32_t y;
@@ -218,6 +276,7 @@ void vesa_clear_screen() {
     vesa_set_cursor(0, 0);
 }
 
+/** scrolls the screen */
 static void scroll() {
     if (cursor_x >= num_cols) {
         current_y += FONT_HEIGHT;
@@ -237,19 +296,33 @@ static void scroll() {
     }
 }
 
+/** sets the color to write text to the screen in
+ * 
+ * @param fg: foreground color to write in as a 32 bit RGB value
+ * @param bg: background color to write in as a 32 bit RGB value
+ */
 void vesa_set_color(uint32_t fg, uint32_t bg) {
     fg_color = fg;
     bg_color = bg;
 }
 
+/** sets the foreground color to write text to the screen in
+ * 
+ * @param fg: foreground color to write in as a 32 bit RGB value
+ */
 void vesa_set_fg_color(uint32_t fg) {
     fg_color = fg;
 }
 
+/** sets the background color to write text to the screen in
+ * 
+ * @param fg: background color to write in as a 32 bit RGB value
+ */
 void vesa_set_bg_color(uint32_t bg) {
     bg_color = bg;
 }
 
+/** sets the color to white foreground on a black background for text */
 void vesa_set_default_color() {
     fg_color = WHITE;
     bg_color = BLACK;

@@ -76,7 +76,7 @@ int read_bmp_header(uint8_t *file, bmp_file_header_t *buf) {
  * @param header: pointer to the bmp_file_header for the previously read file
  * @param in: stream to output .bmp contents to
  * 
- * @return returns the number of bytes read into in
+ * @return number of bytes read into in
  */
 int read_bmp_data(bmp_file_header_t *header, std_stream *in) {
     if (start_pos == NULL) {

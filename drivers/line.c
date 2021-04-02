@@ -7,8 +7,8 @@
 #include <string.h>
 #include <mem.h>
 #include <kerrors.h>
-#include "../kernel/kalloc.h"
 #include "line.h"
+#include "../kernel/kalloc.h"
 
 /* globals */
 static struct line_discipline dline;
@@ -156,7 +156,7 @@ static int line_in(line_disc_t *ld, char c) {
  * @param ld: line discipline to write to
  * @param s: null-terminated string to write
  * 
- * @return returns the number of chars written
+ * @return number of chars written
  */
 static size_t line_ins(line_disc_t *ld, char *s) {
     size_t i;
@@ -172,7 +172,7 @@ static size_t line_ins(line_disc_t *ld, char *s) {
  * 
  * @param ld: line discipline to send the buffer of
  * 
- * @return returns the number of chars written
+ * @return number of chars written
  */
 static size_t line_out(line_disc_t *ld) {
     size_t i;
@@ -196,7 +196,7 @@ static size_t line_out(line_disc_t *ld) {
  * 
  * @param ld: line discipline to send the buffer of
  * 
- * @return returns the number of characters written
+ * @return number of characters written
  */
 static size_t line_send(line_disc_t *ld) {
     size_t i;

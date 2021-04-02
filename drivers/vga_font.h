@@ -1,14 +1,15 @@
+/* defines the font for the vesa and vga drivers */
 #ifndef _VGA_FONT_H
 #define _VGA_FONT_H
 
+/* includes */
 #include <stdint.h>
-/*
- * file './font-bin/3dfx8x16.bin', filesize 4096bytes, linewidth=16bytes
- * array created from bin-file by bin2header
- * bin2header (c) 2013 Nils Stec, <nils.stec@gmail.com>
- *
- */
 
+/* globals */
+
+/* file './font-bin/3dfx8x16.bin', filesize 4096bytes, linewidth=16bytes
+ * array created from bin-file by bin2header
+ * bin2header (c) 2013 Nils Stec, <nils.stec@gmail.com> */
 uint8_t vga_font[4096] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x7e, 0x81, 0xa5, 0x81, 0x81, 0xa5, 0x99, 0x81, 0x81, 0x7e, 0x00, 0x00, 0x00, 0x00, 

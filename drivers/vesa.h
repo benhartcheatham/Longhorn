@@ -1,9 +1,12 @@
+/* Defines functionality of the VESA driver */
 #ifndef _VESA_H
 #define _VESA_H
 
+/* includes */
 #include <stdint.h>
 #include "../boot/multiboot.h"
 
+/* defines */
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 16
 
@@ -14,6 +17,9 @@
 #define GREEN 0x0000ff00
 #define BLUE 0x000000ff
 
+/* structs */
+
+/* functions */
 void init_vesa(multiboot_info_t *mbi);
 void vesa_set_cursor(uint32_t x, uint32_t y);
 uint32_t vesa_get_cursor_x();

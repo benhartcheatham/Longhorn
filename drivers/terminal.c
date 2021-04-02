@@ -1,20 +1,33 @@
+/* Default implementation of the terminal interface with some extra functionality */
+
+/* includes */
 #include <stdio.h>
 #include <stdbool.h>
-#include <kerrors.h>
-#include <mem.h>
 #include <string.h>
-#include "terminal.h"
+#include <mem.h>
+#include <kerrors.h>
 #include "../kernel/kalloc.h"
+#include "terminal.h"
 
+/* globals */
 static term_t *dterm = NULL;
 
-
+/* prototypes */
 static int terminal_write(term_t *t, char c);
 static int terminal_writes(term_t *t, char *s);
 static int terminal_in(term_t *t, char c);
 static int terminal_ins(term_t *t, char *s);
 
-/* initialize the terminal */
+/* functions */
+
+/** initializes a terminal
+ * 
+ * @param t: pointer to terminal to initialize, must be non-NULL
+ * @param ld: pointer to ld to connect terminal to, must be non-NULL
+ * @param dd: display driver to connect terminal to, must be non-NULL
+ * 
+ * @return -TERM_INIT_FAIL on failure, TERM_SUCC otherwise
+ */
 int terminal_init(term_t *t, line_disc_t *ld, struct display *dd) {
     if (t == NULL || ld == NULL)
         return -TERM_INIT_FAIL;
@@ -42,26 +55,49 @@ int terminal_init(term_t *t, line_disc_t *ld, struct display *dd) {
     return TERM_SUCC;
 }
 
-/* writes the given character (not keycode) to the screen */
+/** writes the given ASCII character to the screen 
+ * 
+ * @param t: terminal to write to
+ * @param c: character to write to screen
+ * 
+ * @return TERM_SUCC
+ */
 static int terminal_write(term_t *t, char c) {
     t->dis->dis_putc(c);
     return TERM_SUCC;
 }
 
-/* writes the given strings (not keycodes) to the screen */
+/** writes the given null-terminated ASCII string to the screen 
+ * 
+ * @param t: terminal to write to
+ * @param s: null-terminated string to write to screen
+ * 
+ * @return TERM_SUCC
+ */
 static int terminal_writes(term_t *t, char *s) {
     t->dis->dis_puts(s);
     return TERM_SUCC;
 }
 
-/* outputs the given keycode to the line discipline */
+/** outputs the given keycode to the line discipline 
+ * 
+ * @param t: terminal to write from
+ * @param c: keycode to write to t's connected line discipline
+ * 
+ * @return TERM_SUCC
+ */
 static int terminal_in(term_t *t, char c) {
     t->ld->line_in(t->ld, c);
     return TERM_SUCC;
 }
 
-/* outputs the given string of keycodes to the line discipline 
- * returns the number of chars written */
+/** outputs the given null-terminated string of keycodes to the line discipline 
+ * 
+ * @param t: terminal to write from
+ * @param s: null-terminated string of keycodes to write to t's connected line discipline
+ * 
+ * @return number of characters written
+ */
 static int terminal_ins(term_t *t, char *s) {
     int i;
     for (i = 0; s[i] != '\0'; i++)
@@ -71,10 +107,10 @@ static int terminal_ins(term_t *t, char *s) {
     return i;
 }
 
+/** gets the terminal connected to default line discipline
+ * 
+ * @return a pointer to the default terminal
+ */
 term_t *get_default_terminal() {
     return dterm;
-}
-
-void set_default_terminal(term_t *t) {
-    dterm = t;
 }

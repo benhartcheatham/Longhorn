@@ -1,5 +1,6 @@
-#ifndef vga_H
-#define vga_H
+/* Defines the functionality of the VGA driver. Currrently deprecated in favor of the VESA driver. */
+#ifndef VGA_H
+#define VGA_H
 
 /* includes */
 #include <stdint.h>

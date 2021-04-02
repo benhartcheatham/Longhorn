@@ -1,3 +1,4 @@
+/* Defines functionality for timer interrupts. */
 #ifndef _TIMER_H
 #define _TIMER_H
 
