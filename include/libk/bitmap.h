@@ -1,3 +1,5 @@
+/* Defines functionality of the default bitmap implemenation. 
+ * NOTE: Needs to be updated to use function pointers. */
 #ifndef _BITMAP_H
 #define _BITMAP_H
 

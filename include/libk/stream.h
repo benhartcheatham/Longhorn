@@ -1,3 +1,4 @@
+/* Defines the stream data structure. */
 #ifndef _STREAM_H
 #define _STREAM_H
 

@@ -1,3 +1,4 @@
+/* Defines standard library IO functions */
 #ifndef _STDIO_H
 #define _STDIO_H
 

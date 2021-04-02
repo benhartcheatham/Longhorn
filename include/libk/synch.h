@@ -1,3 +1,4 @@
+/* Defines synchronization primitives for the kernel. */
 #ifndef _SYNCH_H
 #define _SYNCH_H
 

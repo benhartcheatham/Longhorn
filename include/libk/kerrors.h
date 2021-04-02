@@ -13,6 +13,7 @@
 
 /* includes */
 #include <stdint.h>
+#include <stdbool.h>
 
 /* defines */
 
@@ -70,5 +71,10 @@
 
 /* typedefs */
 typedef int32_t err_t;
+
+/* functions */
+inline bool kerror_is_failure(err_t err) {
+    return !(!err);
+}
 
 #endif

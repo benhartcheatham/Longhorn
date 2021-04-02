@@ -1,3 +1,5 @@
+/* Defines functionality of default doubly-linked list implementation.
+ * NOTE: Needs to be updated to use function pointers */
 #ifndef _LIST_H
 #define _LIST_H
 

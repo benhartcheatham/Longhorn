@@ -1,3 +1,4 @@
+/* Defines standard library string functions */
 #ifndef _STRING_H
 #define _STRING_H
 
