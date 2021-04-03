@@ -32,17 +32,5 @@ extern void println(char *string);
 extern int printf(const char *string, ...);
 extern int sprintf(char *str, const char *format, ...);
 
-/* shouldn't strictly be in this file 
-   but are included for right now */
-extern void clear_screen();
-extern void copy_screen(char *buffer);
-extern uint16_t get_cursor_offset();
-extern void set_cursor_offset(uint16_t x, uint16_t y);
-extern void set_color(enum vga_color fg, enum vga_color bg);
-extern void set_fg_color(enum vga_color c);
-extern void set_bg_color(enum vga_color c);
-extern void set_default_color();
-extern uint16_t get_color();
-
 #endif
 

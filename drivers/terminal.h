@@ -107,6 +107,12 @@ typedef struct terminal term_t;
 int terminal_init(term_t *t, struct line_discipline *ld, struct display *dd);
 term_t *get_default_terminal();
 
+/** gets the terminal_state struct of a terminal
+ * 
+ * @param t: terminal to get state from
+ * 
+ * @return pointer to terminal state struct of terminal
+ */
 inline struct terminal_state *get_term_state(term_t *t) {
     return &t->ts;
 }

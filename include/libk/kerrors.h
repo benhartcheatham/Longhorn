@@ -75,6 +75,13 @@
 typedef int32_t err_t;
 
 /* functions */
+
+/** returns whether an err_t is a failure error code
+ * 
+ * @param err: code to check
+ * 
+ * @return true if err is a failure code, false otherwise
+ */
 inline bool kerror_is_failure(err_t err) {
     return !(!err);
 }

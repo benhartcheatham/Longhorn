@@ -1,5 +1,5 @@
 /* Convenience include for the mem* functions 
-   These functions are normally put in string.h */
+ * These functions are normally put in string.h */
 #ifndef _MEM_H
 #define _MEM_H
 

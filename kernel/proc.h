@@ -56,7 +56,12 @@ struct process *proc_get_active();
 const list_node *proc_peek_all_list();
 uint8_t proc_get_live_t_count(struct process *proc);
 
-/* gets the process that contains thread t */
+/** gets the process that contains thread t 
+ * 
+ * @param t: thread to get proc from
+ * 
+ * @return process that contains thread t
+ */
 inline struct process *get_thread_proc(struct thread *t) {
     return (struct process *) ((char *) t) + offsetof(thread_info_t, p);
 }

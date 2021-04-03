@@ -1,10 +1,26 @@
+/* Implementation of the standard lib string functions, plus a few extra functions */
+
+/* includes */
 #include <stdbool.h>
 #include <string.h>
 #include <mem.h>
 
+/* defines */
+
+/* globals */
+static char *oldstr;
+
+/* functions */
+
 /* THIS FILE NEEDS TO BE REVISED TO CONFORM TO C99 */
 
-/* converts an int n into an ascii string str */
+/** converts an int n into an ascii string str
+ * NOTE: not a stdlib function
+ * 
+ * @param n: number to convert
+ * 
+ * @return converted number as a string
+ */
 char *int_to_string(int n) {
     int i = 0;
     static char str[32];
@@ -20,7 +36,13 @@ char *int_to_string(int n) {
     return str;
 }
 
-/* converts an int n into an ascii hex string */
+/** converts an int n into an ascii hex string 
+ * NOTE: not a stdlib function
+ * 
+ * @param n: number to convert
+ * 
+ * @return converted number as a string
+ */
 char *int_to_hexstring(int n) {
     int i = 0;
     static char str[32];
@@ -42,8 +64,17 @@ char *int_to_hexstring(int n) {
 }
 
 /* STANDARD LIBRARY FUNCTIONS */
-static char *oldstr;
 
+/** searches for the first occurrence of the character c in the first n 
+ * bytes of the memory pointed to by  ptr
+ * 
+ * @param ptr: memory to search
+ * @param c: character to search for
+ * @param num: number of bytes to search
+ * 
+ * @return address of the first byte that matches c in the region pointed to by ptr, 
+ *         NULL if it doesn't exist
+ */
 void *memchr(const void *ptr, int c, size_t num) {
     size_t i;
     for (i = 0; i < num; i++, ptr++)
@@ -53,6 +84,13 @@ void *memchr(const void *ptr, int c, size_t num) {
     return NULL;
 }
 
+/** searches a string for the first occurence of the character c
+ * 
+ * @param str: string to search
+ * @param c: character to search for
+ * 
+ * @return address of c in str, NULL if non-existent
+ */
 char *strchr(const char *str, int c) {
     size_t i;
     for (i = 0; i < strlen(str) + 1; i++)
@@ -62,6 +100,14 @@ char *strchr(const char *str, int c) {
     return NULL;
 }
 
+/** searches a string for the first occurence of the character c
+ * this function is supposed to be reentrant, but isn't currently
+ * 
+ * @param str: string to search
+ * @param c: character to search for
+ * 
+ * @return address of c in str, NULL if non-existent
+ */
 char *strrchr(const char *str, int c) {
     int i;
     for (i = strlen(str) - 1; i > -1; i--)
@@ -71,7 +117,14 @@ char *strrchr(const char *str, int c) {
     return NULL;
 }
 
-// this function is ripped from GNU GLibC (version 2.22)
+/** calculates the length of the initial segment of str1 which consists of characters in strt2
+ * this function is ripped from GNU GLibC (version 2.22)
+ * 
+ * @param str1: string to search
+ * @param str2: string containing characters to match against
+ * 
+ * @return size of substring, 0 if no such substring exists
+ */
 size_t strspn(const char *str1, const char *str2) {
     size_t num = 0;
     size_t i;
@@ -90,6 +143,14 @@ size_t strspn(const char *str1, const char *str2) {
     return num;
 }
 
+/** calculates the length of the initial segment of string str1 which consists entirely of 
+ * characters not in string str2
+ * 
+ * @param str1: string to search
+ * @param str2: string containing characters to not match against
+ * 
+ * @return size of substring, 0 if no such substring exists
+ */
 size_t strcspn(const char *str1, const char *str2) {
     size_t i;
     size_t j;
@@ -101,7 +162,13 @@ size_t strcspn(const char *str1, const char *str2) {
     return strlen(str1);
 }
 
-//this one is a little wonky
+/** finds the first occurence of string str2 in string str1
+ * 
+ * @param str1: string to search
+ * @param str2: string to search for in str1
+ * 
+ * @return address of str2 in str1, NULL if str2 is not in str1
+ */
 char *strstr(const char *str1, const char *str2) {
     size_t i;
     for (i = 0; str1[i] != '\0'; i++) {
@@ -120,7 +187,16 @@ char *strstr(const char *str1, const char *str2) {
     return NULL;
 }
 
-// pretty much riped from GNU GlibC (lines 139-142 are different, but not in effect)
+/** splits str into tokens on boundaries determined by the characters in delimeters
+ * the first call to this function should have str point to a valid string, and
+ * subsequent calls should point to NULL until tokenizing is done
+ * pretty much ripped from GNU GlibC (lines 139-142 are different, but not in effect)
+ * 
+ * @param str: string to tokenize
+ * @param delimeters: string of characters to split str on
+ * 
+ * @return token if one exists, NULL if tokenizing is done or no token exists
+ */
 char *strtok(char *str, const char *delimeters) {
     char *token;
 
@@ -149,7 +225,14 @@ char *strtok(char *str, const char *delimeters) {
     return token;
 }
 
-// this function is ripped from GNU GLibC (version 2.22)
+/** finds the first character in the string str1 that matches any character specified in str2
+ * this function is ripped from GNU GLibC (version 2.22)
+ * 
+ * @param str1: string to search
+ * @param str2: string of characters to search for in str1
+ * 
+ * @return first occurence of char in str1 that is in str2, NULL if no chars from str2 are in str1
+ */
 char *strpbrk(const char *str1, const char *str2) {
     while (*str1 != '\0') {
         const char *s2 = str2;
@@ -163,17 +246,27 @@ char *strpbrk(const char *str1, const char *str2) {
   return NULL;
 }
 
-/* reverses a null terminated string */
-void reverse(char *src) {
+/** reverses a string
+ * 
+ * @param str: string to reverse
+*/
+void reverse(char *str) {
     int i, j;
 
-    for (i = 0, j = strlen(src) - 1; i < j; i++, j--) {
-        char temp = src[i];
-        src[i] = src[j];
-        src[j] = temp;
+    for (i = 0, j = strlen(str) - 1; i < j; i++, j--) {
+        char temp = str[i];
+        str[i] = str[j];
+        str[j] = temp;
     }
 }
 
+/** appends the string at src to the string pointed to by dest
+ * 
+ * @param dest: string to append to
+ * @param src: string to append
+ * 
+ * @return pointer to dest
+ */
 char *strcat(char *dest, const char *src) {
     char *dest_end = dest + strlen(dest); 
 
@@ -185,6 +278,14 @@ char *strcat(char *dest, const char *src) {
     return dest;
 }
 
+/** appends num characters from the string at src to the string at dest
+ * 
+ * @param dest: string to append to
+ * @param src: string to append
+ * @param num: number of characters to append
+ * 
+ * @return pointer to dest
+ */
 char *strncat(char *dest, const char *src, size_t num) {
     char *dest_end = dest + strlen(dest);
 
@@ -196,7 +297,12 @@ char *strncat(char *dest, const char *src, size_t num) {
     return dest;
 }
 
-/* returns the length of a null-terminated string */
+/** returns the length of a null-terminated string 
+ * 
+ * @param str: string to calculate the length of
+ * 
+ * @return number of characters in str
+ */
 size_t strlen(const char *str) {
 
     int i = 0;
@@ -206,19 +312,36 @@ size_t strlen(const char *str) {
     return i;
 }
 
-/* returns < 0 if s1 < s2, 0 if s1 == s2, > 0 if s1 > s2 */
-int strcmp(const char *s1, const char *s2) {
+/** compares the string at str1 to the string at str2 
+ * 
+ * @param str1: first string to compare
+ * @param str2: second string ot compare
+ * 
+ * @return the difference between the first differing character in str1 and str2, 0 if there are none
+ */
+int strcmp(const char *str1, const char *str2) {
     int i;
-    for (i = 0; s1[i] == s2[i]; i++) {
-        if (s1[i] == '\0') 
+    // this should probably make sure we don't read garbage if str1 
+    // is longer than str2
+    for (i = 0; str1[i] == str2[i]; i++) {
+        if (str1[i] == '\0') 
             return 0;
     }
-    return s1[i] - s2[i];
+    return str1[i] - str2[i];
 }
 
-int strncmp(const char *s1, const char *s2, size_t num) {
+/** compares the first n characters string at str1 to the string at str2 
+ * 
+ * @param str1: first string to compare
+ * @param str2: second string ot compare
+ * @param n: number of characters to compare
+ * 
+ * @return the difference between the first differing character in the first n characters in
+ *         str1 and str2, 0 if there are none
+ */
+int strncmp(const char *s1, const char *s2, size_t n) {
     size_t i;
-    for (i = 0; i < num && s1[i] == s2[i]; i++) {
+    for (i = 0; i < n && s1[i] == s2[i]; i++) {
         if (s1[i] == '\0') 
             return 0;
     }
@@ -226,31 +349,49 @@ int strncmp(const char *s1, const char *s2, size_t num) {
     return s1[i] - s2[i];
 }
 
-
+/** copies the string at src to the memory at dest
+ * dest and src shouldn't overlap
+ * 
+ * @param dest: memory to copy to
+ * @param src: string to copy
+ * 
+ * @return pointer to dest
+ */
 char *strcpy(char *dest, const char *src) {
-    return memcpy (dest, src, strlen(src) + 1);
+    return memcpy(dest, src, strlen(src) + 1);
 }
 
-/* copies num chars from source to destination
-   destination and source shouldn't overlap
-   if source is less than num, then destination is padded with 0s until num
-   chars have been copied */
-char *strncpy(char *dest, const char *src, size_t num) {
+/** copies num chars from src to dest
+ * dest and src shouldn't overlap
+ * if src is less than num, then dest is padded with 0s until num
+ * chars have been copied 
+ * 
+ * @param dest: memory to copy to
+ * @param src: string to copy
+ * @param n: number of characters to copy
+ * 
+ * @return pointer to dest
+ */
+char *strncpy(char *dest, const char *src, size_t n) {
     size_t i;
-    for (i = 0; i < num && src[i] != '\0'; i++) {
+    for (i = 0; i < n && src[i] != '\0'; i++) {
         dest[i] = src[i];
     }
 
     /* pad with 0s until num chars have been copied */
-    for (; i < num; i++) {
+    for (; i < n; i++) {
         dest[i] = '\0';
     }
 
     return dest;
 }
 
-/* appends a character to a string */
-void append(char str[], char c) {
+/** appends character c to string str 
+ * 
+ * @param str: string to append to
+ * @param c: character to append
+ */
+void append(char *str, char c) {
     char *tmp = str;
     tmp += strlen(str);
 
@@ -259,16 +400,19 @@ void append(char str[], char c) {
     *tmp = '\0';
 }
 
-/* strcoll can't be properly implemented right now because I don't have a C locale */
+/** NOTE: UNIMPLEMENTED
+ * currently just calls strcmp(str1, str2)
+ */
 int strcoll(const char *str1, const char *str2) {
     return strcmp(str1, str2);
 }
 
-/* not implemented for the same reason strcoll can't be properly done */
+/** NOTE: UNIMPLEMENTED */
 size_t strxfrm(char *dest __attribute__ ((unused)), const char *src __attribute__ ((unused)), size_t num __attribute__ ((unused))) {
     return 0;
 }
 
+/** NOTE: UNIMPLEMENTED */
 char *strerr(int errnum) {
     if (errnum == 0)
         return "No error";
@@ -276,8 +420,14 @@ char *strerr(int errnum) {
         return "Some error has occurred (This function is not implemented right now)";
 }
 
-/* Creates a all upperscase version of str and puts it into a buffer
-   str must be less than 256 characters long*/
+/** creates an all upperscase version of str and puts it into a buffer
+ * str must be less than 256 characters long
+ * NOTE: not a std lib function
+ * 
+ * @param str: string to capitalize
+ * 
+ * @return pointer to capitalized string
+ */
 char *to_uppercase(char *str) {
     char *curr = str;
     static char up[256];
@@ -296,9 +446,14 @@ char *to_uppercase(char *str) {
     return up;
 }
 
-/* removes any leading and trailing whitespace
-   corrupts memory at str, use strim if this isn't
-   desired behaviour */
+/** removes any leading and trailing whitespace
+ * corrupts memory at str, use strim if this isn't desired behaviour
+ * NOTE: not a std lib function
+ * 
+ * @param str: string to trim
+ *
+ * @return pointer to memory at str 
+ */
 char *trim(char *str) {
     int i = 0;
     int j = strlen(str) - 1;
@@ -321,9 +476,15 @@ char *trim(char *str) {
     return str;
 }
 
-/* removes any leading and trailing whitespace
-   and stores the resultant string in buffer */
-char *strim(char *str, char buffer[]) {
+/** removes any leading and trailing whitespace
+ * and stores the resulting string in buffer
+ * 
+ * @param str: string to trim
+ * @param buf: buffer to store the trimmed string in
+ *
+ * @return pointer to memory at buf 
+ */
+char *strim(const char *str, char *buf) {
     int i = 0;
     int j = strlen(str) - 1;
 
@@ -338,8 +499,8 @@ char *strim(char *str, char buffer[]) {
     
     int k;
     for (k = 0; i <= j; k++, i++)
-        buffer[k] = str[i];
+        buf[k] = str[i];
     
-    buffer[k] = '\0';
-    return buffer;
+    buf[k] = '\0';
+    return buf;
 }

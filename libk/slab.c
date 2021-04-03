@@ -1,5 +1,7 @@
-/* This implementation uses an underlying free list, maybe want to redo with a better data structure? */
+/* Implementation of a slab allocator. This implementation uses an underlying free list, 
+ * maybe want to redo with a better data structure? */
 
+/* includes */
 #include <stdbool.h>
 #include <slab.h>
 #include <kerrors.h>
@@ -8,10 +10,13 @@
 #include <stdio.h>
 #endif
 
+/* defines */
 #define SLAB_ROUND_UP(x, size) (((x + size - 1) / size) * size)
 
+/* globals */
 static slab_alloc_t default_slab;
 
+/* structs */
 struct slab_node {
     void *addr;
     bool free;
@@ -19,6 +24,15 @@ struct slab_node {
     struct slab_node *next;
 };
 
+/* functions */
+
+/** allocates num_slabs from slab allocator s
+ * 
+ * @param s: slab allocator to allocate from
+ * @param num_slabs: number of slabs to allocate
+ *
+ * @return address of allocated slab(s) or NULL if no region was found
+ */
 static void *slab_alloc(slab_alloc_t *s, size_t num_slabs) {
     struct slab_node *node = (struct slab_node *) s->data;
 
@@ -62,7 +76,14 @@ static void *slab_alloc(slab_alloc_t *s, size_t num_slabs) {
     return NULL;
 }
 
-
+/** frees a previous allocation made by slab allocator s
+ * 
+ * @param s: slab allocator to free from
+ * @param addr: address of previous allocation
+ * @param num_slabs: size of previous allocation
+ * 
+ * @return  -SLAB_FREE_FAIL if free fails, SLAB_SUCC otherwise
+ */
 static int slab_free(slab_alloc_t *s, void *addr, size_t num_slabs) {
     struct slab_node *node = (struct slab_node *) s->data;
 
@@ -94,9 +115,18 @@ static int slab_free(slab_alloc_t *s, void *addr, size_t num_slabs) {
 }
 
 
-/* Initializes a new slab allocator at memory location s.
+/** Initializes a new slab allocator at memory location s.
  * NOTE: slab_size must be greater than or equal to the sizeof(struct slab_node), otherwise
- *       the allocator won't initialize properly */
+ *       the allocator won't initialize properly 
+ * 
+ * @param s: pointer to slab allocator struct to initialize
+ * @param mem: memory for s to allocate from
+ * @param mem_size: size of memory for s to allocate from
+ * @param slab_size: size of each slab in s
+ * @param aux: unused
+ * 
+ * @return -SLAB_INIT_FAIL on failure to initialize, SLAB_SUCC otherwise
+ */
 int slab_init(slab_alloc_t *s, void *mem, size_t mem_size, size_t slab_size, void *aux __attribute__ ((unused))) {
     uint32_t num_slabs = mem_size / slab_size;
 
@@ -137,20 +167,27 @@ int slab_init(slab_alloc_t *s, void *mem, size_t mem_size, size_t slab_size, voi
     return SLAB_SUCC;
 }
 
-
+/** gets a pointer to the default slab allocator
+ * 
+ * @return jpointer to the default slab allocator
+ */
 slab_alloc_t *get_default_slab_allocator() {
     return &default_slab;
 }
 
 #ifdef TESTS
-    void slab_print_list(slab_alloc_t *s) {
-        struct slab_node *node = (struct slab_node *) s->data;
-        
-        uint32_t i = 0;
-        while (node != NULL) {
-            printf("node %d: %x | mem: %x | free: %B | next: %x\n", i, node, node->addr, node->free, node->next);
-            node = node->next;
-            i++;
-        }
+/** prints the underlying linked list of slab allocator s
+ * 
+ * @param s: slab allocator to print
+ */
+void slab_print_list(slab_alloc_t *s) {
+    struct slab_node *node = (struct slab_node *) s->data;
+    
+    uint32_t i = 0;
+    while (node != NULL) {
+        printf("node %d: %x | mem: %x | free: %B | next: %x\n", i, node, node->addr, node->free, node->next);
+        node = node->next;
+        i++;
     }
+}
 #endif

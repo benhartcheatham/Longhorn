@@ -1,45 +1,68 @@
-/* THIS IMPLEMENTATION ISN'T C99 COMPLIANT */
+/* Implementation of standard library IO functions.
+ * NOTE: THIS IMPLEMENTATION ISN'T C99 COMPLIANT */
 
+/* includes */
 #include <stdarg.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include "../drivers/vesa.h"
+#include "../drivers/display.h"
 #include "../kernel/proc.h"
 #include "../kernel/thread.h"
 
-/* prints a string to the screen */
+/* defines */
+
+/* globals */
+
+/* functions */
+
+/** prints a null-terminated string to the screen
+ * 
+ * @param string: null-terminated string to print
+ */
 void print(char *string) {
-    vesa_print(string);
+    get_default_dis_driver()->dis_puts(string);
 }
 
-/* prints a formatted string to the screen */
+/** prints a formatted string to the screen
+ * Format specifiers:
+ *  - %d: decimal number
+ *  - %x: hexadecimal number
+ *  - %s: null-terminated string
+ *  - %B: boolean value as a string
+ * 
+ * @param format: null-terminated string to format and print
+ * @param ...: argument for each formatting specifier
+ * 
+ * @return 0 on success, -1 otherwise
+ */
 int printf(const char *format, ...) {
     va_list args;
     va_start(args, format);
+    display_t *dd = get_default_dis_driver();
 
     while (*format != '\0') {
         if (*format == '%') {
             format++;
             if (*format == 'd') {
                 char *temp = int_to_string(va_arg(args, int));
-                vesa_print(temp);
+                dd->dis_puts(temp);
             } else if (*format == 'x') {
                 char *temp = int_to_hexstring(va_arg(args, int));
-                vesa_print(temp);
+                dd->dis_puts(temp);
             } else if (*format == 's') {
-                vesa_print(va_arg(args, char *));
+                dd->dis_puts(va_arg(args, char *));
             } else if (*format == 'B') {
                 bool arg = va_arg(args, int);
                 if (arg)
-                    vesa_print("true");
+                    dd->dis_puts("true");
                 else
-                    vesa_print("false");
+                    dd->dis_puts("false");
             }
         } else
-            vesa_print_char(*format);
+            dd->dis_putc(*format);
 
         format++;
     }
@@ -48,9 +71,15 @@ int printf(const char *format, ...) {
     return 0;
 }
 
-/* composes a string with the same text that would be printed if format was used on printf, but instead of being printed, 
-   the content is stored as a C string in the buffer pointed by str. 
-   returns the number of characters written, excluding the null terminator */
+/** composes a string with the same text that would be printed if format was used on printf, but instead of being printed, 
+ * the content is stored as a C string in the buffer pointed by str. 
+ * 
+ * @param str: buffer to store formatted string in
+ * @param format: string to format
+ * @param ...: argument for each formatting specifier
+ * 
+ * @return number of characters written, excluding the null terminator
+ */
 int sprintf(char *str, const char *format, ...) {
     int chars_written = 0;
     va_list args;
@@ -92,36 +121,11 @@ int sprintf(char *str, const char *format, ...) {
     return chars_written;
 }
 
-/* prints a string with a newline to the screen */
+/** prints a string with a newline to the screen 
+ * 
+ * @param string: null-terminated string to print
+*/
 void println(char *string) {
-    vesa_println(string);
-}
-
-/* clears the screen */
-void clear_screen() {
-    vesa_clear_screen();
-}
-
-/* sets the cursor position */
-void set_cursor_offset(uint16_t x, uint16_t y) {
-    vesa_set_cursor(x,y);
-}
-
-/* sets the color of text */
-void set_color(enum vga_color fg, enum vga_color bg) {
-    vesa_set_color(fg, bg);
-}
-
-/* sets the foreground color of text */
-void set_fg_color(enum vga_color c) {
-    vesa_set_fg_color(c);
-}
-
-/*sets the background color of text */
-void set_bg_color(enum vga_color c) {
-    vesa_set_bg_color(c);
-}
-
-void set_default_color() {
-    vesa_set_color(WHITE, BLACK);
+    get_default_dis_driver()->dis_puts(string);
+    get_default_dis_driver()->dis_putc('\n');
 }

@@ -2,20 +2,30 @@
  * in libk/synch.h. These primitives should be thread safe and safe to 
  * use in a multicore environment. */
 
+/* includes */
 #include <stddef.h>
 #include <synch.h>
 #include <atomic.h>
 #include <kerrors.h>
 #include "../kernel/thread.h"
 
+/* defines */
 
-/* static functions */
+/* globals */
+
+/* prototypes */
 static int __sdown(semaphore_t *s);
+
+/* functions */
 
 /* semaphore functions */
 
-/* Initalizes a semaphore s with an inital value val
- * Returns an error code < 0 on failure and 0 on success */
+/** initalizes a semaphore s with an inital value val
+ * 
+ * @param s: semaphore to init
+ * @param val: initial value of s
+ * 
+ * @return error code < 0 on failure and 0 on success */
 int semaphore_init(semaphore_t *s, int val) {
     int ret = 0;
 
@@ -31,11 +41,14 @@ int semaphore_init(semaphore_t *s, int val) {
     return ret;
 }
 
-/* Calls the down operation on the semaphore s
+/** calls the down operation on the semaphore s
  * If the semaphore has no resources left, the
  * calling thread is blocked until resources are
  * available
- * Returns an error code < 0 on failure and 0 on success */
+ * 
+ * @param s: semaphore to down on
+ * 
+ * @return error code < 0 on failure and 0 on success */
 int semaphore_down(semaphore_t *s) {
     // from: https://stackoverflow.com/questions/36094115/c-low-level-semaphore-implementation
     // while (1) {
@@ -69,9 +82,14 @@ int semaphore_down(semaphore_t *s) {
     return LOCK_ACQ_SUCC;
 }
 
-/* Static function that does the blocking of the
+/** static function that does the blocking of the
  * thread trying to call down if the semaphore has
- * no resources available */
+ * no resources available 
+ * 
+ * @param s: semaphore to down on
+ * 
+ * @return LOCK_ACQ_SUCC on success, error code < 0 otherwise
+ */
 static int __sdown(semaphore_t *s) {
     list_insert(&s->waiters, &s->lock.owner->node);
 
@@ -88,11 +106,14 @@ static int __sdown(semaphore_t *s) {
     return LOCK_ACQ_SUCC;
 }
 
-/* Calls the up operation on a semaphore
- * If there are other threads waiting on this semaphore,
+/** calls the up operation on a semaphore
+ * if there are other threads waiting on this semaphore,
  * one is unblocked to be scheduled, otherwise the
  * value of the semaphore is incremented 
- * Returns an error code < 0 on failure and 0 on success */
+ * 
+ * @param s: semaphore to up
+ * 
+ * @return error code < 0 on failure and 0 on success */
 int semaphore_up(semaphore_t *s) {
     int ret = 0;
 
@@ -113,9 +134,11 @@ int semaphore_up(semaphore_t *s) {
     return LOCK_REL_SUCC;
 }
 
-/* Tries to call down on the semaphore s
- * Returns an error code < 0 if the attempt
- * fails and 0 on success */
+/** tries to call down on the semaphore s
+ * 
+ * @param s: semaphore to try to down
+ * 
+ * @return error code < 0 on failure and 0 on success */
 int semaphore_try_down(semaphore_t *s) {
 
     int ret = spin_lock_acquire(&s->lock);
@@ -141,9 +164,11 @@ int semaphore_try_down(semaphore_t *s) {
 
 /* spin lock functions */
 
-/* Initializes an unlocked spin lock with owner thread o 
- * Returns _LOCK_INIT_FAIL if o is null and 0 on
- * a successful initialization */
+/** initializes an unlocked spin lock
+ *
+ * @param sl: spinlock to initialize
+ * 
+ * @return -LOCK_INIT_FAIL on failure, LOCK_INIT_SUCC otherwise */
 int spin_lock_init(spin_lock_t *sl) {
     if (sl == NULL)
         return -LOCK_INIT_FAIL;
@@ -154,10 +179,12 @@ int spin_lock_init(spin_lock_t *sl) {
     return LOCK_INIT_SUCC;
 }
 
-/* Acquires a spin lock
- * The thread will busy wait until the thread acquires the lock 
- * Returns -LOCK_ACQ_FAIL if the lock value is corrupted and
- * 0 if the lock is acquired */
+/** acquires a spin lock
+ * the thread will busy wait until the thread acquires the lock 
+ * 
+ * @param sl: spinlock to acquire
+ * 
+ * @return -LOCK_ACQ_FAIL on failure, LOCK_ACQ_SUCC otherwise */
 int spin_lock_acquire(spin_lock_t *sl) {
     int val = sl->val;
 
@@ -174,10 +201,11 @@ int spin_lock_acquire(spin_lock_t *sl) {
     return LOCK_ACQ_SUCC;
 }
 
-/* Releases a spin lock
- * Returns -LOCK_REL_FAIL if the lock value is corrupted
- * or the calling thread does not own the lock and 0
- * if the release call is successfull */
+/** releases a spin lock
+ * 
+ * @param sl: spinlock to release
+ * 
+ * @return -LOCK_REL_FAIL on failure, LOCK_REL_SUCC otherwise*/
 int spin_lock_release(spin_lock_t *sl) {
 
     // if the lock had a bad value (it's already free),

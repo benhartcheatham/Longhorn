@@ -34,6 +34,6 @@ extern size_t strxfrm(char *dest, const char *src, size_t num);
 extern char *strerr(int errnum);
 extern char *to_uppercase(char *str);
 extern char *trim(char *str);
-extern char *strim(char *str, char buffer[]);
+extern char *strim(const char *str, char buffer[]);
 
 #endif

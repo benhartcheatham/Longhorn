@@ -10,6 +10,8 @@
         "vesa.h": "c",
         "list.h": "c",
         "shell.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "mem.h": "c",
+        "stream.h": "c"
     }
 }
