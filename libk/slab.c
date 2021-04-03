@@ -1,5 +1,5 @@
-/* Implementation of a slab allocator. This implementation uses an underlying free list, 
- * maybe want to redo with a better data structure? */
+/* Implementation of a slab allocator. This implementation uses pointer indexing into an 
+ * array of slabs at the beginning of the slab allocator memory */
 
 /* includes */
 #include <stdbool.h>
@@ -17,11 +17,9 @@
 static slab_alloc_t default_slab;
 
 /* structs */
-struct slab_node {
+struct slab {
     void *addr;
     bool free;
-
-    struct slab_node *next;
 };
 
 /* functions */
@@ -34,42 +32,45 @@ struct slab_node {
  * @return address of allocated slab(s) or NULL if no region was found
  */
 static void *slab_alloc(slab_alloc_t *s, size_t num_slabs) {
-    struct slab_node *node = (struct slab_node *) s->data;
+    struct slab *slab = (struct slab *) s->data;
+    size_t total_num_slabs = ((s->mem_size / s->slab_size) * s->slab_size / sizeof(struct slab));
 
     // try and find a region big enough for the allocation
-    while (node != NULL) {
-        size_t i = 0;
+    size_t i = 0;
+    while (i < total_num_slabs) {
 
-        if (node->free) {
-            struct slab_node *temp = node;
-
+        if (slab->free) {
+            struct slab *temp = slab;
+            size_t j = 0;
             // loop through the next num_slabs free nodes, or until
             // an allocated node is found or the list ends
-            while (i < num_slabs && node != NULL) {
-                if (node->free) {
-                    node = node->next;
+            while (j < num_slabs) {
+                if (slab->free) {
+                    j++;
                     i++;
+                    slab++;
                 } else
                     break;
             }
 
             // if the number of free slabs is num_slabs, allocate the region
-            if (i == num_slabs) {
+            if (j == num_slabs) {
                 void *mem_addr = temp->addr;
 
-                i = 0;
-                while (i < num_slabs) {
+                j = 0;
+                while (j < num_slabs) {
                     temp->free = false;
-                    temp = temp->next;
-                    i++;
+                    temp++;
+                    j++;
                 }
 
-                s->free_mem_size -= i * s->slab_size;
+                s->free_mem_size -= j * s->slab_size;
                 return mem_addr;
             }
         }
 
-        node = node->next;
+        slab++;
+        i++;
     }
 
     // no region that fits the request was found
@@ -85,30 +86,32 @@ static void *slab_alloc(slab_alloc_t *s, size_t num_slabs) {
  * @return  -SLAB_FREE_FAIL if free fails, SLAB_SUCC otherwise
  */
 static int slab_free(slab_alloc_t *s, void *addr, size_t num_slabs) {
-    struct slab_node *node = (struct slab_node *) s->data;
+    struct slab *slab = (struct slab *) s->data;
+    size_t total_num_slabs = ((s->mem_size / s->slab_size) * s->slab_size / sizeof(struct slab));
 
     // find the requested node
-    while (node != NULL && node->addr != addr)
-        node = node->next;
+    size_t i = 0;
+    while (slab->addr != addr && i < total_num_slabs)
+        slab++;
     
-    if (node == NULL)
+    if (i == total_num_slabs)
         return -SLAB_FREE_FAIL;
     
     // check the memory area tomake sure
     // entire region is allocated
-    struct slab_node *check_node = node;
+    struct slab *check_slab = slab;
 
-    size_t i = 0;
-    for (i = 0; i < num_slabs && check_node != NULL; ++i, check_node = check_node->next)
-        if (check_node->free != false)
+    i = 0;
+    for (i = 0; i < num_slabs; i++, check_slab++)
+        if (check_slab->free != false)
             return -SLAB_FREE_FAIL;
 
     if (i < num_slabs)
         return -SLAB_FREE_FAIL;
 
     // free region
-    for (i = 0; i < num_slabs && node != NULL; ++i, node = node->next)
-        node->free = true;
+    for (i = 0; i < num_slabs; i++, slab++)
+        slab->free = true;
     
     s->free_mem_size += i * s->slab_size;
     return SLAB_SUCC;
@@ -130,33 +133,28 @@ static int slab_free(slab_alloc_t *s, void *addr, size_t num_slabs) {
 int slab_init(slab_alloc_t *s, void *mem, size_t mem_size, size_t slab_size, void *aux __attribute__ ((unused))) {
     uint32_t num_slabs = mem_size / slab_size;
 
-    if (slab_size < sizeof(struct slab_node))
+    if (slab_size < sizeof(struct slab))
         return -SLAB_INIT_FAIL;
     
-    if (mem == NULL && mem_size < sizeof(struct slab_node) * num_slabs)
+    if (mem == NULL && mem_size < sizeof(struct slab) * num_slabs)
         return -SLAB_INIT_FAIL;
 
-    char *starting_addr = mem + SLAB_ROUND_UP(((num_slabs / 2) * sizeof(struct slab_node)), slab_size);
+    char *starting_addr = mem + ((num_slabs * slab_size) / sizeof(struct slab));
 
     // set up the allocator
-    struct slab_node *node = mem;
+    struct slab *slab = mem;
     while (starting_addr < (char *) (mem + mem_size)) {
         // set up the bookkeeping node
-        node->addr = starting_addr;
-        node->free = true;
-        node->next = node + 1;
+        slab->addr = starting_addr;
+        slab->free = true;
 
-        node++;
+        slab++;
         starting_addr += slab_size;
     }
 
-    // set last node to point to NULL as next
-    node--;
-    node->next = NULL;
-
     s->mem = mem;
     s->mem_size = mem_size;
-    s->free_mem_size = mem_size - SLAB_ROUND_UP(((num_slabs / 2) * sizeof(struct slab_node)), slab_size);
+    s->free_mem_size = mem_size - ((num_slabs * slab_size) / sizeof(struct slab));  // this may be wrong
     s->slab_size = slab_size;
     s->data = mem;
 
@@ -181,12 +179,16 @@ slab_alloc_t *get_default_slab_allocator() {
  * @param s: slab allocator to print
  */
 void slab_print_list(slab_alloc_t *s) {
-    struct slab_node *node = (struct slab_node *) s->data;
+    struct slab *slab = (struct slab *) s->data;
+    uint32_t num_slabs = ((s->mem_size / s->slab_size) * s->slab_size / sizeof(struct slab));
     
+    printf("sizeof(struct slab): %d\n", sizeof(struct slab));
+    printf("s->mem_size: %d | s->slab_size: %d | s->free_mem_size: %d\n", s->mem_size, s->slab_size, s->free_mem_size);
+    printf("number of slabs total: %d\n", num_slabs);
     uint32_t i = 0;
-    while (node != NULL) {
-        printf("node %d: %x | mem: %x | free: %B | next: %x\n", i, node, node->addr, node->free, node->next);
-        node = node->next;
+    while (i < num_slabs) {
+        printf("slab %d: %x | mem: %x | free: %B\n", i, slab, slab->addr, slab->free);
+        slab++;
         i++;
     }
 }

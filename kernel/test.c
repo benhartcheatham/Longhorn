@@ -50,7 +50,7 @@ void init_testing(bool enable_test_prints) {
     add_module(&kalloc);
 
     struct test_module slab_alloc = make_module("Slab Alloc");
-    add_test(&slab_alloc, make_test(true, slab_init(slab_allocator, slab_alloc_mem, 4096, 32, NULL) == SLAB_SUCC, "slab alloctor initialization"));
+    //add_test(&slab_alloc, make_test(true, slab_init(slab_allocator, slab_alloc_mem, 4096, 32, NULL) == SLAB_SUCC, "slab alloctor initialization"));
     
     slab_ret = slab_allocator->alloc(slab_allocator, 1);
     add_test(&slab_alloc, make_test(true, slab_ret != NULL, "Slab allocator allocation 1"));
@@ -59,6 +59,10 @@ void init_testing(bool enable_test_prints) {
     add_test(&slab_alloc, make_test(true, slab_allocator->free(slab_allocator, slab_ret, 1) == SLAB_SUCC, "Slab allocator free 1"));
     add_test(&slab_alloc, make_test(true, slab_allocator->free(slab_allocator, slab_ret2, 30) == SLAB_SUCC, "Slab allocator free 2"));
     add_module(&slab_alloc);
+
+    // #ifdef TESTS
+    // slab_print_list(get_default_slab_allocator());
+    // #endif
 
     // struct test_module procs = make_module("Processes");
     // int pid = proc_create("test", proc_test_func, NULL);
