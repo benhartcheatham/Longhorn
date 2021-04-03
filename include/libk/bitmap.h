@@ -23,6 +23,8 @@ struct bitmap {
 /* typedefs */
 typedef struct bitmap bitmap_t;
 
+/* functions */
+
 /* init functions */
 void bitmap_init(bitmap_t *m, size_t bits);
 void bitmap_init_s(bitmap_t *m, size_t bits, void *map_p);

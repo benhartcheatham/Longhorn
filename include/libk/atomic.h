@@ -8,6 +8,8 @@
 
 /* structs */
 
+/* typedefs */
+
 /* functions */
 int test_and_set(int *dest);
 int fetch_and_add(int *dest, int val);

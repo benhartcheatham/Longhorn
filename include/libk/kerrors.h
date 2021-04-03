@@ -69,6 +69,8 @@
 #define SLAB_FREE_FAIL 1
 #define SLAB_INIT_FAIL 2
 
+/* structs */
+
 /* typedefs */
 typedef int32_t err_t;
 

@@ -9,7 +9,6 @@
 /* defines */
 
 /* structs */
-
 struct spin_lock {
     int val;
     struct thread *owner;

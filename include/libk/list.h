@@ -6,6 +6,10 @@
 /* includes */
 #include <stddef.h>
 
+/* defines */
+#define LIST_ENTRY(ptr, type, member) \
+((type *) ((char *) ptr - offsetof(type, member)))
+
 /* structs */
 struct list_node {
     struct list_node *next;
@@ -20,10 +24,6 @@ struct list {
 /* typedefs */
 typedef struct list_node list_node;
 typedef struct list list;
-
-/* Macros */
-#define LIST_ENTRY(ptr, type, member) \
-((type *) ((char *) ptr - offsetof(type, member)))
 
 /* functions */
 
