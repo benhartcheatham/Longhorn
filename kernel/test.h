@@ -1,3 +1,4 @@
+/* Defines the testing suite. */
 #ifndef _TEST_H
 #define _TEST_H
 

@@ -1,9 +1,17 @@
 /* Implements the timer interrupts for the system. Currently only PIT is supported */
+
+/* includes */
 #include <stdint.h>
 #include "../kernel/isr.h"
 #include "../kernel/port_io.h"
 #include "../kernel/thread.h"
 #include "timer.h"
+
+/* defines */
+
+/* globals */
+
+/* functions */
 
 /** Initializes timer interrupt 
  * 

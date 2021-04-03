@@ -8,6 +8,8 @@
 #include "vesa.h"
 #include "vga_font.h"
 
+/* defines */
+
 /* globals */
 static uint32_t *framebuffer_addr;
 static uint32_t width;

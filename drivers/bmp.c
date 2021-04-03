@@ -1,6 +1,11 @@
 /* This file is for reading a .bmp file for an image. */
+
+/* includes */
 #include "bmp.h"
 
+/* defines */
+
+/* globals */
 static uint8_t *start_pos = NULL;
 static uint32_t img_size = 0;
 

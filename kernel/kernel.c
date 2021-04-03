@@ -1,4 +1,11 @@
+/* This file is the starting point for the kernel. It is responsible for initialization of 
+ * most kernel subsystems. */
+
+/* includes */
 #include <stdbool.h>
+
+/* libc */
+#include <stdio.h>
 
 /* Boot */
 #include "../boot/multiboot.h"
@@ -6,9 +13,6 @@
 /* Drivers */
 #include "../drivers/vesa.h"
 #include "../drivers/line.h"
-
-/* libc */
-#include <stdio.h>
 
 /* Processes/Threads */
 #include "proc.h"
@@ -25,9 +29,17 @@
     #include "test.h"
 #endif
 
-/* Kernel data */
+/* defines */
+
+/* globals */
 char *version_no = "0.3.0";
 
+/** Main function of the kernel, starts the kernel and its subsystems. This function
+ * returns to a tight loop and then is never scheduled again once completed.
+ * 
+ * @param mbi: mbi given by GRUB2
+ * @param magic: unused
+ */
 void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_idt();
     init_alloc(mbi);

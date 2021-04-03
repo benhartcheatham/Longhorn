@@ -1,14 +1,18 @@
-#include <stdbool.h>
-#include "shell.h"
-#include "thread.h"
-#include "port_io.h"
-#include "proc.h"
+/* The default shell for the kernel. */
+
+/*includes */
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <mem.h>
 #include "../drivers/terminal.h"
 #include "../drivers/bmp.h"
+#include "shell.h"
+#include "thread.h"
+#include "port_io.h"
+#include "proc.h"
 
+/* defines */
 #define GRAPHICS_MODE 0
 #define TEXT_MODE 1
 
@@ -18,6 +22,8 @@
 
 #define LOGO_COLOR 0xBD5615
 #define MIN_ARG_MEM 16  //small strings really screw up arg-making
+
+/* globals */
 
 /* shell info */
 size_t last_index = 0;
@@ -34,7 +40,7 @@ bmp_file_header_t header;
 static char key_buffer[LINE_BUFFER_SIZE];
 static bool cursor_on = false;
 
-/* static functions */
+/* prototypes */
 static void shell_waiter(void *aux);
 static void read_stdin(struct process *active);
 static uint32_t ps_get_alignment(display_t *dis, uint32_t *alignment);
@@ -46,9 +52,11 @@ static void ps(char **line, uint32_t argc);
 static void getbuf(char **line, uint32_t argc);
 static void grub(char **line, uint32_t argc);
 static void moon(char **line, uint32_t argc);
-shell_command command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, grub, moon, getbuf};
+shell_command command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, grub, moon, getbuf}; // this has to be here sadly, can't be moved before the protoyypes
 
-/* initializes a shell process */
+/* functions */
+
+/** initializes a shell process */
 void shell_init() {
     shell_pid = proc_create("shell", shell_waiter, NULL);
     proc_set_active(shell_pid);
@@ -58,7 +66,7 @@ void shell_init() {
     bmp_change_color(&header, 0xFFFFFF, 0x0);
 }
 
-/* prints the logo of the correpsonding size to the screen
+/** prints the logo of the correpsonding size to the screen
    logo sizes are defined in terminal.h */
 void print_logo() {
     clear_screen();
@@ -66,7 +74,10 @@ void print_logo() {
     vesa_set_cursor(0, (header.info_header.height / FONT_HEIGHT) + 1);
 }
 
-/* function for the shell process to use, constantly scans input */
+/** function for the shell process to use, constantly scans input
+ * 
+ * @param aux: unused
+ */
 static void shell_waiter(void *aux __attribute__ ((unused))) {
     uint32_t last_cursor_tick = 0;
 
@@ -90,8 +101,11 @@ static void shell_waiter(void *aux __attribute__ ((unused))) {
 
 }
 
-/* reads the active process' stdin stream for input from the user
-   input is executed as a command, if available, when the ENTER key is pressed */ 
+/** reads the active process' stdin stream for input from the user
+ * input is executed as a command, if available, when the ENTER key is pressed
+ * 
+ * @param active: pointer to active process
+ */ 
 static void read_stdin(struct process *active) {
     line_disc_t *ld = get_default_line_disc();
     std_stream *stdin = GET_STDIN(active);
@@ -156,32 +170,11 @@ static void read_stdin(struct process *active) {
     }
 }
 
-// /* adds char c to the key buffer */
-// static void append_to_buffer(char c) {
-//     if (key_buf_i < LINE_BUFFER_SIZE)
-//         key_buffer[key_buf_i++] = c;
-// }
-
-// /* deletes the last size characters from the buffer
-//    size must be less than or equal to the current index of the buffer and greater
-//    than 0 */
-// static void shrink_buffer() {
-//     if (key_buf_i > 0)
-//         key_buffer[--key_buf_i] = '\0';
-//     else
-//         key_buffer[key_buf_i] = '\0';
-// }
-
-// /* flushes/clears the key buffer */
-// static void flush_buffer() {
-//     key_buf_i = 0;
-
-//     int i;
-//     for (i = 0; i < LINE_BUFFER_SIZE + 1; i++)
-//         key_buffer[i] = 0;
-// }
-
-/* prints a list of available commands */
+/** prints a list of available commands
+ * 
+ * @param line: unused
+ * @param argc: unused
+ */
 static void help(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
     printf("Available Commands:\n");
     int i;
@@ -189,11 +182,20 @@ static void help(char **line __attribute__ ((unused)), uint32_t argc __attribute
         printf("\t%s\n", help_commands[i]);
     }
 }
-/* shuts down the machine gracefully (only works for qemu) */
+/** shuts down the machine gracefully (only works for qemu) 
+ * 
+ * @param line: unused
+ * @param argc: unused
+ */
 static void shutdown(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
     outw(0x604, 0x2000);
 }
 
+/** prints the given command line args
+ * 
+ * @param line: pointer to command line args
+ * @param argc: number of command line args
+ */
 static void getbuf(char **line, uint32_t argc) {
     printf("buffer: ");
     for (uint32_t i = 0; i < argc; i++)
@@ -201,6 +203,12 @@ static void getbuf(char **line, uint32_t argc) {
     printf("\n");
 }
 
+/** converts a thread state to a human-readable string
+ *
+ * @param s: state to convert
+ * 
+ * @return state s as a string
+ */
 static char *p_state_to_string(enum thread_states s) {
     switch(s) {
         case THREAD_RUNNING:
@@ -220,7 +228,11 @@ static char *p_state_to_string(enum thread_states s) {
 }
 
 
-/* TODO - update this function to use print_at/set_cursor calls */
+/** prints info about the processes in the system
+ * 
+ * @param line: unused
+ * @param argc: unused
+ */
 static void ps(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
     display_t *dis = get_default_dis_driver();
     const list_node *node = proc_peek_all_list();
@@ -244,6 +256,13 @@ static void ps(char **line __attribute__ ((unused)), uint32_t argc __attribute__
 
 }
 
+/** helper function for ps that gets the y coordinate of the next info string
+ * 
+ * @param dis: display driver used by the shell
+ * @param a: alignment used in calculation
+ * 
+ * @return y coordinate of next info string
+ */
 static uint32_t ps_get_alignment(display_t *dis, uint32_t *a) {
     uint32_t next_y = (*a) * (dis->dis_getn_cols() / 8);
     *a = *a + 1;    // done this way so compiler doesn't complain

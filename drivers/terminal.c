@@ -9,6 +9,8 @@
 #include "../kernel/kalloc.h"
 #include "terminal.h"
 
+/* defines */
+
 /* globals */
 static term_t *dterm = NULL;
 

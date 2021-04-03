@@ -1,3 +1,4 @@
+/* Defines functions for the default kernel shell. */
 #ifndef _SHELL_H
 #define _SHELL_H
 
@@ -7,6 +8,7 @@
 /* defines */
 #define FULL_LOGO 2
 #define HALF_LOGO 1
+
 /* structs */
 
 /* typedefs */

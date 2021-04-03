@@ -1,17 +1,23 @@
+/* Implements the memory manager for the kernel. Currently supports two different allocators,
+palloc and kmalloc. Palloc allocates from a bitmap in increments of PG_SIZE, while kmalloc
+allocates from a slab allocator that allocates in increments of 64 bytes. */
+
+/* includes */
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "kalloc.h"
-#include "../boot/multiboot.h"
 #include <bitmap.h>
-#include <list.h>
-#include <synch.h>
 #include <kerrors.h>
+#include <list.h>
 #include <slab.h>
+#include <synch.h>
+#include "../boot/multiboot.h"
+#include "kalloc.h"
 
 /* defines */
 #define ROUND_UP(x, size) (((x + size - 1) / size) * size)
 #define SLAB_SIZE 64
+
 /* structs */
 struct allocation {
     void *addr;
@@ -20,16 +26,19 @@ struct allocation {
     struct list_node node;
 };
 
-/* static data */
+/* globals */
 static bitmap_t free_map;
 static char *start_addr = (char *) (4*MB);
 static spin_lock_t malloc_lock;
 static spin_lock_t palloc_lock;
 static list allocations;
 
-/* initalization functions */
+/* functions */
 
-/* initializes kmalloc and palloc */
+/** initializes kmalloc and palloc 
+ * 
+ * @param mb: boot record given by GRUB2
+ */
 void init_alloc(multiboot_info_t *mb) {
     size_t num_pages = (size_t) (((mb->mem_upper * 1024) - 4*MB) / PG_SIZE);
     bitmap_init_s(&free_map, num_pages, start_addr);
@@ -42,14 +51,20 @@ void init_alloc(multiboot_info_t *mb) {
     spin_lock_init(&palloc_lock);
 }
 
-/* gets the address of a free page of memory from the memory manager 
-   returns NULL if no free pages exist */
+/** gets the address of a free page of memory from the memory manager
+ * 
+ * @return address of allocated page, NULL if no page exists 
+ */
 void *palloc() {
     return palloc_mult(1);
 }
 
-/* gets the address of cnt consecutive free pages of memory from the memory manager
-   returns NULL if this range doesn't exist */ 
+/** gets the address of cnt consecutive free pages of memory from the memory manager
+ * 
+ * @param cnt: number of consecutive pages to allocate
+ * 
+ * @return address of allocated region, NULL if region doesn't exist
+ */ 
 void *palloc_mult(size_t cnt) {
     if (spin_lock_acquire(&palloc_lock) != LOCK_ACQ_SUCC)
         return NULL;
@@ -66,14 +81,23 @@ void *palloc_mult(size_t cnt) {
     return NULL;
 }
 
-/* frees a page of memory obtained from the memory manager
-   returns -MEM_ALLOC_FAIL if addr wasn't from the memory manager and the number of pages freed otherwise */
+/** frees a page of memory obtained from palloc
+ * 
+ * @param addr: address of previous allocation to free
+ * 
+ * @return -MEM_FREE_FAIL on failure, MEM_FREE_SUCC otherwise
+ */
 int pfree(void *addr) {
     return pfree_mult(addr, 1);
 }
 
-/* frees cnt pages of memory obtained from the memory manager
-   returns -MEM_FREE_FAIL if addr wasn't from the memory manager and the number of pages freed otherwise */
+/** frees cnt pages of memory obtained from the memory manager
+ * 
+ * @param addr: address of previous allocation to free
+ * @param cnt: size in pages of previous allocation
+ * 
+ * @return -MEM_FREE_FAIL on failure, MEM_FREE_SUCC otherwise
+ */
 int pfree_mult(void *addr, size_t cnt) {
     if (spin_lock_acquire(&palloc_lock) != LOCK_ACQ_SUCC)
         return -MEM_FREE_FAIL;
@@ -82,15 +106,23 @@ int pfree_mult(void *addr, size_t cnt) {
 
     if (idx + cnt < bitmap_get_size(&free_map) && bitmap_count_range(&free_map, idx, cnt) == cnt) {
         spin_lock_release(&palloc_lock);
-        return bitmap_set_range(&free_map, idx, cnt, false);
+        if (bitmap_set_range(&free_map, idx, cnt, false) == cnt)
+            return MEM_FREE_SUCC;
+        
+        return -MEM_FREE_FAIL;
     }
 
     spin_lock_release(&palloc_lock);
     return -MEM_FREE_FAIL;
 }
 
-/* obtains the memory address of a memory area of at least size and no greater than PG_SIZE from the memory manager
-   returns NULL if no memory area exists */
+/** obtains the memory address of a memory area of at least size and 
+ * no greater than PG_SIZE from the memory manager
+ * 
+ * @param size: requested size in bytes of allocation
+ * 
+ * @return address of allocated memory, NULL if no such region exists
+ */
 void *kmalloc(size_t size) {
     slab_alloc_t *allocator = get_default_slab_allocator();
     void *ret = NULL;
@@ -134,8 +166,14 @@ void *kmalloc(size_t size) {
     return ret;
 }
 
-/* obtains the memory address of a zeroed memory area of at least num * size from the memory manager
-   returns NULL if no memory area exists */
+/** obtains the memory address of a zeroed memory area of at least num * size 
+ * from the memory manager
+ *  * 
+ * @param num: number of allocations
+ * @param size: size of allocations
+ * 
+ * @return address of allocated memory, NULL if no such region exists
+ */
 void *kcalloc(size_t num, size_t size) {
     uint64_t *mem = (uint64_t *) kmalloc(num * size);
     if (mem == NULL)
@@ -149,8 +187,12 @@ void *kcalloc(size_t num, size_t size) {
     return (void *) mem;
 }
 
-/* frees a unit of memory gotten from kmalloc or kcalloc
-   returns -MEM_FREE_FAIL if memory wasn't obtained from kmalloc or kcalloc and num bytes freed otherwise */
+/** frees a unit of memory gotten from kmalloc or kcalloc
+ * 
+ * @param addr: address of previous memory allocation
+ * 
+ * @return -MEM_FREE_FAIL on failure, MEM_FREE_SUCC otherwise
+ */
 int kfree(void *addr) {
     if (spin_lock_acquire(&malloc_lock) != LOCK_ACQ_SUCC)
         return -MEM_FREE_FAIL;
@@ -180,12 +222,20 @@ int kfree(void *addr) {
     return pfree(addr);
 }
 
-/* returns the number of pages allocated */
+#ifdef TESTS
+/** returns the number of currently pages allocated
+ * 
+ * @return number of pages currently allocated
+ */
 size_t num_allocated() {
     return bitmap_count_range(&free_map, 0, free_map.bits);
 }
 
-/* returns the size of the free map */
+/** returns the size of the palloc free map
+ * 
+ * @return size of the palloc free map
+ */
 size_t map_size() {
     return free_map.bits;
 }
+#endif

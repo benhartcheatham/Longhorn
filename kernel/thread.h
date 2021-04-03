@@ -1,3 +1,4 @@
+/* Defines the threading subsystem */
 #ifndef _THREAD_H
 #define _THREAD_H
 
@@ -52,7 +53,7 @@ typedef struct thread_info thread_info_t;
 void init_threads(struct process *init_p);
 
 /* thread state functions */
-int thread_create(uint8_t priority, char *name, struct process *parent, struct thread **sthread, thread_function func, void *aux);
+int thread_create(uint8_t priority, char *name, struct process *proc, struct thread **sthread, thread_function func, void *aux);
 void thread_block(struct thread *thread);
 void thread_unblock(struct thread *thread);
 void thread_exit(int *ret);
@@ -76,6 +77,8 @@ void timer_interrupt_handler(struct register_frame *r);
 void finish_schedule();
 
 /* testing functions */
+#ifdef TESTS
 size_t num_threads();
+#endif
 
 #endif

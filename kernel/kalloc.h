@@ -1,3 +1,4 @@
+/* Declares functions to access the kernel memory manager(s). */
 #ifndef _ALLOC_H
 #define _ALLOC_H
 
@@ -31,7 +32,9 @@ void *kcalloc(size_t num, size_t size);
 int kfree(void *addr);
 
 /* testing and status functions */
+#ifdef TESTS
 size_t num_allocated();
 size_t map_size();
+#endif
 
 #endif

@@ -1,31 +1,42 @@
+/* Implements the process subsystem of the kernel. Processes are not a schedulable unit, but are instead a wrapper/container
+ * for threads, which are the default scheduable unit. */
+
+/* includes */
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <kerrors.h>
+#include <list.h>
+#include <mem.h>
+#include "../drivers/vesa.h"
 #include "proc.h"
 #include "kalloc.h"
-#include <mem.h>
-#include <string.h>
-#include <stdio.h>
-#include <list.h>
-#include <kerrors.h>
-#include "../drivers/vesa.h"
 
-/* static data */
+/* defines */
+
+/* globals */
 static struct list all_procs;
 static struct process *current;
 static struct process *active;
 static uint32_t pid_count;
 
-/* static functions */
+/* prototypes */
 static struct thread *proc_get_free_thread(struct process *proc);
 
+/* functions */
+
 /* initialization functions */
+
+/** initializes the process subsystem */
 void init_processes() {
     list_init(&all_procs);
 
     //create init process
     struct process *p = (struct process *) palloc();
     if (p == NULL) {
-        println("CRITICAL ERROR: NO MEMORY FOR INIT PROCESS.\nHALTING...");
+        char *stop = NULL;
+        *stop = 0;
         asm volatile("cli");
         asm volatile("hlt");
     }
@@ -57,6 +68,14 @@ void init_processes() {
 
 /* process state functions */
 
+/** creates a process
+ * 
+ * @param name: name of the process
+ * @param func: function for the main thread of the process to execute
+ * @param aux: parameters for func and any other data
+ * 
+ * @return -PROC_CREATE_FAIL on failure, pid of proc otherwise
+ */
 int proc_create(char *name, proc_function func, void *aux) {
     //change this to just use kmalloc
     struct process *p = (struct process *) palloc();
@@ -103,11 +122,19 @@ int proc_create_thread(uint8_t priority, char *name, thread_function func, void 
     return tid;
 }
 
-/* intended for a graceful exit */
+/** exit the current process
+ * 
+ * @param ret: return code of the process
+ */
 void proc_exit(int *ret) {
     proc_kill(PROC_CUR(), ret);
 }
 
+/** kill a process
+ * 
+ * @param proc: process to kill
+ * @param ret: return code of the process
+ */
 void proc_kill(struct process *proc, int *ret) {
     int success = 0;
 
@@ -141,11 +168,20 @@ void proc_kill(struct process *proc, int *ret) {
 
 /* process "setter" functions */
 
+/** sets the active thread of the process
+ * the active thread of a process is the thread currently executing
+ * 
+ * @param proc: process to set active thread of
+ * @param num: which thread to set as active in process thread table
+ */
 void proc_set_active_thread(struct process *proc, uint8_t num) {
     proc->active_thread = proc->threads[num];
 }
 
-/* sets the active process to proc with pid*/
+/** sets the active process to proc with pid
+ * 
+ * @param pid: pid of process to set as active
+ */
 void proc_set_active(uint32_t pid) {
     list_node *node = all_procs.head.next;
     struct process *proc = LIST_ENTRY(node, struct process, node);
@@ -161,38 +197,61 @@ void proc_set_active(uint32_t pid) {
     }
 }
 
-/* sets the active process to proc */
+/** sets the active process to proc
+ * 
+ * @param proc: process to set as the active process
+ */
 void proc_set_active_p(struct process *proc) {
     active = proc;
 }
 
 /* process "getter" functions */
 
-/* gets the state of the active thread of the process */
+/** gets the state of the active thread of the process
+ * 
+ * @param p: process to get the state from
+ */
 enum thread_states proc_get_state(struct process *p) {
     return p->active_thread->state;
 }
 
-/* returns a pointer to the active process */
+/** returns a pointer to the active process 
+ * 
+ * @return pointer to the active process
+ */
 struct process *proc_get_active() {
     return active;
 }
 
-/* returns a pointer to the all list for processes
-   don't use this unless necessary, should be using a list
-   iterator that doesn't allow for modification */
+/** returns a pointer to the all list for processes
+ * don't use this unless necessary, shouldn't modify this list
+ * 
+ * @return head of the process all list
+ */
 const list_node *proc_peek_all_list() {
     return list_peek(&all_procs);
 }
 
-/* gets the amount of live threads process proc owns */
+/** gets the amount of live threads process proc owns 
+ * a live thread is a proces that has a state other than TERMINATED
+ * or has yet to be created
+ * 
+ * @param proc: process to get number of live threads from
+ * 
+ * @return number of live threads of proc
+ */
 uint8_t proc_get_live_t_count(struct process *proc) {
     return proc->num_live_threads;
 }
 
 /* static functions */
 
-/* gets the next free slot in the threads array if there is one */
+/** gets the next free slot in the threads array if there is one 
+ * 
+ * @param proc: process to get the next free slot from
+ * 
+ * @return pointer to next free thread in the process
+ */
 static struct thread *proc_get_free_thread(struct process *proc) {
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++)

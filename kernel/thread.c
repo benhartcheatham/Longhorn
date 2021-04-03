@@ -9,29 +9,28 @@
   
   Priority scehduling is also something I will want to implement now */
 
+/* includes */
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <synch.h>
+#include <kerrors.h>
 #include "thread.h"
 #include "proc.h"
 #include "kalloc.h"
 #include "port_io.h"
-#include <stdio.h>
-#include <synch.h>
-#include <kerrors.h>
 
 /* defines */
 #define MAX_THREAD_TICKS 8
 
-/* static data */
+/* globals */
 static struct list ready_threads;
 static struct list blocked_threads;
 static struct list dying_threads;
 static struct thread *idle_t;
 static bool tids[MAX_TID];
 static uint8_t thread_ticks = 0;
-
-/* data */
 
 /* structs */
 struct thread_func_frame {
@@ -49,7 +48,7 @@ struct stack_frame {
     void (*eip) (void);
 };
 
-/* static functions */
+/* prototypes */
 static uint32_t allocate_tid();
 static void thread_execute(thread_function *func, void *aux);
 static void schedule();
@@ -59,9 +58,14 @@ static void idle(void *aux);
 /* external functions */
 extern void switch_threads(struct thread *current_thread, struct thread *next_thread);
 
+/* functions */
+
 /* initialization functions */
 
-/* initializes threading */
+/** initializes the threading subsystem
+ * 
+ * @param init: pointer to the initial process
+ */
 void init_threads(struct process *init) {
     list_init(&ready_threads);
     list_init(&blocked_threads);
@@ -74,8 +78,18 @@ void init_threads(struct process *init) {
 
 /* thread state functions */
 
-/* creates a thread under the given parent process */
-int thread_create(uint8_t priority, char *name, struct process *parent, struct thread **sthread, thread_function func, void *aux) {
+/** creates a thread under the given process
+ * 
+ * @param priority: unused
+ * @param name: name of thread
+ * @param proc: process to create this thread under
+ * @param sthread: pointer to store thread info into (should be in proc)
+ * @param func: function thread should run when scheduled
+ * @param aux: func parameters and any extra info
+ * 
+ * @return tid of the created thread, -1 if creation failed
+ */
+int thread_create(uint8_t priority, char *name, struct process *proc, struct thread **sthread, thread_function func, void *aux) {
     uint8_t *s = (uint8_t *) palloc_mult(STACK_SIZE / PG_SIZE);
 
     if (s == NULL)
@@ -95,10 +109,10 @@ int thread_create(uint8_t priority, char *name, struct process *parent, struct t
     ti->t.state = THREAD_READY;
     sprintf(ti->t.name, "%s", name);
     ti->t.priority = priority;
-    ti->t.pid = parent->pid;
+    ti->t.pid = proc->pid;
 
     // add a pointer to the parent process after thread struct
-    ti->p = parent;
+    ti->p = proc;
     *sthread = &ti->t;
 
     s += STACK_SIZE;
@@ -132,7 +146,10 @@ int thread_create(uint8_t priority, char *name, struct process *parent, struct t
     return ti->t.tid;
 }
 
-/* blocks a thread */
+/** blocks a thread
+ * 
+ * @param thread: thread to block
+ */
 void thread_block(struct thread *thread) {
     disable_interrupts();
 
@@ -153,7 +170,10 @@ void thread_block(struct thread *thread) {
     schedule();
 }
 
-/* unblocks a thread and sets it to ready to run */
+/** unblocks a thread and sets it to ready to run 
+ * 
+ * @param thread: thread to unblock
+ */
 void thread_unblock(struct thread *thread) {
     disable_interrupts();
 
@@ -169,7 +189,10 @@ void thread_unblock(struct thread *thread) {
     enable_interrupts();
 }
 
-/* function called at the end of the current thread's lifecycle */
+/** function called at the end of the current thread's lifecycle 
+ * 
+ * @param ret: pointer to where to store return code of thread
+ */
 void thread_exit(int *ret) {
     struct thread *t = THREAD_CUR();
 
@@ -187,10 +210,13 @@ void thread_exit(int *ret) {
     schedule();
 }
 
-/* kills thread thread if owned by current process
-   returns 0 if successful, -1 otherwise 
-   
-   THIS DOESN'T RELEASE THE LOCKS HELD BY THE THREAD, NEEDS TO BE UPDATED */
+/** kills thread thread if owned by current process
+ * THIS DOESN'T RELEASE THE LOCKS HELD BY THE THREAD, NEEDS TO BE UPDATED 
+ * 
+ * @param thread: thread to kill
+ * 
+ * @return return code of the thread, -1 if kill failed
+ */
 int thread_kill(struct thread *thread) {
     if (thread == NULL)
         return -1;
@@ -227,11 +253,15 @@ int thread_kill(struct thread *thread) {
 
 /* scheduling functions */
 
+/** yields the remainder of this thread's time slice */
 void thread_yield() {
     schedule();
 }
 
-/* interrupt handler for the timer interrupt, also starts scheduling periodically */
+/** interrupt handler for the timer interrupt, also starts scheduling periodically
+ * 
+ * @param r: unused
+ */
 void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) {
     thread_ticks++;
     THREAD_CUR()->ticks++;
@@ -241,7 +271,7 @@ void timer_interrupt_handler(struct register_frame *r __attribute__ ((unused))) 
     }
 }
 
-/* finishes up the scheduling process and updates thread state */
+/** finishes up the scheduling process and updates thread state */
 void finish_schedule() {
     //finish the part after we switch threads in schedule()
 
@@ -268,7 +298,11 @@ void finish_schedule() {
 
 /* static functions */
 
-/* executes the function the thread is created to do and kills the thread when done */
+/** executes the function the thread is created to do and kills the thread when done
+ * 
+ * @param func: fucntion for thread to run, given at creation
+ * @param aux: parameters of func
+ */
 static void thread_execute(thread_function func, void *aux) {
     //have to reenable interrupts since there isn't a guaruntee we returned to the irq handler
     asm volatile("sti");
@@ -276,7 +310,7 @@ static void thread_execute(thread_function func, void *aux) {
     thread_exit(NULL);
 }
 
-/* schedules threads */
+/** schedules threads */
 static void schedule() {
     disable_interrupts();
 
@@ -311,14 +345,20 @@ static void schedule() {
     finish_schedule();
 }
 
-/* function that the init thread runs after interrupts are enabled */
+/** function that the init thread runs after interrupts are enabled
+ * 
+ * @param aux: unused
+ */
 static void idle(void *aux __attribute__ ((unused))) {
     while (1) {
         thread_block(THREAD_CUR());
     };
 }
 
-/* allocates a thread id for when a thread is being created */
+/** allocates a thread id for when a thread is being created
+ * 
+ * @return tid of new thread
+ */
 static uint32_t allocate_tid() {
     int i;
     for (i = 0; i < MAX_TID; i++)
@@ -331,6 +371,13 @@ static uint32_t allocate_tid() {
 }
 
 /* testing functions */
+
+#ifdef TESTS
+/** gets the number of threads on the system
+ * 
+ * @return number of threads on the system
+ */
 size_t num_threads() {
     return list_size(&ready_threads) + list_size(&blocked_threads);
 }
+#endif

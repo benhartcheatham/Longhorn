@@ -5,6 +5,14 @@
         - std library includes should be first, include directory (libc, libk, etc.) should be next, then 
           includes from the current directory or a specified absolute path
         - includes should be grouped based on file path
+    - Sections
+        - includes
+        - defines
+        - structs (if applicable)
+        - globals
+        - prototypes (if applicable)
+        - functions
+
 .h:  
     - Each .h file must have an include guard  
     - Each section should be denoted by a comment before the section starts and should be in the order below  

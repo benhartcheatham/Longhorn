@@ -10,6 +10,8 @@
 #include "line.h"
 #include "../kernel/kalloc.h"
 
+/* defines */
+
 /* globals */
 static struct line_discipline dline;
 

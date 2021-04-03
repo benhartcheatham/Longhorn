@@ -5,6 +5,10 @@
 #include "display.h"
 #include "vesa.h"
 
+/* defines */
+
+/* globals */
+
 /* prototypes */
 static display_t default_dis;
 static void display_putats(const char *s, uint32_t x, uint32_t y);
