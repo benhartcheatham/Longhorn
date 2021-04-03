@@ -17,7 +17,7 @@
 #define TEXT_MODE 1
 
 #define MAX_NUM_ARGS 26
-#define NUM_COMMANDS 7
+#define NUM_COMMANDS 8
 #define NUM_HELP_COMMANDS (NUM_COMMANDS - 2)
 
 #define LOGO_COLOR 0xBD5615
@@ -27,8 +27,8 @@
 
 /* shell info */
 size_t last_index = 0;
-char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "exit", "ps", "getbuf"};
-char *commands[NUM_COMMANDS] = {"help", "shutdown", "exit", "ps", "grub", "moon", "getbuf"};
+char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "exit", "ps", "clear", "getbuf"};
+char *commands[NUM_COMMANDS] = {"help", "shutdown", "exit", "ps", "clear", "getbuf", "grub", "moon"};
 uint32_t shell_pid;
 
 /* logo variables */
@@ -52,7 +52,8 @@ static void ps(char **line, uint32_t argc);
 static void getbuf(char **line, uint32_t argc);
 static void grub(char **line, uint32_t argc);
 static void moon(char **line, uint32_t argc);
-shell_command command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, grub, moon, getbuf}; // this has to be here sadly, can't be moved before the protoyypes
+static void clear(char **line, uint32_t argc);
+shell_command command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, clear, getbuf, grub, moon}; // this has to be here sadly, can't be moved before the protoyypes
 
 /* functions */
 
@@ -69,7 +70,7 @@ void shell_init() {
 /** prints the logo of the correpsonding size to the screen
    logo sizes are defined in terminal.h */
 void print_logo() {
-    clear_screen();
+    get_default_dis_driver()->dis_clear();
     draw_bmp_data(&header, 10, vesa_get_cursor_y() * FONT_HEIGHT + 10);
     vesa_set_cursor(0, (header.info_header.height / FONT_HEIGHT) + 1);
 }
@@ -144,7 +145,6 @@ static void read_stdin(struct process *active) {
 
             int i;
             for (i = 0; i < NUM_COMMANDS; i++) {
-
                 if (strcmp(trim(args[0]), commands[i]) == 0) {
                     /* this should make a new process/thread, but I need to be able
                     *  to wait on child processes  */
@@ -267,6 +267,10 @@ static uint32_t ps_get_alignment(display_t *dis, uint32_t *a) {
     uint32_t next_y = (*a) * (dis->dis_getn_cols() / 8);
     *a = *a + 1;    // done this way so compiler doesn't complain
     return next_y;
+}
+
+static void clear(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+    get_default_dis_driver()->dis_clear();
 }
 
 /* novelty command */
