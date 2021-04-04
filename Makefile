@@ -20,7 +20,15 @@ CPPFLAGS = $(foreach dir, $(LIBINCLUDE), -I "$(dir)")
 QEMU = qemu-system-i386
 DEFINES = 
 
+### INSTALLATION GROUPS ###
+BINUTILS_VER = 2.24
+GCC_VER = 4.9.1
+OS = "Ubuntu"
+BUILD_DIR = ""
+
 ### MAKEFILE RULES ###
+
+### EXECUTE RULES ###
 all: os-binary os-img
 
 # default is to run iso
@@ -30,6 +38,8 @@ run: all
 # runs ab usi with no restart on crash
 run-no-reboot: all
 	$(QEMU) -cdrom Longhorn.iso -no-reboot -no-shutdown
+
+### BUILD RULES ###
 
 # runs a version of the kernel that has testing enabled
 test: DEFINES += -D TESTS # look at https://www.gnu.org/software/make/manual/make.html#Target_002dspecific for how this works
@@ -62,11 +72,33 @@ os-binary: $(BOOT) $(OBJ) $(ASM)
 	$ objcopy --input binary --output elf32-i386 --binary-architecture i386 \
     $< $@
 
-### BUILD RULES ###
-
 # Builds a disk img of the os
 os-img:
 	mkdir -p build/boot/grub
 	cp grub.cfg build/boot/grub/grub.cfg
 	cp os-binary build/boot/os-binary
 	grub-mkrescue -o Longhorn.iso build
+
+### INSTALL RULES ###
+
+install:
+	-@if [ -n $(BUILD_DIR) ]; then 															\
+		./install_script.sh -o $(OS) -b $(BINUTILS_VER) -g $(GCC_VER) -d $(BUILD_DIR) -s;   \
+	else																					\
+		./install_script.sh -o $(OS) -b $(BINUTILS_VER) -g $(GCC_VER) -s; 					\
+	fi
+
+depend:
+	-@apt install grub-common;	\
+	apt install qemu-system-x86
+
+help:
+	-@echo " To compile the OS, run make. To compile and run, run make run. Finally, to compile and run the testing suite run make test.\n" \
+	"To compile you will need an i686 cross compiler (made in make install) aliased to i686-elf-gcc, grub-mkrescue, and a qemu\n"   \
+	"installation that can emulate i386 aliased to qemu-system-i386. You can install these dependencies (on systems with apt) by running make depend.\n"														   \
+	"To create an i686 cross compiler compatible with this makefile, run make install. Options for installation include:\n"		   \
+	"\tGCC_VER: Version of gcc of the compiler\n\tBINUTILS_VER: Version of binutils of the compiler\n"					   \
+	"\tOS: The OS you are using to compile the corss compiler. MUST CHANGE FROM \"Ubuntu\" IF NOT ON A DEBIAN SYSTEM.\n"         \
+	"\tSupported OS archetypes are: Ubuntu, Arch.\n"                       													   \
+	"\tBUILD_DIR: Directory to build the compiler in.\n To set any of these variables do <VAR_NAME>=<VALUE>.\n"                   \
+	"If you don't want to use aliases, the makefile can be changed under the COMPILER GROUPS/RULES section to use your commands." \
