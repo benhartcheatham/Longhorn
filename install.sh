@@ -2,7 +2,7 @@
 
 BINUTILS_VER=2.24
 GCC_VER=4.9.1
-ORIGIN_OS="Ubuntu"
+ORIGIN_OS="Arch"
 BUILD_DIR=$HOME
 
 if [ $USER = "root" ]
@@ -63,13 +63,17 @@ done
 
 if [ $ORIGIN_OS = "Arch" ] 
 then
-    echo "Arch is not currently supported. Exiting..."
-    exit -1
+    echo "Installing dependencies for: $ORIGIN_OS"
+    echo "sudo pacman -S base-devel gmp libmpc mpfr"
+    sudo pacman -S base-devel gmp libmpc mpfr
 fi
 
-echo "Installing dependencies for: $ORIGIN_OS"
-echo "sudo apt install build-essential bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo"
-sudo apt install build-essential bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo
+if [ $ORIGIN_OS = "Ubuntu" ]
+then
+    echo "Installing dependencies for: $ORIGIN_OS"
+    echo "sudo apt install build-essential bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo"
+    sudo apt install build-essential bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo
+fi
 
 echo -e "\nStarting Build:\nMaking directory $BUILD_DIR"
 mkdir -p $BUILD_DIR
@@ -103,7 +107,7 @@ echo tar -xf "binutils-$BINUTILS_VER.tar.gz"
 echo "Unpacking gcc source..."
 echo tar -xf "gcc-$GCC_VER.tar.gz"
 
-mkdir -p $BUILD_DIR/cross
+mkdir -p $BUILD_DIR
 export PREFIX="$BUILD_DIR/cross"
 export TARGET=i686-elf
 export PATH="$PREFIX/bin:$PATH"
@@ -114,18 +118,18 @@ cd $BUILD_DIR    # just in case
 mkdir -p build-binutils
 cd build-binutils
 ../binutils-$BINUTILS_VER/configure --target=$TARGET --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror
-# make
-# make install
+make
+make install
 
 cd $BUILD_DIR
 # need to check to make sure $PREFIX/bin is in path here
 mkdir -p build-gcc
 cd build-gcc
 ../gcc-$GCC_VER/configure --target=$TARGET --prefix"$PREFIX" --disable-nls --enable-languages=c --without-headers
-# make all-gcc
-# make all-target-libgcc
-# make install-gcc
-# make install-target-libgcc
+make all-gcc
+make all-target-libgcc
+make install-gcc
+make install-target-libgcc
 
 export PATH="$BUILD_DIR/cross/bin:$PATH"
 echo -e "\nCompilation complete."
