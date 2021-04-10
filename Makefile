@@ -89,8 +89,14 @@ os-img:
 # 	fi
 
 # depend:
-# 	-@apt install grub-common;	\
-# 	apt install qemu-system-x86
+#   -@if [ $OS = "Ubuntu" ]; then \
+# 		echo "this DOES NOT install grub components. You will need to install the packages for" \
+# 		echo "grub-mkrescue (grub-common) and xorriso for make to work." \
+# 		apt install grub-common qemu-system-x86 nasm	\
+#     else if [ $OS = "Arch" ]; then \
+# 		echo "This DOES NOT install grub. If you don't have the grub package, you will need it" \
+# 		sudo pacman -S qemu qemu-arch-extra nasm libisoburn mtools \
+# 	fi
 
 # help:
 # 	-@if [ $(OS) = "Arch" ]; then \
