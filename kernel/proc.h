@@ -5,6 +5,7 @@
 /* includes */
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "thread.h"
 #include <list.h>
 #include <stream.h>
@@ -12,6 +13,7 @@
 /* defines */
 #define MAX_NUM_THREADS 8
 #define MAX_NAME_LENGTH 12
+#define PROC_MAGIC 0x34
 
 /* structs */
 
@@ -23,12 +25,13 @@ struct process {
     struct thread *threads[MAX_NUM_THREADS];    // the threads in this process, must be at least 1,
                                                 // no more than MAX_NUM_THREADS
     uint8_t num_live_threads;   // nuber of alive threads in the process
-
+    
     //might want to make these FILE structs later on
     //shouldn't be accessed directly
     std_stream stdin, stdout, stderr;   // std streams of the process
 
     list_node node; // node for all list of processes
+    uint32_t magic;
 };
 
 /* typedefs */
@@ -41,8 +44,9 @@ void init_processes();
 
 /* process state functions */
 int proc_create(char *name, proc_function f, void *aux);
-void proc_exit();
+void proc_exit(int *ret);
 void proc_kill(struct process *proc, int *ret);
+void proc_cleanup(struct process *p);
 
 /* process "setter" functions */
 void proc_set_active_thread(struct process *proc, uint8_t num);
@@ -63,7 +67,8 @@ uint8_t proc_get_live_t_count(struct process *proc);
  * @return process that contains thread t
  */
 inline struct process *get_thread_proc(struct thread *t) {
-    return (struct process *) ((char *) t) + offsetof(thread_info_t, p);
+    thread_info_t *info = (thread_info_t *) t;
+    return info->p;
 }
 
 #endif

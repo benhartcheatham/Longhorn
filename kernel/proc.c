@@ -22,7 +22,7 @@ static struct process *active;
 static uint32_t pid_count;
 
 /* prototypes */
-static struct thread *proc_get_free_thread(struct process *proc);
+static int proc_get_free_thread(struct process *proc);
 
 /* functions */
 
@@ -53,13 +53,11 @@ void init_processes() {
     p->pid = pid_count++;
 
     int i;
-    for (i = 0; i < MAX_NUM_THREADS; i++) {
-        p->threads[i]->state = THREAD_TERMINATED;
-        p->threads[i]->child_num = i;
-    }
+    for (i = 0; i < MAX_NUM_THREADS; i++)
+        p->threads[i] = NULL;
 
     current = p;
-    
+
     init_threads(p);
     p->active_thread = p->threads[0];
 
@@ -99,22 +97,24 @@ int proc_create(char *name, proc_function func, void *aux) {
         p->threads[i]->child_num = i;
     }
 
-    if (thread_create(0, "main", p, &p->threads[0], func, aux) != -THREAD_CREATE_FAIL)
+    if (thread_create(0, "main", p, 0, func, aux) != -THREAD_CREATE_FAIL)
         p->num_live_threads = 1;
     else {
-        proc_kill(p, NULL);
         return -PROC_CREATE_FAIL;
     }
     
     p->active_thread = p->threads[0];
-
     list_insert_end(&all_procs.tail, &p->node);
+    p->magic = PROC_MAGIC;
     return p->pid;
 }
 
 int proc_create_thread(uint8_t priority, char *name, thread_function func, void *aux) {
-    struct thread *t = proc_get_free_thread(PROC_CUR());
-    int tid = thread_create(priority, name, PROC_CUR(), &t, func, aux);
+    int thread_slot = proc_get_free_thread(PROC_CUR());
+    if (thread_slot == -1)
+        return -1;
+    
+    int tid = thread_create(priority, name, PROC_CUR(), thread_slot, func, aux);
 
     if (tid != -THREAD_CREATE_FAIL)
         PROC_CUR()->num_live_threads++;
@@ -130,40 +130,48 @@ void proc_exit(int *ret) {
     proc_kill(PROC_CUR(), ret);
 }
 
+/** cleans up any book keeping for process p
+ * the actual resources should be deallocated in thread_kill
+ * 
+ * @param p: process to clean up
+ */
+void proc_cleanup(struct process *p) {
+    if (p == NULL || p->num_live_threads != 0) 
+        return;
+
+    list_delete(&all_procs, &p->node);
+}
+
 /** kill a process
  * 
  * @param proc: process to kill
- * @param ret: return code of the process
+ * @param ret: pointer to where to store retun code, if non-NULL
  */
 void proc_kill(struct process *proc, int *ret) {
-    int success = 0;
+    if (proc == NULL)
+        return;
 
-    int i;
-    for (i = 0; i < MAX_NUM_THREADS && proc->num_live_threads > 1; i++) {
-        if (proc->threads[i]->tid != THREAD_CUR()->tid) {
-            int kill_return = thread_kill(proc->threads[i]);
-            if (kill_return != THREAD_KILL_SUCC) {
-                printf("COULDN'T KILL THREAD: %s WITH TID: %d\n", proc->threads[i]->name, proc->threads[i]->tid);
-                printf("THREAD TID: %d PROC->THREAD TID: %d\n", kill_return, proc->threads[i]->tid);
-                success = -THREAD_KILL_FAIL;
-            }
-            
-            if (proc->num_live_threads <= 0)
-                break; 
+    int num_alive = proc->num_live_threads;
+
+    for (int i = 0; i < MAX_NUM_THREADS; i++) {
+        if (proc->threads[i] != NULL && proc->threads[i]->state != THREAD_DYING 
+                                    && proc->threads[i]->state != THREAD_RUNNING) {
+            int t_ret = thread_kill(proc->threads[i]);
+
+            if (t_ret != -1)
+                num_alive--;
         }
     }
 
-    if (success != THREAD_KILL_SUCC && ret != NULL) {
-        *ret = -PROC_KILL_FAIL;
-        return;
-    } else if (ret != NULL)
-        *ret = PROC_KILL_SUCC;
+    if (ret != NULL)
+        *ret = num_alive;
 
-    list_delete(&all_procs, &proc->node);
-    pfree(proc);
-    
-    THREAD_CUR()->state = THREAD_DYING;
-    thread_yield();
+    if (PROC_CUR() == proc && num_alive == 1) {
+        if (ret != NULL)
+            *ret = --num_alive;
+        
+        thread_exit(NULL);
+    }
 }
 
 /* process "setter" functions */
@@ -252,12 +260,12 @@ uint8_t proc_get_live_t_count(struct process *proc) {
  * 
  * @return pointer to next free thread in the process
  */
-static struct thread *proc_get_free_thread(struct process *proc) {
+static int proc_get_free_thread(struct process *proc) {
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++)
         if (proc->threads[i] == NULL)
-            return proc->threads[i];
-    return NULL;
+            return i;
+    return -1;
 }
 
 

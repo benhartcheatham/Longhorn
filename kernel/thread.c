@@ -54,6 +54,7 @@ static void thread_execute(thread_function *func, void *aux);
 static void schedule();
 extern void first_switch_entry();
 static void idle(void *aux);
+static size_t num_threads();
 
 /* external functions */
 extern void switch_threads(struct thread *current_thread, struct thread *next_thread);
@@ -71,9 +72,8 @@ void init_threads(struct process *init) {
     list_init(&blocked_threads);
     list_init(&dying_threads);
 
-    thread_create(0, "idle", init, &init->threads[0], idle, NULL);
+    thread_create(0, "idle", init, 0, idle, NULL);
     idle_t = init->threads[0];
-
 }
 
 /* thread state functions */
@@ -89,7 +89,7 @@ void init_threads(struct process *init) {
  * 
  * @return tid of the created thread, -1 if creation failed
  */
-int thread_create(uint8_t priority, char *name, struct process *proc, struct thread **sthread, thread_function func, void *aux) {
+int thread_create(uint8_t priority, char *name, struct process *proc, uint32_t child_num, thread_function func, void *aux) {
     uint8_t *s = (uint8_t *) palloc_mult(STACK_SIZE / PG_SIZE);
 
     if (s == NULL)
@@ -98,22 +98,22 @@ int thread_create(uint8_t priority, char *name, struct process *proc, struct thr
     // setup the thread struct at the bottom of the page (lowest addr)
     struct thread_info *ti = (struct thread_info *) s;
 
-    ti->t.tid = allocate_tid();
-
     // if the max amount of threads on the system is already met don't allow creation
     if (ti->t.tid == MAX_TID + 1) {
         kfree((void *) s);
         return -1;
     }
 
+    ti->t.tid = allocate_tid();
     ti->t.state = THREAD_READY;
     sprintf(ti->t.name, "%s", name);
     ti->t.priority = priority;
     ti->t.pid = proc->pid;
-
+    ti->t.child_num = child_num;
+    
     // add a pointer to the parent process after thread struct
     ti->p = proc;
-    *sthread = &ti->t;
+    proc->threads[child_num] = &ti->t;
 
     s += STACK_SIZE;
 
@@ -143,6 +143,7 @@ int thread_create(uint8_t priority, char *name, struct process *proc, struct thr
     list_insert(&ready_threads, &ti->t.node);
     enable_interrupts();
 
+    ti->t.magic = THREAD_MAGIC;
     return ti->t.tid;
 }
 
@@ -195,59 +196,91 @@ void thread_unblock(struct thread *thread) {
  */
 void thread_exit(int *ret) {
     struct thread *t = THREAD_CUR();
-
     disable_interrupts();
 
     list_delete(&ready_threads, &t->node);
     t->state = THREAD_DYING;
-    list_insert(&dying_threads, &t->node);
 
-    enable_interrupts();
 
     if (ret != NULL)
         *ret = THREAD_KILL_SUCC;
     
-    schedule();
+    thread_yield();
 }
 
-/** kills thread thread if owned by current process
+/** cleans up thread t
+ * t is assumed to be in no lists and safe to deallocate
+ * 
+ * @param t: thread to cleanup
+ * 
+ * @return -1 if cleanup was unsuccessful, 0 otherwise
+ */
+static int thread_cleanup(struct thread *t) {
+    if (t == NULL || t->state != THREAD_DYING)
+        return -1;
+    
+    struct process *t_proc = get_thread_proc(t);
+    t_proc->threads[t->child_num] = NULL;
+    t_proc->num_live_threads--;
+
+    if (t_proc->num_live_threads == 0) {
+        proc_cleanup(t_proc);
+        pfree(t_proc);
+    }
+
+    pfree_mult((void *) ((uint32_t) t->esp / STACK_SIZE), STACK_SIZE / PG_SIZE);
+    return 0;
+}
+
+/** kills thread thread
+ * If thread is currently running, this function call is equivalent
+ * to calling thread_exit()
  * THIS DOESN'T RELEASE THE LOCKS HELD BY THE THREAD, NEEDS TO BE UPDATED 
  * 
  * @param thread: thread to kill
  * 
- * @return return code of the thread, -1 if kill failed
+ * @return 0 if the thread is not running and thread is killed successfully,
+ *         -1 if the thread is not running and is not killed successfully,
+ *          this function will not return when thread is running
  */
 int thread_kill(struct thread *thread) {
     if (thread == NULL)
         return -1;
+
+    disable_interrupts();
+    if (thread->state == THREAD_RUNNING) {
+        thread_exit(NULL);
+    }
+
+    if (thread->state == THREAD_READY) {
+        thread->state = THREAD_DYING;
     
-    struct process *thread_parent = get_thread_proc(thread);
-
-    if (thread->state == THREAD_READY || thread->state == THREAD_RUNNING) {
-        disable_interrupts();
-
-        list_delete(&ready_threads, &thread->node);
-
-        thread_parent->threads[thread->child_num] = NULL;
-        uint32_t temp = (uint32_t) thread->esp & (~(STACK_SIZE - 1));
-        pfree((void *) temp);
-    
-        thread_parent->num_live_threads--;
-        enable_interrupts();
-
-    } else {
-        disable_interrupts();
+        struct list_node *node = list_delete(&ready_threads, &thread->node);
+        if (node == NULL) {
+            enable_interrupts();
+            return -1;
+        }
         
-        list_delete(&blocked_threads, &thread->node);
-
-        thread_parent->threads[thread->child_num] = NULL;
-        uint32_t temp = (uint32_t) thread->esp & (~(STACK_SIZE - 1));
-        pfree((void *) temp);
-
-        thread_parent->num_live_threads--;
+        // list_insert(&dying_threads, node);
+        thread_cleanup(thread);
         enable_interrupts();
     }
 
+    if (thread->state == THREAD_BLOCKED) {
+        thread->state = THREAD_DYING;
+
+        struct list_node *node = list_delete(&blocked_threads, &thread->node);
+        if (node == NULL) {
+            enable_interrupts();
+            return -1;
+        }
+        
+        // list_insert(&dying_threads, node);
+        thread_cleanup(thread);
+        enable_interrupts();
+    }
+
+    enable_interrupts();
     return 0;
 }
 
@@ -281,16 +314,10 @@ void finish_schedule() {
     proc_set_active_thread(PROC_CUR(), cur->child_num);
     
     if (list_isEmpty(&dying_threads) == false) {
+        disable_interrupts();
         struct thread *dying = LIST_ENTRY(list_pop(&dying_threads), struct thread, node);
-        struct process *dying_parent = get_thread_proc(dying);
-
-        //only kill the parent process if this is its last thread
-        if (proc_get_live_t_count(dying_parent) > 1)
-            thread_kill(dying);
-        else
-            proc_exit(dying_parent);
-        
-        dying = NULL;
+        if (dying != NULL)
+            thread_cleanup(dying);
     }
 
     enable_interrupts();
@@ -323,7 +350,6 @@ static void schedule() {
     if (next == NULL) {
         next_thread = idle_t;
         idle_t->state = THREAD_READY;
-    
     } else {
         next_thread = LIST_ENTRY(next, struct thread, node);
     }
@@ -336,6 +362,9 @@ static void schedule() {
     
     if (current->state == THREAD_READY)
         list_insert_end(&ready_threads.tail, &current->node);
+
+    if (current == next_thread && current->state == THREAD_DYING)   // this may fuck stuff up
+        thread_exit(NULL);
 
     if (current == next_thread || next_thread->state != THREAD_READY)
         return;
@@ -351,6 +380,11 @@ static void schedule() {
  */
 static void idle(void *aux __attribute__ ((unused))) {
     while (1) {
+        if (num_threads() == 1) {
+            printf("Stopping execution...\n");
+            asm volatile("cli");
+            asm volatile("hlt");
+        }
         thread_block(THREAD_CUR());
     };
 }
@@ -372,12 +406,10 @@ static uint32_t allocate_tid() {
 
 /* testing functions */
 
-#ifdef TESTS
 /** gets the number of threads on the system
  * 
  * @return number of threads on the system
  */
-size_t num_threads() {
+static size_t num_threads() {
     return list_size(&ready_threads) + list_size(&blocked_threads);
 }
-#endif

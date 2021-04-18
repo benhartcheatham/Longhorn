@@ -26,7 +26,7 @@ struct test_module {
 /* functions */
 void init_testing(bool enable_test_prints);
 void RUN_ALL_TESTS();
-void test_module(struct test_module module);
+void test_module(struct test_module *module);
 bool test(bool expected, bool expression, char *name);
 void add_module(struct test_module *mod);
 void add_test(struct test_module *mod, struct test_info test);

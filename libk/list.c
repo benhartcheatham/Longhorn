@@ -114,7 +114,7 @@ list_node *list_delete(list *list, list_node *node) {
     // make new links
     curr->prev->next = curr->next;
     curr->next->prev = curr->prev;
-
+    curr->prev = curr->next = NULL;
     // might want to null out old links for safety, have to think about that
     return curr;
 }

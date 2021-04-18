@@ -35,23 +35,21 @@ void proc_test_func(void *aux);
  */
 void init_testing(bool enable_test_prints) {
     test_prints = enable_test_prints;
+
     slab_alloc_t *slab_allocator = get_default_slab_allocator();
-    printf("slab allocator addr: %x\n", slab_allocator->mem);
     void *slab_alloc_mem = NULL;
     void *slab_ret = NULL;
     void *slab_ret2 = NULL;
 
     struct test_module kalloc = make_module("Kalloc");
-    // the + 6 is 1 for the free_map, 1 for malloc arena, and 4 for starting procs and threads 
-    #ifdef TESTS
-    add_test(&kalloc, make_test(true, num_allocated() == (map_size() / PG_SIZE + 8), "Initialization"));
-    #endif
+    // #ifdef TESTS
+    // these numbers are outdated, and it's kinda a stupid test
+    // add_test(&kalloc, make_test(true, num_allocated() == (map_size() / PG_SIZE + 8), "Initialization"));
+    // #endif
     add_test(&kalloc, make_test(true, (slab_alloc_mem = palloc()) != NULL, "Allocate mem for slab allocator"));
     add_module(&kalloc);
 
     struct test_module slab_alloc = make_module("Slab Alloc");
-    //add_test(&slab_alloc, make_test(true, slab_init(slab_allocator, slab_alloc_mem, 4096, 32, NULL) == SLAB_SUCC, "slab alloctor initialization"));
-    
     slab_ret = slab_allocator->alloc(slab_allocator, 1);
     add_test(&slab_alloc, make_test(true, slab_ret != NULL, "Slab allocator allocation 1"));
     slab_ret2 = slab_allocator->alloc(slab_allocator, 30);
@@ -64,16 +62,24 @@ void init_testing(bool enable_test_prints) {
     // slab_print_list(get_default_slab_allocator());
     // #endif
 
-    // struct test_module procs = make_module("Processes");
-    // int pid = proc_create("test", proc_test_func, NULL);
-    // add_test(&procs, make_test(true, pid == 2, "Create1"));
-    // add_test(&procs, make_test(true, num_allocated() == (map_size() / PG_SIZE + 8), "Create2"));
-    // add_test(&procs, make_test(true, num_threads() == 3, "Create3"));
+    struct test_module procs = make_module("Processes");
+    strcpy(procs.name, "Processes");    // this shouldn't have to happen, but i'm redoing this all soon anyway
+    uint32_t pid = proc_create("test", proc_test_func, NULL);
+    add_test(&procs, make_test(true, pid == 2, "Create1"));
 
-    // const list_node *proc_node = proc_peek_all_list();
-    // while (proc_node != NULL && LIST_ENTRY(proc_node, struct process, node)->pid != pid)
-    //     proc_node = proc_node->next;
-    // add_module(&procs);
+    const list_node *proc_node = proc_peek_all_list();
+    while (proc_node != NULL && LIST_ENTRY(proc_node, struct process, node)->pid != pid)
+        proc_node = proc_node->next;
+
+    int ret = 0;
+    struct process *proc_handle = LIST_ENTRY(proc_node, struct process, node);
+    add_test(&procs, make_test(true, proc_handle->num_live_threads == 1, "Create2"));
+
+    proc_kill(proc_handle, &ret);
+    add_test(&procs, make_test(true, ret == 0, "Kill"));
+    add_module(&procs);
+
+
 }
 
 /** function used for testing processes
@@ -150,7 +156,7 @@ void RUN_ALL_TESTS() {
     printf("NUMBER MODULES: %d\n", num_modules_made);
     uint32_t i;
     for (i = 0; i < NUM_MODULES && i < num_modules_made; i++) {
-        test_module(modules[i]);
+        test_module(&modules[i]);
     }
 }
 
@@ -158,19 +164,19 @@ void RUN_ALL_TESTS() {
  * 
  * @param module: module to run
  */
-void test_module(struct test_module module) {
+void test_module(struct test_module *module) {
     int num_passed = 0;
-    printf("TESTING MODULE: %s\n", module.name);
+    printf("TESTING MODULE: %s\n", module->name);
 
     int i;
-    for (i = 0; i < TESTS_PER_MODULE && i < module.num_tests; i++)
-        if (test(module.tests[i].expected, module.tests[i].expression, module.tests[i].name))
+    for (i = 0; i < TESTS_PER_MODULE && i < module->num_tests; i++)
+        if (test(module->tests[i].expected, module->tests[i].expression, module->tests[i].name))
             num_passed++;
-    
-    if (module.num_tests >= TESTS_PER_MODULE)
-        printf("TESTS DONE FOR MODULE: %s\nNUM_PASSED: %d\nNUM_FAILED: %d\n\n", module.name, num_passed, TESTS_PER_MODULE - num_passed);
+
+    if (module->num_tests >= TESTS_PER_MODULE)
+        printf("TESTS DONE FOR MODULE: %s\nNUM_PASSED: %d\nNUM_FAILED: %d\n\n", module->name, num_passed, TESTS_PER_MODULE - num_passed);
     else
-        printf("TESTS DONE FOR MODULE: %s\nNUM_PASSED: %d\nNUM_FAILED: %d\n\n", module.name, num_passed, module.num_tests - num_passed);
+        printf("TESTS DONE FOR MODULE: %s\nNUM_PASSED: %d\nNUM_FAILED: %d\n\n", module->name, num_passed, module->num_tests - num_passed);
 }
 
 /** evaluates a test with the given inputs

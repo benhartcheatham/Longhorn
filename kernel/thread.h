@@ -12,10 +12,10 @@
 #define MAX_PNAME_LENGTH 12
 #define MAX_TNAME_LENGTH 24
 #define MAX_TID 512
-#define THREAD_MAGIC 0x5f5f5f5fu
-#define STACK_SIZE PG_SIZE
+#define STACK_SIZE PG_SIZE*8
 #define THREAD_CUR() ((struct thread *) &get_running()->t)
-#define PROC_CUR() (get_running()->p)
+#define PROC_CUR() ((struct process *) get_running()->p)
+#define THREAD_MAGIC 0x33
 
 /* structs */
 
@@ -34,6 +34,7 @@ struct thread {
     uint32_t child_num; // the location of the thread in the process thread array
 
     list_node node; // list node for ready and non-ready lists
+    uint32_t magic;
 };
 
 // only for use in this file and thread.c
@@ -53,7 +54,7 @@ typedef struct thread_info thread_info_t;
 void init_threads(struct process *init_p);
 
 /* thread state functions */
-int thread_create(uint8_t priority, char *name, struct process *proc, struct thread **sthread, thread_function func, void *aux);
+int thread_create(uint8_t priority, char *name, struct process *proc, uint32_t child_num, thread_function func, void *aux);
 void thread_block(struct thread *thread);
 void thread_unblock(struct thread *thread);
 void thread_exit(int *ret);
@@ -75,10 +76,5 @@ static inline struct thread_info *get_running() {
 void thread_yield();
 void timer_interrupt_handler(struct register_frame *r);
 void finish_schedule();
-
-/* testing functions */
-#ifdef TESTS
-size_t num_threads();
-#endif
 
 #endif
