@@ -41,6 +41,8 @@ int printf(const char *format, ...) {
                 puts_std(out, int_to_hexstring(va_arg(args, int)));
             } else if (*format == 's') {
                 puts_std(out, (va_arg(args, char *)));
+            } else if (*format == 'c') {
+                put_std(out, va_arg(args, int));
             } else if (*format == 'B') {
                 bool arg = va_arg(args, int);
                 if (arg)
@@ -86,6 +88,8 @@ int kprintf(const char *format, ...) {
                 dd->dis_puts(temp);
             } else if (*format == 's') {
                 dd->dis_puts(va_arg(args, char *));
+            } else if (*format == 'c') {
+                dd->dis_putc(va_arg(args, int));
             } else if (*format == 'B') {
                 bool arg = va_arg(args, int);
                 if (arg)

@@ -61,6 +61,7 @@ shell_command command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, c
 void shell_init() {
     shell_pid = proc_create("shell", shell_waiter, NULL);
     proc_set_active(shell_pid);
+    proc_get_active()->stdout = proc_get_active()->stdin;
 
     line_init(get_default_line_disc(), NULL, GET_STDOUT(proc_get_active()), GET_STDIN(proc_get_active()), COOKED);
     read_bmp_header(header_addr, &header);
@@ -149,7 +150,7 @@ static void read_stdin(struct process *active) {
                     break;
                 }
             }
-            //flush_std(stdin);
+            flush_std(stdin);
             ld->line_flush(ld);
 
             for (uint32_t i = 0; i < argc; i++) {
