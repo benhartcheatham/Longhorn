@@ -40,6 +40,7 @@ void destroy_c(char_stream *stream);
 std_stream *init_std(std_stream *stream);
 void flush_std(std_stream *stream);
 int put_std(std_stream *stream, char c);
+int puts_std(std_stream *stream, char *s);
 char *get_copy_std(std_stream *stream);
 char get_std(std_stream *stream);
 char peek_std(std_stream *stream);

@@ -3,6 +3,7 @@
 /* includes */
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <mem.h>
 #include "../kernel/kalloc.h"
 #include "stream.h"
@@ -138,17 +139,32 @@ void flush_std(std_stream *stream) {
  * @param stream: stream to input to
  * @param c: character to input
  * 
- * @return 1 on success, 0 otherwise
+ * @return 0 on success, -1 otherwise
  */
 int put_std(std_stream *stream, char c) {
     if(stream->in == ((stream->out - 1 + STD_STREAM_SIZE) % STD_STREAM_SIZE))
-        return 0; /* Queue Full*/
+        return -1; /* Queue Full*/
 
     stream->stream[stream->in] = c;
 
     stream->in = (stream->in + 1) % STD_STREAM_SIZE;
 
-    return 1;
+    return 0;
+}
+
+/** puts string s into std_stream stream
+ * 
+ * @param stream: stream to input to
+ * @param s: string to input
+ * 
+ * @return number of characters input to stream
+ */
+int puts_std(std_stream *stream, char *s) {
+    size_t len = strlen(s);
+    size_t i;
+    for (i = 0; i < len && put_std(stream, s[i]) == 0; i++);
+
+    return i;
 }
 
 /** returns the address of a char array that has the contents of std_stream stream in it

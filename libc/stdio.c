@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <stream.h>
 #include "../drivers/display.h"
 #include "../kernel/proc.h"
 #include "../kernel/thread.h"
@@ -22,8 +23,39 @@
  * 
  * @param string: null-terminated string to print
  */
-void print(char *string) {
+void kprint(char *string) {
     get_default_dis_driver()->dis_puts(string);
+}
+
+int printf(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    std_stream *out = GET_STDOUT(PROC_CUR());
+
+    while (*format != '\0') {
+        if (*format == '%') {
+            format++;
+            if (*format == 'd') {
+                puts_std(out, int_to_string(va_arg(args, int)));
+            } else if (*format == 'x') {
+                puts_std(out, int_to_hexstring(va_arg(args, int)));
+            } else if (*format == 's') {
+                puts_std(out, (va_arg(args, char *)));
+            } else if (*format == 'B') {
+                bool arg = va_arg(args, int);
+                if (arg)
+                    puts_std(out, "true");
+                else
+                    puts_std(out, "false");
+            }
+        } else
+            put_std(out, *format);
+
+        format++;
+    }
+
+    va_end(args);
+    return 0;
 }
 
 /** prints a formatted string to the screen
@@ -38,7 +70,7 @@ void print(char *string) {
  * 
  * @return 0 on success, -1 otherwise
  */
-int printf(const char *format, ...) {
+int kprintf(const char *format, ...) {
     va_list args;
     va_start(args, format);
     display_t *dd = get_default_dis_driver();
@@ -125,7 +157,7 @@ int sprintf(char *str, const char *format, ...) {
  * 
  * @param string: null-terminated string to print
 */
-void println(char *string) {
+void kprintln(char *string) {
     get_default_dis_driver()->dis_puts(string);
     get_default_dis_driver()->dis_putc('\n');
 }

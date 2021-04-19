@@ -124,10 +124,6 @@ static void read_stdin(struct process *active) {
             char *token = strtok(key_buffer, " ");
             size_t arg_length = strlen(token);
 
-            // kmalloc is apparently still really buggy with small allocations
-            if (arg_length < MIN_ARG_MEM)
-                arg_length = MIN_ARG_MEM;
-
             args[0] = kmalloc(arg_length);
             strcpy(args[0], token);
             argc++;
@@ -153,7 +149,7 @@ static void read_stdin(struct process *active) {
                     break;
                 }
             }
-            flush_std(stdin);
+            //flush_std(stdin);
             ld->line_flush(ld);
 
             for (uint32_t i = 0; i < argc; i++) {
@@ -163,7 +159,7 @@ static void read_stdin(struct process *active) {
 
             memset(args, 0, MAX_NUM_ARGS * sizeof(char *));
             memset(key_buffer, 0, LINE_BUFFER_SIZE);
-            printf("> ");
+            kprintf("> ");
         }
         
         c = get_std(stdin);
@@ -176,10 +172,10 @@ static void read_stdin(struct process *active) {
  * @param argc: unused
  */
 static void help(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
-    printf("Available Commands:\n");
+    kprintf("Available Commands:\n");
     int i;
     for (i = 0; i < NUM_HELP_COMMANDS; i++) {
-        printf("\t%s\n", help_commands[i]);
+        kprintf("\t%s\n", help_commands[i]);
     }
 }
 /** shuts down the machine gracefully (only works for qemu) 
@@ -197,10 +193,10 @@ static void shutdown(char **line __attribute__ ((unused)), uint32_t argc __attri
  * @param argc: number of command line args
  */
 static void getbuf(char **line, uint32_t argc) {
-    printf("buffer: ");
+    kprintf("buffer: ");
     for (uint32_t i = 0; i < argc; i++)
-        printf("%s ", line[i]);
-    printf("\n");
+        kprintf("%s ", line[i]);
+    kprintf("\n");
 }
 
 /** converts a thread state to a human-readable string
@@ -249,7 +245,7 @@ static void ps(char **line __attribute__ ((unused)), uint32_t argc __attribute__
         dis->dis_putats(int_to_string(proc->pid), ps_get_alignment(dis, &alignment), dis->dis_gety());
         dis->dis_putats(p_state_to_string(proc_get_state(proc)), ps_get_alignment(dis, &alignment), dis->dis_gety());
         dis->dis_putats(proc->active_thread->name, ps_get_alignment(dis, &alignment), dis->dis_gety());
-        printf("\n");
+        kprintf("\n");
 
         node = list_get_next(node);
     }
@@ -275,16 +271,16 @@ static void clear(char **line __attribute__ ((unused)), uint32_t argc __attribut
 
 /* novelty command */
 static void grub(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
-    printf("GRUB is ok\n\n\n\ni guess...\n");
+    kprintf("GRUB is ok\n\n\n\ni guess...\n");
 }
 
 /* novelty command */
 static void moon(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
-    printf("did you mean: ");
+    kprintf("did you mean: ");
 
     get_default_dis_driver()->dis_setcol(0xff0000, 0x0);
     
-    printf("\"GAMER GOD MOONMOON\"?\n");
+    kprintf("\"GAMER GOD MOONMOON\"?\n");
     
     get_default_dis_driver()->dis_setcol(0xffffff, 0x0);
 

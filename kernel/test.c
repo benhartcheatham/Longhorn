@@ -153,7 +153,7 @@ struct test_info make_test(bool expected, bool expression, char *name) {
 
 /** runs all tests in every module, called in kmain() if testing is enabled */
 void RUN_ALL_TESTS() {
-    printf("NUMBER MODULES: %d\n", num_modules_made);
+    kprintf("NUMBER MODULES: %d\n", num_modules_made);
     uint32_t i;
     for (i = 0; i < NUM_MODULES && i < num_modules_made; i++) {
         test_module(&modules[i]);
@@ -166,7 +166,7 @@ void RUN_ALL_TESTS() {
  */
 void test_module(struct test_module *module) {
     int num_passed = 0;
-    printf("TESTING MODULE: %s\n", module->name);
+    kprintf("TESTING MODULE: %s\n", module->name);
 
     int i;
     for (i = 0; i < TESTS_PER_MODULE && i < module->num_tests; i++)
@@ -174,9 +174,9 @@ void test_module(struct test_module *module) {
             num_passed++;
 
     if (module->num_tests >= TESTS_PER_MODULE)
-        printf("TESTS DONE FOR MODULE: %s\nNUM_PASSED: %d\nNUM_FAILED: %d\n\n", module->name, num_passed, TESTS_PER_MODULE - num_passed);
+        kprintf("TESTS DONE FOR MODULE: %s\nNUM_PASSED: %d\nNUM_FAILED: %d\n\n", module->name, num_passed, TESTS_PER_MODULE - num_passed);
     else
-        printf("TESTS DONE FOR MODULE: %s\nNUM_PASSED: %d\nNUM_FAILED: %d\n\n", module->name, num_passed, module->num_tests - num_passed);
+        kprintf("TESTS DONE FOR MODULE: %s\nNUM_PASSED: %d\nNUM_FAILED: %d\n\n", module->name, num_passed, module->num_tests - num_passed);
 }
 
 /** evaluates a test with the given inputs
@@ -192,9 +192,9 @@ bool test(bool expected, bool expression, char *name) {
 
     if (test_prints) {
         if (result)
-            printf("test %s passed: expected %B, got %B\n", name, expected, expression);
+            kprintf("test %s passed: expected %B, got %B\n", name, expected, expression);
         else
-            printf("test %s failed: expected %B, got %B\n", name, expected, expression);
+            kprintf("test %s failed: expected %B, got %B\n", name, expected, expression);
     }
 
     return result;

@@ -55,7 +55,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
 
     #ifndef TESTS
         print_logo(HALF_LOGO);
-        printf("\nWelcome to Longhorn!\nVersion no.: %s\nType <help> for a list of commands.\n> ", version_no);
+        kprintf("\nWelcome to Longhorn!\nVersion no.: %s\nType <help> for a list of commands.\n> ", version_no);
     #endif
     
     enable_interrupts();

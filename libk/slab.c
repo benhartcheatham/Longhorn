@@ -182,12 +182,12 @@ void slab_print_list(slab_alloc_t *s) {
     struct slab *slab = (struct slab *) s->data;
     uint32_t num_slabs = ((s->mem_size / s->slab_size) * s->slab_size / sizeof(struct slab));
     
-    printf("sizeof(struct slab): %d\n", sizeof(struct slab));
-    printf("s->mem_size: %d | s->slab_size: %d | s->free_mem_size: %d\n", s->mem_size, s->slab_size, s->free_mem_size);
-    printf("number of slabs total: %d\n", num_slabs);
+    kprintf("sizeof(struct slab): %d\n", sizeof(struct slab));
+    kprintf("s->mem_size: %d | s->slab_size: %d | s->free_mem_size: %d\n", s->mem_size, s->slab_size, s->free_mem_size);
+    kprintf("number of slabs total: %d\n", num_slabs);
     uint32_t i = 0;
     while (i < num_slabs) {
-        printf("slab %d: %x | mem: %x | free: %B\n", i, slab, slab->addr, slab->free);
+        kprintf("slab %d: %x | mem: %x | free: %B\n", i, slab, slab->addr, slab->free);
         slab++;
         i++;
     }

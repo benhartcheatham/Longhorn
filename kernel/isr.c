@@ -140,7 +140,7 @@ void install_irqs() {
  * @param r: interrupt register frame
  */
 void isr_handler(struct register_frame *r) {
-    printf("Recieved Interrupt: %d %s\n", r->int_no, exception_messages[r->int_no]);
+    kprintf("Recieved Interrupt: %d %s\n", r->int_no, exception_messages[r->int_no]);
     asm volatile("cli");
     asm volatile("hlt");
 }

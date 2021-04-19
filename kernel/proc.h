@@ -28,7 +28,10 @@ struct process {
     
     //might want to make these FILE structs later on
     //shouldn't be accessed directly
-    std_stream stdin, stdout, stderr;   // std streams of the process
+    std_stream *stdin;
+    std_stream *stdout;
+    std_stream *stderr;
+    std_stream std_in, std_out, std_err;   // std streams of the process
 
     list_node node; // node for all list of processes
     uint32_t magic;

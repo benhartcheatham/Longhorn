@@ -381,7 +381,7 @@ static void schedule() {
 static void idle(void *aux __attribute__ ((unused))) {
     while (1) {
         if (num_threads() == 1) {
-            printf("Stopping execution...\n");
+            kprintf("Stopping execution...\n");
             asm volatile("cli");
             asm volatile("hlt");
         }

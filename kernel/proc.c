@@ -41,12 +41,16 @@ void init_processes() {
         asm volatile("hlt");
     }
 
-    init_std(GET_STDIN(p));
-    init_std(GET_STDOUT(p));
-    init_std(GET_STDERR(p));
-    flush_std(GET_STDIN(p));
-    flush_std(GET_STDOUT(p));
-    flush_std(GET_STDERR(p));
+    init_std(&p->std_in);
+    init_std(&p->std_out);
+    init_std(&p->std_err);
+    flush_std(&p->std_in);
+    flush_std(&p->std_out);
+    flush_std(&p->std_err);
+
+    p->stdin = &p->std_in;
+    p->stdout = &p->std_out;
+    p->stderr = &p->std_err;
 
     sprintf(p->name, "init");
     pid_count = 0;
@@ -84,12 +88,16 @@ int proc_create(char *name, proc_function func, void *aux) {
 
     p->pid = pid_count++;
 
-    init_std(GET_STDIN(p));
-    init_std(GET_STDOUT(p));
-    init_std(GET_STDERR(p));
-    flush_std(GET_STDIN(p));
-    flush_std(GET_STDOUT(p));
-    flush_std(GET_STDERR(p));
+    init_std(&p->std_in);
+    init_std(&p->std_out);
+    init_std(&p->std_err);
+    flush_std(&p->std_in);
+    flush_std(&p->std_out);
+    flush_std(&p->std_err);
+    
+    p->stdin = &p->std_in;
+    p->stdout = &p->std_out;
+    p->stderr = &p->std_err;
 
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++) {
