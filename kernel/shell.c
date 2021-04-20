@@ -29,7 +29,7 @@
 size_t last_index = 0;
 char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "exit", "ps", "clear", "getbuf"};
 char *commands[NUM_COMMANDS] = {"help", "shutdown", "exit", "ps", "clear", "getbuf", "grub", "moon"};
-uint32_t shell_pid;
+struct process *shell;
 
 /* logo variables */
 extern char _binary_assets_longhorn_logo_bmp_start;
@@ -59,11 +59,11 @@ proc_function *command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, 
 
 /** initializes a shell process */
 void shell_init() {
-    shell_pid = proc_create("shell", shell_waiter, NULL);
-    proc_set_active(shell_pid);
-    proc_get_active()->stdout = proc_get_active()->stdin;
+    shell = proc_create("shell", shell_waiter, NULL);
+    proc_set_active(shell->pid);
+    shell->stdout = shell->stdin;
 
-    line_init(get_default_line_disc(), NULL, GET_STDOUT(proc_get_active()), GET_STDIN(proc_get_active()), COOKED);
+    line_init(get_default_line_disc(), NULL, GET_STDOUT(shell), GET_STDIN(shell), COOKED);
     read_bmp_header(header_addr, &header);
     bmp_change_color(&header, 0xFFFFFF, 0x0);
 }
@@ -96,8 +96,7 @@ static void shell_waiter(void *aux __attribute__ ((unused))) {
             last_cursor_tick = THREAD_CUR()->ticks;
         }
 
-        if (proc_get_active()->pid == shell_pid)
-            read_stdin(proc_get_active());
+        read_stdin(shell);
 
     }
 
@@ -147,8 +146,11 @@ static void read_stdin(struct process *active) {
                     *  to wait on child processes  */
 
                     void *aux[2] = {(void *) args, (void *) argc};
-                    proc_create(commands[i], command_functions[i], aux);
-
+                    struct process *comm = proc_create("ps", command_functions[i], aux);
+                    if (comm) {
+                        proc_wait(comm);
+                    }
+                    
                     break;
                 }
             }
@@ -163,8 +165,12 @@ static void read_stdin(struct process *active) {
             memset(args, 0, MAX_NUM_ARGS * sizeof(char *));
             memset(key_buffer, 0, LINE_BUFFER_SIZE);
             kprintf("> ");
+            ps(NULL);
+            asm volatile ("cli");
+            asm volatile ("hlt");
         }
         
+
         c = get_std(stdin);
     }
 }

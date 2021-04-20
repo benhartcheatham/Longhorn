@@ -47,10 +47,13 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
 
     display_init((void *) mbi);
 
-    shell_init();
+    #ifndef TESTS
+        shell_init();
+    #endif
+
     #ifdef TESTS
         init_testing(true);
-        RUN_ALL_TESTS();
+        RUN_ALL_TESTS(NULL);
     #endif
 
     #ifndef TESTS
@@ -63,6 +66,6 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     //shouldn't get to this point again
     //thread_block(THREAD_CUR());
     while (1) {
-        //thread_yield();
+        thread_yield();
     }
 }

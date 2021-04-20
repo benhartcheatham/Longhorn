@@ -99,7 +99,7 @@ static int __sdown(semaphore_t *s) {
     if (ret < 0)
         return ret;
 
-    thread_block(THREAD_CUR());
+    thread_block();
 
     spin_lock_acquire(&s->lock);
 

@@ -62,6 +62,9 @@ void init_processes() {
 
     current = p;
 
+    list_init(&p->waiters);
+    p->wait_code = 0;
+
     init_threads(p);
     p->active_thread = p->threads[0];
 
@@ -78,11 +81,11 @@ void init_processes() {
  * 
  * @return -PROC_CREATE_FAIL on failure, pid of proc otherwise
  */
-int proc_create(char *name, proc_function func, void *aux) {
+struct process *proc_create(char *name, proc_function func, void *aux) {
     //change this to just use kmalloc
     struct process *p = (struct process *) palloc();
     if (p == NULL)
-        return -PROC_CREATE_FAIL;
+        return NULL;
     
     sprintf(p->name, "%s", name);
 
@@ -105,18 +108,21 @@ int proc_create(char *name, proc_function func, void *aux) {
         p->threads[i]->child_num = i;
     }
 
+    list_init(&p->waiters);
+    p->wait_code = 0;
+
     p->magic = PROC_MAGIC;
-    
+
     if (thread_create(0, "main", p, 0, func, aux) != -THREAD_CREATE_FAIL)
         p->num_live_threads = 1;
     else {
-        return -PROC_CREATE_FAIL;
+        return NULL;
     }
     
     p->active_thread = p->threads[0];
     list_insert_end(&all_procs.tail, &p->node);
 
-    return p->pid;
+    return p;
 }
 
 int proc_create_thread(uint8_t priority, char *name, thread_function func, void *aux) {
@@ -148,19 +154,20 @@ void proc_exit(int *ret) {
  * 
  * @return -1 on failure, 0 on success
  */
-int proc_notify(bool all, int ret) {
-    list_t *waiters = &PROC_CUR()->waiters;
-    list_node_t *node = list_pop(waiters);
+int proc_notify(struct process *p, bool all, int ret) {
+    list_t *waiters = &p->waiters;
 
+    list_node_t *node = list_pop(waiters);
     if (node == NULL)
         return -1;
-    
+
     struct thread *wait_t;
     do {
-        wait_t = LIST_ENTRY(node, struct thread, node);
+        wait_t = LIST_ENTRY(node, struct thread, wait_node);
         wait_t->wait_code = ret;
         thread_unblock(wait_t);
         node = list_pop(waiters);
+
     } while (all && node != NULL);
 
     return 0;
@@ -172,16 +179,16 @@ int proc_notify(bool all, int ret) {
  * 
  * @param p: process to wait on
  * 
- * @return -1 if wait fails, 0 once wait is complete
+ * @return -1 if wait fails, return of thread once wait is complete
  */
 int proc_wait(struct process *p) {
     if (p == NULL)
         return -1;
 
-    list_insert(&p->waiters, &THREAD_CUR()->node);
-    thread_block(THREAD_CUR());
-
-    return 0;
+    list_insert(&p->waiters, &THREAD_CUR()->wait_node);
+    thread_block();
+    kprintf("returned\n");
+    return p->wait_code;
 }
 
 /** cleans up any book keeping for process p
@@ -193,7 +200,7 @@ void proc_cleanup(struct process *p) {
     if (p == NULL || p->num_live_threads != 0) 
         return;
 
-    proc_notify(true, 0);
+    proc_notify(p, true, 0);
     list_delete(&all_procs, &p->node);
 }
 
@@ -207,7 +214,6 @@ void proc_kill(struct process *proc, int *ret) {
         return;
 
     int num_alive = proc->num_live_threads;
-
     for (int i = 0; i < MAX_NUM_THREADS; i++) {
         if (proc->threads[i] != NULL && proc->threads[i]->state != THREAD_DYING 
                                     && proc->threads[i]->state != THREAD_RUNNING) {
@@ -224,7 +230,7 @@ void proc_kill(struct process *proc, int *ret) {
     if (PROC_CUR() == proc && num_alive == 1) {
         if (ret != NULL)
             *ret = --num_alive;
-        
+
         thread_exit(NULL);
     }
 }

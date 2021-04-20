@@ -36,6 +36,7 @@ struct thread {
 
     list_t waiters;   // list of threads waiting on this one
     int wait_code; // code of thread that this thread is waiting on
+    list_node_t wait_node; // node for waiting on threads
 
     list_node_t node; // list node for ready and non-ready lists
     uint32_t magic;
@@ -59,12 +60,12 @@ void init_threads(struct process *init_p);
 
 /* thread state functions */
 int thread_create(uint8_t priority, char *name, struct process *proc, uint32_t child_num, thread_function func, void *aux);
-void thread_block(struct thread *thread);
+void thread_block();
 void thread_unblock(struct thread *thread);
 void thread_exit(int *ret);
 int thread_kill(struct thread *thread);
-int thread_join(struct thread *thread);
-int thread_notify(bool all, int ret);
+int thread_wait(struct thread *thread);
+int thread_notify(struct thread *thread, bool all, int ret);
 
 /* thread "getter" functions */
 

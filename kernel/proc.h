@@ -35,6 +35,7 @@ struct process {
 
     list_t waiters; // list of waiting processes
     int wait_code;  // return code of process waited on
+    list_node_t wait_node; // node to wait on processes with
 
     list_node_t node; // node for all list of processes
     uint32_t magic;
@@ -49,11 +50,11 @@ typedef void (proc_function) (void *aux);
 void init_processes();
 
 /* process state functions */
-int proc_create(char *name, proc_function f, void *aux);
+struct process *proc_create(char *name, proc_function f, void *aux);
 void proc_exit(int *ret);
 void proc_kill(struct process *proc, int *ret);
 int proc_wait(struct process *proc);
-int proc_notify(bool all, int ret);
+int proc_notify(struct process *proc, bool all, int ret);
 void proc_cleanup(struct process *p);
 
 /* process "setter" functions */

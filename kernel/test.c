@@ -64,18 +64,18 @@ void init_testing(bool enable_test_prints) {
 
     struct test_module procs = make_module("Processes");
     strcpy(procs.name, "Processes");    // this shouldn't have to happen, but i'm redoing this all soon anyway
-    uint32_t pid = proc_create("test", proc_test_func, NULL);
-    add_test(&procs, make_test(true, pid == 2, "Create1"));
+    struct process *p1 = proc_create("test", proc_test_func, NULL);
+    add_test(&procs, make_test(true, p1->pid == 1, "Create1"));
 
     const list_node_t *proc_node = proc_peek_all_list();
-    while (proc_node != NULL && LIST_ENTRY(proc_node, struct process, node)->pid != pid)
+    while (proc_node != NULL && LIST_ENTRY(proc_node, struct process, node)->pid != p1->pid)
         proc_node = proc_node->next;
 
     int ret = 0;
     struct process *proc_handle = LIST_ENTRY(proc_node, struct process, node);
     add_test(&procs, make_test(true, proc_handle->num_live_threads == 1, "Create2"));
-
     proc_kill(proc_handle, &ret);
+
     add_test(&procs, make_test(true, ret == 0, "Kill"));
     add_module(&procs);
 
@@ -152,7 +152,7 @@ struct test_info make_test(bool expected, bool expression, char *name) {
 }
 
 /** runs all tests in every module, called in kmain() if testing is enabled */
-void RUN_ALL_TESTS() {
+void RUN_ALL_TESTS(void *aux __attribute__ ((unused))) {
     kprintf("NUMBER MODULES: %d\n", num_modules_made);
     uint32_t i;
     for (i = 0; i < NUM_MODULES && i < num_modules_made; i++) {

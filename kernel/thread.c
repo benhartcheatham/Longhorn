@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <synch.h>
 #include <kerrors.h>
+#include <string.h>
 #include "thread.h"
 #include "proc.h"
 #include "kalloc.h"
@@ -55,7 +56,7 @@ static void schedule();
 extern void first_switch_entry();
 static void idle(void *aux);
 // static size_t num_threads();
-// static void print_ready();
+static void print_ready();
 
 /* external functions */
 extern void switch_threads(struct thread *current_thread, struct thread *next_thread);
@@ -75,8 +76,9 @@ void init_threads(struct process *init) {
 
     thread_create(0, "idle", init, 0, idle, NULL);
     idle_t = init->threads[0];
+    strcpy(THREAD_CUR()->name, "i0");
     THREAD_CUR()->state = THREAD_BLOCKED;
-    
+
     // idle_t->state = THREAD_BLOCKED;
     // list_delete(&ready_threads, &idle_t->node);
     // list_insert(&blocked_threads, &idle_t->node);
@@ -149,7 +151,7 @@ int thread_create(uint8_t priority, char *name, struct process *proc, uint32_t c
     ti->t.wait_code = 0;
 
     ti->t.magic = THREAD_MAGIC;
-    
+
     disable_interrupts();
     list_insert(&ready_threads, &ti->t.node);
     enable_interrupts();
@@ -161,22 +163,19 @@ int thread_create(uint8_t priority, char *name, struct process *proc, uint32_t c
  * 
  * @param thread: thread to block
  */
-void thread_block(struct thread *thread) {
+void thread_block() {
     disable_interrupts();
-
-    struct list_node *node = list_delete(&ready_threads, &thread->node);
+    struct list_node *node = list_delete(&ready_threads, &THREAD_CUR()->node);
 
     // running threads aren't in the ready list, so we
     // need to account for that case
-    if (node == NULL && thread->state != THREAD_RUNNING) {
+    if (node == NULL || THREAD_CUR()->state != THREAD_RUNNING) {
         enable_interrupts();
         return;
     }
     
-    thread->state = THREAD_BLOCKED;
+    THREAD_CUR()->state = THREAD_BLOCKED;
     list_insert(&blocked_threads, node);
-
-    enable_interrupts();
 
     schedule();
 }
@@ -187,6 +186,10 @@ void thread_block(struct thread *thread) {
  */
 void thread_unblock(struct thread *thread) {
     disable_interrupts();
+    if (thread->state != THREAD_BLOCKED) {
+        enable_interrupts();
+        return;
+    }
 
     struct list_node *node = list_delete(&blocked_threads, &thread->node);
 
@@ -211,12 +214,11 @@ void thread_exit(int *ret) {
     list_delete(&ready_threads, &t->node);
     t->state = THREAD_DYING;
 
-
     if (ret != NULL)
         *ret = THREAD_KILL_SUCC;
     
-    thread_notify(true, THREAD_KILL_SUCC);
-
+    thread_notify(THREAD_CUR(), true, THREAD_KILL_SUCC);
+    thread_cleanup(THREAD_CUR());
     thread_yield();
 }
 
@@ -229,12 +231,12 @@ void thread_exit(int *ret) {
  * @return -THREAD_FAILURE when wait isn't successful,
  *         return code of t on success
  */
-int thread_join(struct thread *t) {
+int thread_wait(struct thread *t) {
     if (t == NULL)
         return -THREAD_FAILURE;
 
-    list_insert(&t->waiters, &THREAD_CUR()->node);
-    thread_block(THREAD_CUR());
+    list_insert(&t->waiters, &THREAD_CUR()->wait_node);
+    thread_block();
 
     return THREAD_CUR()->wait_code;
 }
@@ -247,16 +249,16 @@ int thread_join(struct thread *t) {
  * 
  * @return -1 on failure, 0 on success
  */
-int thread_notify(bool all, int ret) {
-    list_t *waiters = &THREAD_CUR()->waiters;
+int thread_notify(struct thread *t, bool all, int ret) {
+    list_t *waiters = &t->waiters;
     list_node_t *node = list_pop(waiters);
 
     if (node == NULL)
         return -1;
-    
+
     struct thread *wait_t;
     do {
-        wait_t = LIST_ENTRY(node, struct thread, node);
+        wait_t = LIST_ENTRY(node, struct thread, wait_node);
         wait_t->wait_code = ret;
         thread_unblock(wait_t);
         node = list_pop(waiters);
@@ -275,7 +277,7 @@ int thread_notify(bool all, int ret) {
 static int thread_cleanup(struct thread *t) {
     if (t == NULL || t->state != THREAD_DYING)
         return -1;
-    
+
     struct process *t_proc = get_thread_proc(t);
     t_proc->threads[t->child_num] = NULL;
     t_proc->num_live_threads--;
@@ -285,7 +287,7 @@ static int thread_cleanup(struct thread *t) {
         pfree(t_proc);
     }
 
-    pfree_mult((void *) ((uint32_t) t->esp / STACK_SIZE), STACK_SIZE / PG_SIZE);
+    pfree_mult((void *) THREAD_CUR(), STACK_SIZE / PG_SIZE);
     return 0;
 }
 
@@ -329,12 +331,11 @@ int thread_kill(struct thread *thread) {
         }
     }
 
-    thread_notify(true, -1);
+    thread_notify(thread, true, -1);
     // list_insert(&dying_threads, node);
     thread_cleanup(thread);
     enable_interrupts();
 
-    enable_interrupts();
     return 0;
 }
 
@@ -366,7 +367,7 @@ void finish_schedule() {
     struct thread *cur = THREAD_CUR();
     cur->state = THREAD_RUNNING;
     proc_set_active_thread(PROC_CUR(), cur->child_num);
-    
+
     if (list_isEmpty(&dying_threads) == false) {
         disable_interrupts();
         struct thread *dying = LIST_ENTRY(list_pop(&dying_threads), struct thread, node);
@@ -395,10 +396,11 @@ static void thread_execute(thread_function func, void *aux) {
 static void schedule() {
     disable_interrupts();
 
+    print_ready();
     list_node_t *next = list_size(&ready_threads) == 1 ? ready_threads.head.next : list_pop(&ready_threads);
     struct thread *next_thread = NULL;
     struct thread *current = THREAD_CUR();
-
+    
     // if we have no ready threads, we schedule the idle thread
     // otherwise we just pull one of the top
     if (next == NULL) {
@@ -407,6 +409,7 @@ static void schedule() {
     } else {
         next_thread = LIST_ENTRY(next, struct thread, node);
     }
+    kprintf("next thread: %s in proc: %s\n", next_thread->name, get_thread_proc(next_thread)->name);
 
     if (current->state == THREAD_RUNNING)
         current->state = THREAD_READY;
@@ -418,10 +421,10 @@ static void schedule() {
         list_insert_end(&ready_threads.tail, &current->node);
 
     if (current == next_thread && current->state == THREAD_DYING)
-        thread_exit(NULL);
-
+        finish_schedule();
+    
     // don't need to do any scheduling, just restore state and return
-    if (current == next_thread || next_thread->state != THREAD_READY) {
+    if (current == next_thread && current->state == THREAD_READY || next_thread->state != THREAD_READY) {
         current->state = THREAD_RUNNING;
         enable_interrupts();
         return;
@@ -438,7 +441,7 @@ static void schedule() {
  */
 static void idle(void *aux __attribute__ ((unused))) {
     while (1) {
-        thread_block(THREAD_CUR());
+        thread_block();
     };
 }
 
@@ -463,15 +466,15 @@ static uint32_t allocate_tid() {
 //     return list_size(&ready_threads) + list_size(&blocked_threads);
 // }
 
-// static void print_ready() {
-//     struct list_node *node = ready_threads.head.next;
-
-//     uint32_t i = 0;
-//     while (node != &ready_threads.tail && node != NULL) {
-//         struct thread *t = LIST_ENTRY(node, struct thread, node);
-//         kprintf("name: %s state: %d num in list: %d\n", t->name, t->state, i);
-//         i++;
-//         node = node->next;
-//     }
-//     kprintf("\n");
-// }
+static void print_ready() {
+    struct list_node *node = ready_threads.head.next;
+    
+    uint32_t i = 0;
+    while (node != &ready_threads.tail && node != NULL) {
+        struct thread *t = LIST_ENTRY(node, struct thread, node);
+        kprintf("name: %s state: %d num in list: %d\n", get_thread_proc(t)->name, t->state, i);
+        i++;
+        node = node->next;
+    }
+    kprintf("\n");
+}
