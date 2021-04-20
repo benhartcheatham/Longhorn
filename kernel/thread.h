@@ -12,7 +12,7 @@
 #define MAX_PNAME_LENGTH 12
 #define MAX_TNAME_LENGTH 24
 #define MAX_TID 512
-#define STACK_SIZE PG_SIZE*8
+#define STACK_SIZE PG_SIZE
 #define THREAD_CUR() ((struct thread *) &get_running()->t)
 #define PROC_CUR() ((struct process *) get_running()->p)
 #define THREAD_MAGIC 0x33

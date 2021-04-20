@@ -61,8 +61,8 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     enable_interrupts();
 
     //shouldn't get to this point again
-    
-    // while (1) {
-    //     thread_yield();
-    // }
+    //thread_block(THREAD_CUR());
+    while (1) {
+        //thread_yield();
+    }
 }
