@@ -6,9 +6,10 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "thread.h"
-#include <list.h>
 #include <stream.h>
+#include <list.h>
+#include "thread.h"
+
 
 /* defines */
 #define MAX_NUM_THREADS 8
@@ -26,14 +27,16 @@ struct process {
                                                 // no more than MAX_NUM_THREADS
     uint8_t num_live_threads;   // nuber of alive threads in the process
     
-    //might want to make these FILE structs later on
-    //shouldn't be accessed directly
-    std_stream *stdin;
-    std_stream *stdout;
-    std_stream *stderr;
+
+    std_stream *stdin;  // stdin handle
+    std_stream *stdout; // stdout handle 
+    std_stream *stderr; // stderr handle
     std_stream std_in, std_out, std_err;   // std streams of the process
 
-    list_node node; // node for all list of processes
+    list_t waiters; // list of waiting processes
+    int wait_code;  // return code of process waited on
+
+    list_node_t node; // node for all list of processes
     uint32_t magic;
 };
 
@@ -49,6 +52,8 @@ void init_processes();
 int proc_create(char *name, proc_function f, void *aux);
 void proc_exit(int *ret);
 void proc_kill(struct process *proc, int *ret);
+int proc_wait(struct process *proc);
+int proc_notify(bool all, int ret);
 void proc_cleanup(struct process *p);
 
 /* process "setter" functions */
@@ -60,7 +65,7 @@ void proc_set_active_p(struct process *proc);
 enum thread_states proc_get_state(struct process *p);
 struct process *proc_get_active();
 
-const list_node *proc_peek_all_list();
+const list_node_t *proc_peek_all_list();
 uint8_t proc_get_live_t_count(struct process *proc);
 
 /** gets the process that contains thread t 

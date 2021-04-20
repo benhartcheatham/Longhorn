@@ -26,7 +26,7 @@
  * 
  * @param list: pointer to list to initialize
  */
-void list_init(list *list) {
+void list_init(list_t *list) {
     list->head.prev = NULL;
     list->head.next = &list->tail;
 
@@ -42,7 +42,7 @@ void list_init(list *list) {
  * @param head: node to set list head to
  * 
  */
-void list_set_head(list *list, list_node head) {
+void list_set_head(list_t *list, list_node_t head) {
     list->head.prev = head.prev;
     list->head.next = head.next;
 }
@@ -53,7 +53,7 @@ void list_set_head(list *list, list_node head) {
  * @param tail: node to set list tail to
  * 
  */
-void list_set_tail(list *list, list_node tail) {
+void list_set_tail(list_t *list, list_node_t tail) {
     list->tail.prev = tail.prev;
     list->tail.next = tail.next;
 }
@@ -63,7 +63,7 @@ void list_set_tail(list *list, list_node tail) {
  * @param list: list to insert into
  * @param node: node to insert
  */
-void list_insert(list *list, list_node *node) {
+void list_insert(list_t *list, list_node_t *node) {
    list_insert_front(&list->head, node);
 }
 
@@ -72,7 +72,7 @@ void list_insert(list *list, list_node *node) {
  * @param list: list to insert into
  * @param node: node to insert
  */
-void list_insert_end(list_node *tail, list_node *node) {
+void list_insert_end(list_node_t *tail, list_node_t *node) {
     tail->prev->next = node;
     node->prev = tail->prev;
     tail->prev = node;
@@ -84,7 +84,7 @@ void list_insert_end(list_node *tail, list_node *node) {
  * @param list: list to insert into
  * @param node: node to insert
  */
-void list_insert_front(list_node *head, list_node *node) {
+void list_insert_front(list_node_t *head, list_node_t *node) {
    head->next->prev = node;
    node->next = head->next;
    head->next = node;
@@ -98,8 +98,8 @@ void list_insert_front(list_node *head, list_node *node) {
  * 
  * @return node deleted from list
  */
-list_node *list_delete(list *list, list_node *node) {
-    list_node *curr = &list->head;
+list_node_t *list_delete(list_t *list, list_node_t *node) {
+    list_node_t *curr = &list->head;
     
     while (curr != NULL && curr != node)
         curr = curr->next;
@@ -125,7 +125,7 @@ list_node *list_delete(list *list, list_node *node) {
  * 
  * @return first node in the list or NULL if list is empty
  */
-list_node *list_pop(list *list) {
+list_node_t *list_pop(list_t *list) {
     if (!list_isEmpty(list))
         return list_delete(list, list->head.next);
 
@@ -142,7 +142,7 @@ list_node *list_pop(list *list) {
  * 
  * @return first node in the list or NULL if list is empty
  */
-const list_node *list_peek(list *list) {
+const list_node_t *list_peek(list_t *list) {
     if (!list_isEmpty(list))
         return list->head.next;
     
@@ -156,7 +156,7 @@ const list_node *list_peek(list *list) {
  * 
  * @return node in the list after given node or NULL if one doesn't exist
  */
-const list_node *list_get_next(const list_node *node) {
+const list_node_t *list_get_next(const list_node_t *node) {
     return node->next;
 }
 
@@ -167,7 +167,7 @@ const list_node *list_get_next(const list_node *node) {
  * 
  * @return node in the list before given node or NULL if one doesn't exist
  */
-const list_node *list_get_prev(const list_node *node) {
+const list_node_t *list_get_prev(const list_node_t *node) {
     return node->prev;
 }
 
@@ -178,7 +178,7 @@ const list_node *list_get_prev(const list_node *node) {
  * 
  * @return 1 if node has a node after it 0 if next node is NULL
  */
-int list_hasNext(const list_node *node) {
+int list_hasNext(const list_node_t *node) {
     if (node->next != NULL )
         return 1;
     return 0;
@@ -191,7 +191,7 @@ int list_hasNext(const list_node *node) {
  * 
  * @return 1 if list is empty, 0 otherwise
  */
-int list_isEmpty(list *list) {
+int list_isEmpty(list_t *list) {
     if (list->head.next == &list->tail)
         return 1;
     return 0;
@@ -203,8 +203,8 @@ int list_isEmpty(list *list) {
  * 
  * @return number of elements in list (excluding head and tail)
  */
-size_t list_size(list *list) {
-    list_node *curr = list->head.next;
+size_t list_size(list_t *list) {
+    list_node_t *curr = list->head.next;
 
     size_t size = 0;
     while (curr != NULL && list_hasNext(curr)) {
@@ -222,7 +222,7 @@ size_t list_size(list *list) {
  * @param node: node to set next of
  * @param next: node to set next of node to
  */
-void node_set_next(list_node *node, list_node *next) {
+void node_set_next(list_node_t *node, list_node_t *next) {
     node->next = next;
 }
 
@@ -231,7 +231,7 @@ void node_set_next(list_node *node, list_node *next) {
  * @param node: node to set prev of
  * @param next: node to set prev of node to
  */
-void node_set_prev(list_node *node, list_node *prev) {
+void node_set_prev(list_node_t *node, list_node_t *prev) {
     node->prev = prev;
 }
 
@@ -243,6 +243,6 @@ void node_set_prev(list_node *node, list_node *prev) {
  * 
  * @return 1 if nodes are equal, 0 otherwise
  */
-int node_equals(list_node *node1, list_node *node2) {
+int node_equals(list_node_t *node1, list_node_t *node2) {
     return node1 == node2;
 }

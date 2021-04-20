@@ -31,7 +31,7 @@ static bitmap_t free_map;
 static char *start_addr = (char *) (4*MB);
 static spin_lock_t malloc_lock;
 static spin_lock_t palloc_lock;
-static list allocations;
+static list_t allocations;
 
 /* functions */
 

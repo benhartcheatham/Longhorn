@@ -12,6 +12,8 @@
         "shell.h": "c",
         "string.h": "c",
         "mem.h": "c",
-        "stream.h": "c"
+        "stream.h": "c",
+        "list": "c",
+        "thread": "c"
     }
 }

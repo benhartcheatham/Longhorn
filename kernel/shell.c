@@ -46,14 +46,14 @@ static void read_stdin(struct process *active);
 static uint32_t ps_get_alignment(display_t *dis, uint32_t *alignment);
 
 /* command functions */
-static void help(char **line, uint32_t argc);
-static void shutdown(char **line, uint32_t argc);
-static void ps(char **line, uint32_t argc);
-static void getbuf(char **line, uint32_t argc);
-static void grub(char **line, uint32_t argc);
-static void moon(char **line, uint32_t argc);
-static void clear(char **line, uint32_t argc);
-shell_command command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, clear, getbuf, grub, moon}; // this has to be here sadly, can't be moved before the protoyypes
+static void help(void *aux);
+static void shutdown(void *aux);
+static void ps(void *aux);
+static void getbuf(void *aux);
+static void grub(void *aux);
+static void moon(void *aux);
+static void clear(void *aux);
+proc_function *command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, clear, getbuf, grub, moon}; // this has to be here sadly, can't be moved before the protoyypes
 
 /* functions */
 
@@ -146,7 +146,9 @@ static void read_stdin(struct process *active) {
                     /* this should make a new process/thread, but I need to be able
                     *  to wait on child processes  */
 
-                    command_functions[i](args, argc);
+                    void *aux[2] = {(void *) args, (void *) argc};
+                    proc_create(commands[i], command_functions[i], aux);
+
                     break;
                 }
             }
@@ -172,7 +174,7 @@ static void read_stdin(struct process *active) {
  * @param line: unused
  * @param argc: unused
  */
-static void help(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+static void help(void *aux __attribute__ ((unused))) {
     kprintf("Available Commands:\n");
     int i;
     for (i = 0; i < NUM_HELP_COMMANDS; i++) {
@@ -184,7 +186,7 @@ static void help(char **line __attribute__ ((unused)), uint32_t argc __attribute
  * @param line: unused
  * @param argc: unused
  */
-static void shutdown(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+static void shutdown(void *aux __attribute__ ((unused))) {
     outw(0x604, 0x2000);
 }
 
@@ -193,10 +195,14 @@ static void shutdown(char **line __attribute__ ((unused)), uint32_t argc __attri
  * @param line: pointer to command line args
  * @param argc: number of command line args
  */
-static void getbuf(char **line, uint32_t argc) {
+static void getbuf(void *aux) {
+    void **aux_arr = (void **) aux;
+    char **args = ((char **) aux_arr[0]);
+    uint32_t argc = (uint32_t) (aux_arr[1]);
+
     kprintf("buffer: ");
     for (uint32_t i = 0; i < argc; i++)
-        kprintf("%s ", line[i]);
+        kprintf("%s ", args[i]);
     kprintf("\n");
 }
 
@@ -230,9 +236,9 @@ static char *p_state_to_string(enum thread_states s) {
  * @param line: unused
  * @param argc: unused
  */
-static void ps(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+static void ps(void *aux __attribute__ ((unused))) {
     display_t *dis = get_default_dis_driver();
-    const list_node *node = proc_peek_all_list();
+    const list_node_t *node = proc_peek_all_list();
     uint32_t alignment = 0;
 
     char *headers[4] = {"name", "pid", "state", "active thread\n"};
@@ -266,17 +272,17 @@ static uint32_t ps_get_alignment(display_t *dis, uint32_t *a) {
     return next_y;
 }
 
-static void clear(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+static void clear(void *aux __attribute__ ((unused))) {
     get_default_dis_driver()->dis_clear();
 }
 
 /* novelty command */
-static void grub(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+static void grub(void *aux __attribute__ ((unused))) {
     kprintf("GRUB is ok\n\n\n\ni guess...\n");
 }
 
 /* novelty command */
-static void moon(char **line __attribute__ ((unused)), uint32_t argc __attribute__ ((unused))) {
+static void moon(void *aux __attribute__ ((unused))) {
     kprintf("did you mean: ");
 
     get_default_dis_driver()->dis_setcol(0xff0000, 0x0);

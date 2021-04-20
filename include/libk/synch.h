@@ -17,7 +17,7 @@ struct spin_lock {
 struct semaphore {
     int val;
     struct spin_lock lock;
-    list waiters;
+    list_t waiters;
 };
 
 /* typedefs */

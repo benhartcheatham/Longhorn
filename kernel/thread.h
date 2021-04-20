@@ -4,9 +4,10 @@
 
 /* includes */
 #include <stdint.h>
+#include <stdbool.h>
+#include <list.h>
 #include "isr.h"
 #include "kalloc.h"
-#include <list.h>
 
 /* defines */
 #define MAX_PNAME_LENGTH 12
@@ -33,7 +34,10 @@ struct thread {
 
     uint32_t child_num; // the location of the thread in the process thread array
 
-    list_node node; // list node for ready and non-ready lists
+    list_t waiters;   // list of threads waiting on this one
+    int wait_code; // code of thread that this thread is waiting on
+
+    list_node_t node; // list node for ready and non-ready lists
     uint32_t magic;
 };
 
@@ -59,6 +63,8 @@ void thread_block(struct thread *thread);
 void thread_unblock(struct thread *thread);
 void thread_exit(int *ret);
 int thread_kill(struct thread *thread);
+int thread_join(struct thread *thread);
+int thread_notify(bool all, int ret);
 
 /* thread "getter" functions */
 

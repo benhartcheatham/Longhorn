@@ -67,7 +67,7 @@ void init_testing(bool enable_test_prints) {
     uint32_t pid = proc_create("test", proc_test_func, NULL);
     add_test(&procs, make_test(true, pid == 2, "Create1"));
 
-    const list_node *proc_node = proc_peek_all_list();
+    const list_node_t *proc_node = proc_peek_all_list();
     while (proc_node != NULL && LIST_ENTRY(proc_node, struct process, node)->pid != pid)
         proc_node = proc_node->next;
 
