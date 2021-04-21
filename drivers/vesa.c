@@ -273,7 +273,7 @@ void vesa_clear_screen() {
     uint32_t y;
     for (y = 0; y < height; y++)
         for (x = 0; x < width; x++)
-            framebuffer_addr[(y * height) + x] = bg_color;
+            framebuffer_addr[(y * width) + x] = bg_color;
     
     vesa_set_cursor(0, 0);
 }

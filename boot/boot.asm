@@ -8,8 +8,8 @@ CHECKSUM  equ -(MAGIC + FLAGS)    		; checksum of above, to prove we are multibo
 
 ; get GRUB to setup our video mode
 VIDEO_MODE   equ 0						; 1 for text mode, 0 for graphical
-VIDEO_WIDTH  equ 1920						; number of pixels in graphical mode, num chars in text. 0 if we just want what GRUB gives us
-VIDEO_HEIGHT equ 1080						; number of pixels in graphical mode, num chars in text
+VIDEO_WIDTH  equ 1920					; number of pixels in graphical mode, num chars in text. 0 if we just want what GRUB gives us
+VIDEO_HEIGHT equ 1080					; number of pixels in graphical mode, num chars in text
 VIDEO_DEPTH  equ 0						; size of each pixel in graphical mode, 0 for text mode. 0 if we want what GRUB gives us
  
 ; Declare a multiboot header that marks the program as a kernel. These are magic
