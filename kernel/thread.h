@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <list.h>
 #include "isr.h"
-#include "kalloc.h"
+#include "palloc.h"
 
 /* defines */
 #define MAX_PNAME_LENGTH 12

@@ -11,7 +11,7 @@
 #include <slab.h>
 #include <kerrors.h>
 #include "test.h"
-#include "kalloc.h"
+#include "palloc.h"
 #include "proc.h"
 #include "thread.h"
 

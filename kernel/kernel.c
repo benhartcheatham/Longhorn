@@ -19,7 +19,6 @@
 #include "shell.h"
 
 /* Memory Management */
-#include "kalloc.h"
 
 /* Interrupts */
 #include "isr.h"

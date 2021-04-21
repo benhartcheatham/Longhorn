@@ -81,7 +81,8 @@ os-img:
 
 ### INSTALL RULES ###
 
-# install:
+install:
+	-@echo "Sorry, the install script is broken rn. go to this website: https://wiki.osdev.org/GCC_Cross-Compiler to setup everything, also look at make depend."
 # 	-@if [ -n $(BUILD_DIR) ]; then 															\
 # 		./install.sh -o $(OS) -b $(BINUTILS_VER) -g $(GCC_VER) -d $(BUILD_DIR) -s;   \
 # 	else																					\
@@ -92,7 +93,7 @@ os-img:
 #   -@if [ $OS = "Ubuntu" ]; then \
 # 		echo "this DOES NOT install grub components. You will need to install the packages for" \
 # 		echo "grub-mkrescue (grub-common) and xorriso for make to work." \
-# 		apt install grub-common qemu-system-x86 nasm	\
+# 		sudo apt install grub-common qemu-system-x86 nasm	\
 #     else if [ $OS = "Arch" ]; then \
 # 		echo "This DOES NOT install grub. If you don't have the grub package, you will need it" \
 # 		sudo pacman -S qemu qemu-arch-extra nasm libisoburn mtools \

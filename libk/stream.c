@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <mem.h>
-#include "../kernel/kalloc.h"
+#include "../kernel/kmalloc.h"
 #include "stream.h"
 
 /* defines */

@@ -8,9 +8,10 @@
 #include "../drivers/terminal.h"
 #include "../drivers/bmp.h"
 #include "shell.h"
+#include "proc.h"
 #include "thread.h"
 #include "port_io.h"
-#include "proc.h"
+#include "kmalloc.h"
 
 /* defines */
 #define GRAPHICS_MODE 0

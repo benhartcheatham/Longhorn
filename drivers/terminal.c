@@ -6,7 +6,6 @@
 #include <string.h>
 #include <mem.h>
 #include <kerrors.h>
-#include "../kernel/kalloc.h"
 #include "terminal.h"
 
 /* defines */

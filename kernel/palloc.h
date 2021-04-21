@@ -10,6 +10,7 @@
 #define PG_SIZE 4096
 #define KB 1024
 #define MB 1024*KB
+#define ROUND_UP(x, size) (((x + size - 1) / size) * size)
 
 /* structs */
 
@@ -25,11 +26,6 @@ void *palloc();
 void *palloc_mult(size_t cnt);
 int pfree(void *addr);
 int pfree_mult(void *addr, size_t cnt);
-
-/* variable size allocation functions */
-void *kmalloc(size_t size);
-void *kcalloc(size_t num, size_t size);
-int kfree(void *addr);
 
 /* testing and status functions */
 #ifdef TESTS

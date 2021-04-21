@@ -8,7 +8,7 @@
 #include <mem.h>
 #include <kerrors.h>
 #include "line.h"
-#include "../kernel/kalloc.h"
+#include "../kernel/kmalloc.h"
 
 /* defines */
 

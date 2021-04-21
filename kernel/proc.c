@@ -11,7 +11,7 @@
 #include <mem.h>
 #include "../drivers/vesa.h"
 #include "proc.h"
-#include "kalloc.h"
+#include "palloc.h"
 
 /* defines */
 

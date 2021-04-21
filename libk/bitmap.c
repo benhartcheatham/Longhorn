@@ -4,7 +4,7 @@
 
 /* includes */
 #include <bitmap.h>
-#include "../kernel/kalloc.h"
+#include "../kernel/palloc.h"
 
 /* defines */
 

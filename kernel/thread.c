@@ -19,7 +19,7 @@
 #include <string.h>
 #include "thread.h"
 #include "proc.h"
-#include "kalloc.h"
+#include "palloc.h"
 #include "port_io.h"
 
 /* defines */
@@ -108,7 +108,7 @@ int thread_create(uint8_t priority, char *name, struct process *proc, uint32_t c
 
     // if the max amount of threads on the system is already met don't allow creation
     if (ti->t.tid == MAX_TID + 1) {
-        kfree((void *) s);
+        pfree_mult((void *) s, STACK_SIZE / PG_SIZE);
         return -1;
     }
 
