@@ -1,5 +1,7 @@
 /* This file is used for smaller allocations through malloc, if you need allocations
  * of a page size or bigger, consider using one of the palloc implementations. */
+
+/* includes */
 #include <stdint.h>
 #include <stdbool.h>
 #include <kerrors.h>
@@ -9,6 +11,9 @@
 #include "kmalloc.h"
 #include "palloc.h"
 
+/* defines */
+
+/* structs */
 struct allocation {
     void *addr;
     size_t size;
@@ -16,10 +21,21 @@ struct allocation {
     struct list_node node;
 };
 
+/* globals */
 static slab_alloc_t *allocator;
 static spin_lock_t malloc_lock;
 static list_t allocations;
 
+/* functions */
+
+/** initalizes kmalloc
+ * 
+ * @param addr: address to start kmalloc heap at
+ * @param size: size of kmalloc heap
+ * @param slab_size: size of each slab in kmalloc heap
+ * 
+ * @return -1 on failure, 0 on success
+ */
 int init_kmalloc(void *addr, size_t size, size_t slab_size) {
     if (slab_size < sizeof(struct allocation))
         return -1;
@@ -31,7 +47,6 @@ int init_kmalloc(void *addr, size_t size, size_t slab_size) {
 
     return 0;
 }
-
 
 /** obtains the memory address of a memory area of at least size and 
  * no greater than PG_SIZE from the memory manager

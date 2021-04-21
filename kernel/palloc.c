@@ -1,6 +1,5 @@
-/* Implements the memory manager for the kernel. Currently supports two different allocators,
-palloc and kmalloc. Palloc allocates from a bitmap in increments of PG_SIZE, while kmalloc
-allocates from a slab allocator that allocates in increments of 64 bytes. */
+/* Implements the page frame allocator for the kernel. This file does no mapping,
+ * instead use a different page-wide allocator. */
 
 /* includes */
 #include <stddef.h>
@@ -39,7 +38,7 @@ void init_alloc(multiboot_info_t *mb) {
     spin_lock_init(&palloc_lock);
 }
 
-/** gets the address of a free page of memory from the memory manager
+/** gets the address of a free page frame
  * 
  * @return address of allocated page, NULL if no page exists 
  */
@@ -47,7 +46,7 @@ void *palloc() {
     return palloc_mult(1);
 }
 
-/** gets the address of cnt consecutive free pages of memory from the memory manager
+/** gets the address of cnt consecutive free page frames
  * 
  * @param cnt: number of consecutive pages to allocate
  * 
@@ -79,7 +78,7 @@ int pfree(void *addr) {
     return pfree_mult(addr, 1);
 }
 
-/** frees cnt pages of memory obtained from the memory manager
+/** frees cnt pages of memory obtained from palloc/palloc_mult
  * 
  * @param addr: address of previous allocation to free
  * @param cnt: size in pages of previous allocation

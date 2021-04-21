@@ -1,6 +1,7 @@
-/* Declares functions to access the kernel memory manager(s). */
-#ifndef _ALLOC_H
-#define _ALLOC_H
+/* Declares functions to access the kernel page frame allocator. */
+
+#ifndef PALLOC_H
+#define PALLOC_H
 
 /* includes */
 #include <stddef.h>
