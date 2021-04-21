@@ -187,7 +187,7 @@ int proc_wait(struct process *p) {
 
     list_insert(&p->waiters, &THREAD_CUR()->wait_node);
     thread_block();
-    kprintf("returned\n");
+
     return p->wait_code;
 }
 

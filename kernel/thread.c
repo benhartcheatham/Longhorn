@@ -56,7 +56,7 @@ static void schedule();
 extern void first_switch_entry();
 static void idle(void *aux);
 // static size_t num_threads();
-static void print_ready();
+// static void print_ready();
 
 /* external functions */
 extern void switch_threads(struct thread *current_thread, struct thread *next_thread);
@@ -218,7 +218,7 @@ void thread_exit(int *ret) {
         *ret = THREAD_KILL_SUCC;
     
     thread_notify(THREAD_CUR(), true, THREAD_KILL_SUCC);
-    thread_cleanup(THREAD_CUR());
+    //proc_notify(PROC_CUR(), true, 0);
     thread_yield();
 }
 
@@ -287,7 +287,7 @@ static int thread_cleanup(struct thread *t) {
         pfree(t_proc);
     }
 
-    pfree_mult((void *) THREAD_CUR(), STACK_SIZE / PG_SIZE);
+    pfree_mult((void *) t, STACK_SIZE / PG_SIZE);
     return 0;
 }
 
@@ -396,7 +396,6 @@ static void thread_execute(thread_function func, void *aux) {
 static void schedule() {
     disable_interrupts();
 
-    print_ready();
     list_node_t *next = list_size(&ready_threads) == 1 ? ready_threads.head.next : list_pop(&ready_threads);
     struct thread *next_thread = NULL;
     struct thread *current = THREAD_CUR();
@@ -405,11 +404,10 @@ static void schedule() {
     // otherwise we just pull one of the top
     if (next == NULL) {
         next_thread = idle_t;
-        idle_t->state = THREAD_READY;
+        thread_unblock(idle_t);
     } else {
         next_thread = LIST_ENTRY(next, struct thread, node);
     }
-    kprintf("next thread: %s in proc: %s\n", next_thread->name, get_thread_proc(next_thread)->name);
 
     if (current->state == THREAD_RUNNING)
         current->state = THREAD_READY;
@@ -424,7 +422,7 @@ static void schedule() {
         finish_schedule();
     
     // don't need to do any scheduling, just restore state and return
-    if (current == next_thread && current->state == THREAD_READY || next_thread->state != THREAD_READY) {
+    if (current == next_thread || next_thread->state != THREAD_READY) {
         current->state = THREAD_RUNNING;
         enable_interrupts();
         return;
@@ -466,15 +464,15 @@ static uint32_t allocate_tid() {
 //     return list_size(&ready_threads) + list_size(&blocked_threads);
 // }
 
-static void print_ready() {
-    struct list_node *node = ready_threads.head.next;
+// static void print_ready() {
+//     struct list_node *node = ready_threads.head.next;
     
-    uint32_t i = 0;
-    while (node != &ready_threads.tail && node != NULL) {
-        struct thread *t = LIST_ENTRY(node, struct thread, node);
-        kprintf("name: %s state: %d num in list: %d\n", get_thread_proc(t)->name, t->state, i);
-        i++;
-        node = node->next;
-    }
-    kprintf("\n");
-}
+//     uint32_t i = 0;
+//     while (node != &ready_threads.tail && node != NULL) {
+//         struct thread *t = LIST_ENTRY(node, struct thread, node);
+//         kprintf("name: %s state: %d num in list: %d\n", get_thread_proc(t)->name, t->state, i);
+//         i++;
+//         node = node->next;
+//     }
+//     kprintf("\n");
+// }

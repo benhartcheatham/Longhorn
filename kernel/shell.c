@@ -165,9 +165,6 @@ static void read_stdin(struct process *active) {
             memset(args, 0, MAX_NUM_ARGS * sizeof(char *));
             memset(key_buffer, 0, LINE_BUFFER_SIZE);
             kprintf("> ");
-            ps(NULL);
-            asm volatile ("cli");
-            asm volatile ("hlt");
         }
         
 
