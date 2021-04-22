@@ -26,6 +26,8 @@
 #define MAX_THREAD_TICKS 8
 
 /* globals */
+const size_t _thread_esp = offsetof(struct thread, esp); // this is used for thread switching
+
 static struct list ready_threads;
 static struct list blocked_threads;
 static struct list dying_threads;

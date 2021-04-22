@@ -18,6 +18,7 @@ CC = i686-elf-gcc
 CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 CPPFLAGS = $(foreach dir, $(LIBINCLUDE), -I "$(dir)")
 QEMU = qemu-system-i386
+QEMU_FLAGS = 
 DEFINES = 
 
 ### INSTALLATION GROUPS ###
@@ -33,16 +34,18 @@ all: os-binary os-img
 
 # default is to run iso
 run: all
-	$(QEMU) -cdrom Longhorn.iso
+	$(QEMU) -cdrom Longhorn.iso $(QEMU_FLAGS)
 
 # runs ab usi with no restart on crash
-run-no-reboot: all
-	$(QEMU) -cdrom Longhorn.iso -no-reboot -no-shutdown
+run-no-reboot: QEMU-FLAGS += -no-reboot -no-shutdown
+run-no-reboot: run
+	$(QEMU) -cdrom Longhorn.iso 
 
 ### BUILD RULES ###
 
 # runs a version of the kernel that has testing enabled
 test: DEFINES += -D TESTS # look at https://www.gnu.org/software/make/manual/make.html#Target_002dspecific for how this works
+# test: QEMU_FLAGS += -nographic
 test: run
 
 # cleans all directories of compiled files (except build)
