@@ -5,6 +5,7 @@
 
 /* includes */
 #include <stdint.h>
+#include "proc.h"
 
 /* defines */
 #define KERNEL_TABLE  0
@@ -19,12 +20,29 @@ typedef uint32_t kaddr_t;
 
 /* structs */
 typedef struct pte {
-    uint32_t info;
+    uint32_t present  : 1;
+    uint32_t rw       : 1;
+    uint32_t user     : 1;
+    uint32_t pwt      : 1;
+    uint32_t cache    : 1;
+    uint32_t accessed : 1;
+    uint32_t dirty    : 1;
+    uint32_t pat      : 1;
+    uint32_t global   : 1;
+    uint32_t ignored  : 3;
+    uint32_t addr     : 20;
 } pte_t;
 
 // a pde is the same thing as a page_table struct
 typedef struct pde {
-    uint32_t info;
+    uint32_t present  : 1;
+    uint32_t rw       : 1;
+    uint32_t user     : 1;
+    uint32_t pwt      : 1;
+    uint32_t cache    : 1;
+    uint32_t accessed : 1;
+    uint32_t ignored  : 6;  // must be zeroed out because bit 7 needs to be zero
+    uint32_t addr     : 20;
 } pde_t;
 
 typedef struct page_table {
