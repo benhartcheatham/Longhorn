@@ -19,7 +19,7 @@ struct pde {
 } __attribute__ ((packed));
 
 struct page_table {
-    struct pte *entries[2014];
+    struct pte *entries[1024];
 } __attribute__ ((aligned(4096)));
 
 struct page_dir {

@@ -19,6 +19,7 @@
 #include "shell.h"
 
 /* Memory Management */
+#include "paging.h"
 
 /* Interrupts */
 #include "isr.h"
