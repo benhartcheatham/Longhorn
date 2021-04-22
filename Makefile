@@ -17,7 +17,7 @@ BOOT = $(BOOT_SOURCES:.asm=.o)
 CC = i686-elf-gcc
 CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 CPPFLAGS = $(foreach dir, $(LIBINCLUDE), -I "$(dir)")
-QEMU = qemu-system-i386
+QEMU = qemu-system-x86_64	# this was originally qemu-system-i386, but this may be better since it is more current
 QEMU_FLAGS = 
 DEFINES = 
 
