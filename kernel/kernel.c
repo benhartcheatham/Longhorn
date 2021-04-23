@@ -13,6 +13,8 @@
 /* Drivers */
 #include "../drivers/vesa.h"
 #include "../drivers/line.h"
+#include "../drivers/display.h"
+#include "../drivers/serial.h"
 
 /* Processes/Threads */
 #include "proc.h"
@@ -32,7 +34,11 @@
 /* defines */
 
 /* globals */
-char *version_no = "0.3.0";
+/* Summary of version changes:
+ * 0.4.0: Added a serial driver in, as well as process features.
+ * 0.4.1: Moved print_logo to only run on start in kernel .c
+ */
+char *version_no = "0.4.1";
 
 /** Main function of the kernel, starts the kernel and its subsystems. This function
  * returns to a tight loop and then is never scheduled again once completed.
@@ -45,13 +51,10 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_alloc(mbi);
     init_processes();
 
-    display_init((void *) mbi);
-
     #ifndef TESTS
+        display_init((void *) mbi);
         shell_init();
-    #endif
-
-    #ifdef TESTS
+    #else
         init_testing(true);
         RUN_ALL_TESTS(NULL);
     #endif
@@ -60,7 +63,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
         print_logo(HALF_LOGO);
         kprintf("\nWelcome to Longhorn!\nVersion no.: %s\nType <help> for a list of commands.\n> ", version_no);
     #endif
-    
+
     enable_interrupts();
 
     //shouldn't run more than once

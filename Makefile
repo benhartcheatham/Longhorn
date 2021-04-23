@@ -45,7 +45,7 @@ run-no-reboot: run
 
 # runs a version of the kernel that has testing enabled
 test: DEFINES += -D TESTS # look at https://www.gnu.org/software/make/manual/make.html#Target_002dspecific for how this works
-# test: QEMU_FLAGS += -nographic
+test: QEMU_FLAGS += -nographic
 test: run
 
 # cleans all directories of compiled files (except build)

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "../drivers/timer.h"
 #include "../drivers/keyboard.h"
+#include "../drivers/serial.h"
 #include "isr.h"
 #include "port_io.h"
 
@@ -173,6 +174,7 @@ void register_interrupt_handler(uint8_t n, isr_frame handler) {
 void init_irqs() {
     init_timer(R_FREQ);
     init_keyboard();
+    init_serial();
 }
 
 /** initializes IDT */

@@ -14,6 +14,7 @@
 #include "palloc.h"
 #include "proc.h"
 #include "thread.h"
+#include "port_io.h"
 
 /* defines */
 #define NUM_MODULES 10
@@ -158,6 +159,9 @@ void RUN_ALL_TESTS(void *aux __attribute__ ((unused))) {
     for (i = 0; i < NUM_MODULES && i < num_modules_made; i++) {
         test_module(&modules[i]);
     }
+
+    kprintf("exiting...\n");
+    outw(0x604, 0x2000);    // issues shutdown command to QEMU
 }
 
 /** runs the tests in the given test_module

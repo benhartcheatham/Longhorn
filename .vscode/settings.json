@@ -20,6 +20,8 @@
         "initializer_list": "cpp",
         "ranges": "cpp",
         "utility": "cpp",
-        "port_io.h": "c"
+        "port_io.h": "c",
+        "line.h": "c",
+        "terminal.h": "c"
     }
 }
