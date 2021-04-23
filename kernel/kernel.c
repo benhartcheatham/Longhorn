@@ -51,7 +51,6 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
         display_init((void *) mbi);
         shell_init();
     #else
-        init_serial();
         init_testing(true);
         RUN_ALL_TESTS(NULL);
     #endif
