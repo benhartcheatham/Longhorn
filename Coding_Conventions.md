@@ -124,7 +124,7 @@ The comment should be wiped with every minor version change.   -->
 - functions:  
     - names should be snake case  
     - functions with no parameters should be written as <code>foo()</code>, not <code>foo(void)</code>, except when defining interfaces/function pointers  
-    - functions with pointer return types should be written type <code>\*foo()</code>, not <code>type\* foo()</code>  
+    - functions with pointer return types should be written <code>type \*foo()</code>, not <code>type\* foo()</code>  
     - system initializer functions (like the ones that initialize threads and processes) should be named  
       <code>init_\<system\>()</code>, whereas initializer functions for structs/types should be named <code><struct>_init() </code> 
     - function names should start with the file/system they belong to
@@ -132,7 +132,7 @@ The comment should be wiped with every minor version change.   -->
     - multiline comments should be marked with /\* \*/  
         - the content of the comment should start on the same column over multiple lines, ex.:  
             <pre><code>/* this is  
-             &nbsp;\* a comment */</code></pre>  
+           * a comment */</code></pre>  
     
     - every function must be commented with an explanation of the function, then an <code>@param</code> section, then an <code>@return</code> section  
         when the return type of the function is void, the <code>@return</code> section doesn't need to be specified  
