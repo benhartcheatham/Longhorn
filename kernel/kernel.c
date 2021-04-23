@@ -34,7 +34,11 @@
 /* defines */
 
 /* globals */
-char *version_no = "0.3.0";
+/* Summary of version changes:
+ * 0.4.0: Added a serial driver in, as well as process features.
+ * 0.4.1: Moved print_logo to only run on start in kernel .c
+ */
+char *version_no = "0.4.1";
 
 /** Main function of the kernel, starts the kernel and its subsystems. This function
  * returns to a tight loop and then is never scheduled again once completed.
