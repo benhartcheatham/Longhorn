@@ -32,11 +32,6 @@ char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "exit", "ps", "cle
 char *commands[NUM_COMMANDS] = {"help", "shutdown", "exit", "ps", "clear", "getbuf", "grub", "moon"};
 struct process *shell;
 
-/* logo variables */
-extern char _binary_assets_longhorn_logo_bmp_start;
-uint8_t *header_addr = (uint8_t *) &_binary_assets_longhorn_logo_bmp_start;
-bmp_file_header_t header;
-
 /* key buffer info */
 static char key_buffer[LINE_BUFFER_SIZE];
 static bool cursor_on = false;
@@ -65,16 +60,6 @@ void shell_init() {
     shell->stdout = shell->stdin;
 
     line_init(get_default_line_disc(), NULL, GET_STDOUT(shell), GET_STDIN(shell), COOKED);
-    read_bmp_header(header_addr, &header);
-    bmp_change_color(&header, 0xFFFFFF, 0x0);
-}
-
-/** prints the logo of the correpsonding size to the screen
-   logo sizes are defined in terminal.h */
-void print_logo() {
-    get_default_dis_driver()->dis_clear();
-    draw_bmp_data(&header, 10, vesa_get_cursor_y() * FONT_HEIGHT + 10);
-    vesa_set_cursor(0, (header.info_header.height / FONT_HEIGHT) + 1);
 }
 
 /** function for the shell process to use, constantly scans input
