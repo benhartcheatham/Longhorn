@@ -16,6 +16,5 @@ typedef void (*shell_command) (char **line, uint32_t argc);
 
 /* functions */
 void shell_init();
-void print_logo();
 
 #endif
