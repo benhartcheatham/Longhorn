@@ -17,7 +17,8 @@ BOOT = $(BOOT_SOURCES:.asm=.o)
 CC = i686-elf-gcc
 CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 CPPFLAGS = $(foreach dir, $(LIBINCLUDE), -I "$(dir)")
-QEMU = qemu-system-i386
+QEMU = qemu-system-x86_64	# this was originally qemu-system-i386, but this may be better since it is more current
+QEMU_FLAGS = 
 DEFINES = 
 
 ### INSTALLATION GROUPS ###
@@ -33,16 +34,18 @@ all: os-binary os-img
 
 # default is to run iso
 run: all
-	$(QEMU) -cdrom Longhorn.iso
+	$(QEMU) -cdrom Longhorn.iso $(QEMU_FLAGS)
 
 # runs ab usi with no restart on crash
-run-no-reboot: all
-	$(QEMU) -cdrom Longhorn.iso -no-reboot -no-shutdown
+run-no-reboot: QEMU-FLAGS += -no-reboot -no-shutdown
+run-no-reboot: run
+	$(QEMU) -cdrom Longhorn.iso 
 
 ### BUILD RULES ###
 
 # runs a version of the kernel that has testing enabled
 test: DEFINES += -D TESTS # look at https://www.gnu.org/software/make/manual/make.html#Target_002dspecific for how this works
+test: QEMU_FLAGS += -nographic
 test: run
 
 # cleans all directories of compiled files (except build)
@@ -81,7 +84,8 @@ os-img:
 
 ### INSTALL RULES ###
 
-# install:
+install:
+	-@echo "Sorry, the install script is broken rn. go to this website: https://wiki.osdev.org/GCC_Cross-Compiler to setup everything, also look at make depend."
 # 	-@if [ -n $(BUILD_DIR) ]; then 															\
 # 		./install.sh -o $(OS) -b $(BINUTILS_VER) -g $(GCC_VER) -d $(BUILD_DIR) -s;   \
 # 	else																					\
@@ -92,7 +96,7 @@ os-img:
 #   -@if [ $OS = "Ubuntu" ]; then \
 # 		echo "this DOES NOT install grub components. You will need to install the packages for" \
 # 		echo "grub-mkrescue (grub-common) and xorriso for make to work." \
-# 		apt install grub-common qemu-system-x86 nasm	\
+# 		sudo apt install grub-common qemu-system-x86 nasm	\
 #     else if [ $OS = "Arch" ]; then \
 # 		echo "This DOES NOT install grub. If you don't have the grub package, you will need it" \
 # 		sudo pacman -S qemu qemu-arch-extra nasm libisoburn mtools \

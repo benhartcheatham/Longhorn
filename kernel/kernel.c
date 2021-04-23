@@ -13,6 +13,8 @@
 /* Drivers */
 #include "../drivers/vesa.h"
 #include "../drivers/line.h"
+#include "../drivers/display.h"
+#include "../drivers/serial.h"
 
 /* Processes/Threads */
 #include "proc.h"
@@ -45,13 +47,11 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_alloc(mbi);
     init_processes();
 
-    display_init((void *) mbi);
-
     #ifndef TESTS
+        display_init((void *) mbi);
         shell_init();
-    #endif
-
-    #ifdef TESTS
+    #else
+        init_serial();
         init_testing(true);
         RUN_ALL_TESTS(NULL);
     #endif
@@ -60,7 +60,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
         print_logo(HALF_LOGO);
         kprintf("\nWelcome to Longhorn!\nVersion no.: %s\nType <help> for a list of commands.\n> ", version_no);
     #endif
-    
+
     enable_interrupts();
 
     //shouldn't run more than once
