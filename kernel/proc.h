@@ -9,7 +9,7 @@
 #include <stream.h>
 #include <list.h>
 #include "thread.h"
-
+#include "paging.h"
 
 /* defines */
 #define MAX_NUM_THREADS 8
@@ -27,7 +27,6 @@ struct process {
                                                 // no more than MAX_NUM_THREADS
     uint8_t num_live_threads;   // nuber of alive threads in the process
     
-
     std_stream *stdin;  // stdin handle
     std_stream *stdout; // stdout handle 
     std_stream *stderr; // stderr handle
@@ -37,6 +36,8 @@ struct process {
     int wait_code;  // return code of process waited on
     list_node_t wait_node; // node to wait on processes with
 
+    page_dir_t *pgdir;
+    
     list_node_t node; // node for all list of processes
     uint32_t magic;
 };

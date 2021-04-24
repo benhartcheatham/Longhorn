@@ -5,7 +5,6 @@
 
 /* includes */
 #include <stdint.h>
-#include "proc.h"
 
 /* defines */
 #define KERNEL_TABLE  0
@@ -54,13 +53,13 @@ typedef struct page_table {
 } page_table_t __attribute__ ((aligned(4096)));
 
 typedef struct page_dir {
-    struct pde tables[1024];
+    struct pde *tables[1024];
 } page_dir_t __attribute__ ((aligned(4096)));
 
 
 /* functions */
 int init_paging(page_dir_t **pd);
-int paging_init(struct process *proc, struct process *proc_parent);
+int paging_init(page_dir_t *proc, page_dir_t *proc_parent);
 int paging_map(page_dir_t *pg_dir, vaddr_t vaddr, paddr_t paddr);
 int paging_kmap(page_dir_t *pg_dir, paddr_t paddr);
 int paging_kvmap(page_dir_t *pg_dir, kvaddr_t kvaddr, paddr_t paddr);

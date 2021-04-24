@@ -71,6 +71,8 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
         kprintf("\nWelcome to Longhorn!\nVersion no.: %s\nType <help> for a list of commands.\n> ", version_no);
     #endif
 
+    init_paging(&PROC_CUR()->pgdir);
+    kprintf("initialized paging...\n");
     enable_interrupts();
 
     //shouldn't run more than once

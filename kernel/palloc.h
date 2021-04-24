@@ -10,7 +10,7 @@
 /* defines */
 #define PG_SIZE 4096
 #define KB 1024
-#define MB 1024*KB
+#define MB 1024*1024
 #define ROUND_UP(x, size) (((x + size - 1) / size) * size)
 
 /* structs */

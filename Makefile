@@ -37,8 +37,8 @@ run: all
 	$(QEMU) -cdrom Longhorn.iso $(QEMU_FLAGS)
 
 # runs ab usi with no restart on crash
-run-no-reboot: QEMU-FLAGS += -no-reboot -no-shutdown
-run-no-reboot: run
+run-debug: QEMU-FLAGS += -no-reboot -d int,cpu_reset
+run-debug: run
 	$(QEMU) -cdrom Longhorn.iso 
 
 ### BUILD RULES ###

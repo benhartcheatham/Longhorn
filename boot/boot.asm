@@ -91,7 +91,7 @@ _start:
 	; stack (as it grows downwards on x86 systems). This is necessarily done
 	; in assembly as languages such as C cannot function without a stack.
 	mov esp, stack_top
-
+	
 	; Enter the high-level kernel. The ABI requires the stack is 16-byte
 	; aligned at the time of the call instruction (which afterwards pushes
 	; the return pointer of size 4 bytes). The stack was originally 16-byte
@@ -118,7 +118,7 @@ gdt_start:
         ;base = 0x0, limit=0xfffff
         ;1st flags: (present) 1, (privilege) 00, (descriptor type) 1
         ;type flags: (code) 1, (conforming) 0, (readable) 1, (accessed) 0
-        ;2nd flags: (granularity) 1 (32-bit default) 1, (64-bit seg) 0, (AVL) 0
+        ;2nd flags: (granularity) 1, (32-bit default) 1, (64-bit seg) 0, (AVL) 0
         dw 0xffff       ;Limit
         dw 0x0          ;Base (bits 0-15)
         db 0x0          ;Base (bits 16-23)
