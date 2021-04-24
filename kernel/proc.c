@@ -12,6 +12,7 @@
 #include "../drivers/vesa.h"
 #include "proc.h"
 #include "palloc.h"
+#include "paging.h"
 
 /* defines */
 
@@ -65,6 +66,7 @@ void init_processes() {
     list_init(&p->waiters);
     p->wait_code = 0;
 
+    init_paging(NULL);
     init_threads(p);
     p->active_thread = p->threads[0];
 

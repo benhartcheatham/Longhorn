@@ -10,6 +10,9 @@
 /* defines */
 #define KERNEL_TABLE  0
 #define KADDR_OFFSET 0xC0000000
+#define KVADDR_OFFSET 0xF0000000
+#define PG_ROUND_UP(x) ((((uint32_t) x) + PG_SIZE + 1) & (~(PG_SIZE - 1)))
+#define PG_ROUND_DOWN(x) (((uint32_t) x) & (~(PG_SIZE - 1)))
 
 /* typedefs */
 
@@ -17,6 +20,7 @@
 typedef uint32_t paddr_t;
 typedef uint32_t vaddr_t;
 typedef uint32_t kaddr_t;
+typedef uint32_t kvaddr_t;
 
 /* structs */
 typedef struct pte {
@@ -55,10 +59,12 @@ typedef struct page_dir {
 
 
 /* functions */
-int init_paging(page_dir_t *pd);
+int init_paging(page_dir_t **pd);
 int paging_init(struct process *proc, struct process *proc_parent);
-int paging_map(vaddr_t vaddr, paddr_t paddr);
-int paging_kmap(kaddr_t kaddr, paddr_t paddr);
+int paging_map(page_dir_t *pg_dir, vaddr_t vaddr, paddr_t paddr);
+int paging_kmap(page_dir_t *pg_dir, paddr_t paddr);
+int paging_kvmap(page_dir_t *pg_dir, kvaddr_t kvaddr, paddr_t paddr);
+paddr_t *get_current_pgdir();
 
 
 #endif

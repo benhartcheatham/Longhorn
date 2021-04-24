@@ -72,7 +72,7 @@ os-binary: $(BOOT) $(OBJ) $(ASM)
 	nasm $< -f elf32 -o $@
 
 %.o: %.bmp
-	$ objcopy --input binary --output elf32-i386 --binary-architecture i386 \
+	objcopy --input binary --output elf32-i386 --binary-architecture i386 \
     $< $@
 
 # Builds a disk img of the os

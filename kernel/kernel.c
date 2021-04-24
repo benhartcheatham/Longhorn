@@ -22,7 +22,7 @@
 #include "shell.h"
 
 /* Memory Management */
-#include "paging.h"
+#include "kmalloc.h"
 
 /* Interrupts */
 #include "isr.h"
