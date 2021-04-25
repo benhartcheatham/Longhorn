@@ -72,7 +72,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
         print_logo();
         kprintf("\nWelcome to Longhorn!\nVersion no.: %s\nType <help> for a list of commands.\n> ", version_no);
     #endif
-    
+
     //shouldn't run more than once
     while (1) {
         thread_yield();

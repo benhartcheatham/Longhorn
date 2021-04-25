@@ -99,16 +99,16 @@ struct process *proc_create(char *name, proc_function func, void *aux) {
     flush_std(&p->std_in);
     flush_std(&p->std_out);
     flush_std(&p->std_err);
-    
+
     p->stdin = &p->std_in;
     p->stdout = &p->std_out;
     p->stderr = &p->std_err;
 
     int i;
     for (i = 0; i < MAX_NUM_THREADS; i++) {
-        p->threads[i]->state = THREAD_TERMINATED;
-        p->threads[i]->child_num = i;
+        p->threads[i] = NULL;
     }
+
 
     list_init(&p->waiters);
     p->wait_code = 0;
@@ -120,7 +120,7 @@ struct process *proc_create(char *name, proc_function func, void *aux) {
     else {
         return NULL;
     }
-    
+
     p->active_thread = p->threads[0];
     list_insert_end(&all_procs.tail, &p->node);
 

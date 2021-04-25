@@ -38,7 +38,7 @@ void proc_test_func(void *aux);
 void init_testing(bool enable_test_prints) {
     test_prints = enable_test_prints;
     kprintf("initializing tests\n");
-    slab_alloc_t *slab_allocator = get_default_slab_allocator();
+    slab_alloc_t slab_allocator;
     void *slab_alloc_mem = NULL;
     void *slab_ret = NULL;
     void *slab_ret2 = NULL;
@@ -52,18 +52,14 @@ void init_testing(bool enable_test_prints) {
     add_test(&kalloc, make_test(true, (slab_alloc_mem = palloc()) != NULL, "Allocate mem for slab allocator"));
     add_module(&kalloc);
 
-    kprintf("making slab alloc tests\n");
     struct test_module slab_alloc = make_module("Slab Alloc");
-    kprintf("hello %x\n", slab_allocator->alloc);
-    slab_ret = slab_allocator->alloc(slab_allocator, 1);
-    kprintf("thought so\n");
+    slab_init(&slab_allocator, slab_alloc_mem, PG_SIZE, 64, NULL);
+    slab_ret = slab_allocator.alloc(&slab_allocator, 1);
     add_test(&slab_alloc, make_test(true, slab_ret != NULL, "Slab allocator allocation 1"));
-    slab_ret2 = slab_allocator->alloc(slab_allocator, 30);
-    kprintf("unless?\n");
+    slab_ret2 = slab_allocator.alloc(&slab_allocator, 30);
     add_test(&slab_alloc, make_test(true, slab_ret2 != NULL, "Slab allocator allocation 2"));
-    add_test(&slab_alloc, make_test(true, slab_allocator->free(slab_allocator, slab_ret, 1) == SLAB_SUCC, "Slab allocator free 1"));
-    add_test(&slab_alloc, make_test(true, slab_allocator->free(slab_allocator, slab_ret2, 30) == SLAB_SUCC, "Slab allocator free 2"));
-    kprintf("jk\n");
+    add_test(&slab_alloc, make_test(true, slab_allocator.free(&slab_allocator, slab_ret, 1) == SLAB_SUCC, "Slab allocator free 1"));
+    add_test(&slab_alloc, make_test(true, slab_allocator.free(&slab_allocator, slab_ret2, 30) == SLAB_SUCC, "Slab allocator free 2"));
     add_module(&slab_alloc);
 
     // #ifdef TESTS
@@ -73,6 +69,7 @@ void init_testing(bool enable_test_prints) {
     kprintf("making process tests\n");
     struct test_module procs = make_module("Processes");
     strcpy(procs.name, "Processes");    // this shouldn't have to happen, but i'm redoing this all soon anyway
+    kprintf("going to create a process\n");
     struct process *p1 = proc_create("test", proc_test_func, NULL);
     add_test(&procs, make_test(true, p1->pid == 1, "Create1"));
 

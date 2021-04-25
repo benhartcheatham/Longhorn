@@ -65,7 +65,7 @@ void *kmalloc(size_t size) {
     size_t num_alloc_slabs = ROUND_UP(sizeof(struct allocation) / allocator->slab_size, allocator->slab_size);
     if (num_alloc_slabs == 0)
         num_alloc_slabs++;
-    
+
     if (spin_lock_acquire(&malloc_lock) != LOCK_ACQ_SUCC)
         return NULL;
     

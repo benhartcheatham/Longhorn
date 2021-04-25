@@ -147,12 +147,11 @@ void isr_handler(struct register_frame *r) {
     if (r->int_no == 0x0e) {
         uint32_t cr2;
         asm volatile("mov %%cr2, %0": "=g" (cr2));
-        kprintf("Reason of fault:");
-
-        if (r->err_code & 1) {
-            kprintf("non present page\n");
-        } else
+        kprintf("Reason of fault: ");
+        if (r->err_code & 1)
             kprintf("protection violation\n");
+        else
+            kprintf("non present page\n");
         
         kprintf("Page access info:\n");
         kprintf("\tread/write (0=read,1=write): %d\n", (r->err_code >> 1) & 1);

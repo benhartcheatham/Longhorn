@@ -33,7 +33,7 @@ void init_alloc(multiboot_info_t *mb) {
     bitmap_init_s(&free_map, num_pages, start_addr);
     bitmap_set_range(&free_map, 0, num_pages / PG_SIZE + 1, true);
 
-    init_kmalloc(palloc_mult(PG_SIZE * 10), PG_SIZE * 10, SLAB_SIZE);
+    init_kmalloc(palloc_mult(10), PG_SIZE * 10, SLAB_SIZE);
 
     spin_lock_init(&palloc_lock);
 }

@@ -138,9 +138,8 @@ int slab_init(slab_alloc_t *s, void *mem, size_t mem_size, size_t slab_size, voi
     
     if (mem == NULL && mem_size < sizeof(struct slab) * num_slabs)
         return -SLAB_INIT_FAIL;
-
+    
     char *starting_addr = mem + ((num_slabs * slab_size) / sizeof(struct slab));
-
     // set up the allocator
     struct slab *slab = mem;
     while (starting_addr < (char *) (mem + mem_size)) {
