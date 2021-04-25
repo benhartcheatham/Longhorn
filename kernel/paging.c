@@ -15,6 +15,7 @@
 #define PG_SHIFTL(x) ((paddr_t) x << PG_SIZE_BITS)
 #define PG_SHIFTR(x) ((paddr_t) x >> PG_SIZE_BITS)
 #define ENTRY_MASK (0x3FF)
+#define LAST_TABLE_ADDR (1023*4*MB)
 
 /* globals */
 extern char _kernel_start;
@@ -24,8 +25,8 @@ paddr_t kernel_end = (paddr_t) &_kernel_end;
 
 /* prototypes */
 static void enable_paging(page_dir_t *pg_dir);
-static page_table_t *paging_traverse_pgdir(page_dir_t *pg_dir, vaddr_t vaddr, bool create);
-static pte_t *paging_traverse_pgtable(page_table_t *pg_table, vaddr_t vaddr);
+// static page_table_t *paging_traverse_pgdir(page_dir_t *pg_dir, vaddr_t vaddr, bool create);
+// static pte_t *paging_traverse_pgtable(page_table_t *pg_table, vaddr_t vaddr);
 static page_table_t *paging_create_pgtable(page_dir_t *pg_dir, vaddr_t vaddr);
 static pte_t *paging_create_pte(page_table_t *pg_table, vaddr_t vaddr, paddr_t paddr);
 static void init_pde(pde_t *pde, paddr_t addr, bool rw, bool user, bool cache);
@@ -53,12 +54,7 @@ int init_paging() {
         paging_kmap(pd, pg);
 
     // map last page table to point to page directory
-    page_table_t *dir_table = paging_create_pgtable(pd, 1023*4*MB); // address of last page table
-    for (uint32_t i = 0; i < (sizeof(page_table_t) / sizeof(pte_t)) - 1; i++) { // the minus one is so that we don't map this table again
-        pte_t *pte = &dir_table->entries[i];
-        init_pte(pte, (paddr_t) PG_SHIFTL(pd->tables[i].table_addr), true, false, true);
-    }
-
+    paging_kvmap(pd, LAST_TABLE_ADDR, (paddr_t) pd);
     enable_paging(pd);
     return 0;
 }
@@ -167,10 +163,14 @@ int paging_kvmap(page_dir_t *pg_dir, kvaddr_t kvaddr, paddr_t paddr) {
  * 
  * @return pointer to physical address of page directory
  */
-page_dir_t *get_current_pgdir() {
+page_dir_t *get_current_pgdir_phys() {
     page_dir_t *paddr;
     asm volatile ("mov %%cr3, %0" : "=g" (paddr));
     return paddr;
+}
+
+page_dir_t *get_current_pgdir() {
+    return (page_dir_t *) LAST_TABLE_ADDR;
 }
 
 /** finds the page table that contains vaddr in pg_dir, if it exists
@@ -182,7 +182,7 @@ page_dir_t *get_current_pgdir() {
  * @return a pointer to the physical address of the page table containing vaddr, 
  *         NULL if it doesn't exist and create is false
  */
-static page_table_t *paging_traverse_pgdir(page_dir_t *pg_dir, vaddr_t vaddr, bool create) {
+page_table_t *paging_traverse_pgdir(page_dir_t *pg_dir, vaddr_t vaddr, bool create) {
     uint32_t pde_index = (vaddr >> 22) & ENTRY_MASK;    // index in pg_dir tables array
     pde_t *pde = &pg_dir->tables[pde_index];    // pointer to table in pg_dir tables array
 
@@ -203,7 +203,7 @@ static page_table_t *paging_traverse_pgdir(page_dir_t *pg_dir, vaddr_t vaddr, bo
  * 
  * @return pte mapped to vaddr, NULL if it doesn't exist
  */
-static pte_t *paging_traverse_pgtable(page_table_t *pg_table, vaddr_t vaddr) {
+pte_t *paging_traverse_pgtable(page_table_t *pg_table, vaddr_t vaddr) {
     uint32_t pte_index = (vaddr >> 12) & ENTRY_MASK;    // index in pg_table entries array
     pte_t *pte = &pg_table->entries[pte_index]; // pointer to entry in pg_table entries array
 
@@ -226,7 +226,6 @@ static page_table_t *paging_create_pgtable(page_dir_t *pg_dir, vaddr_t vaddr) {
 
     if (!pde->present) {
         void *paddr = palloc();
-            
         memset((void *)paddr, 0, sizeof(page_table_t));
         init_pde(pde, (paddr_t) paddr, true, false, true);
     }

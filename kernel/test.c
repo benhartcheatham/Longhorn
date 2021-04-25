@@ -25,9 +25,9 @@ static bool test_prints = false;
 static uint32_t num_modules_made = 0;
 struct test_module modules[NUM_MODULES];
 extern struct process *init;
+
 /* prototypes */
 void proc_test_func(void *aux);
-
 /* functions */
 
 /** initializes all tests for the testing module of the kernel

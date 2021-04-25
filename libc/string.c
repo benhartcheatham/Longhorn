@@ -36,18 +36,18 @@ char *int_to_string(int n) {
     return str;
 }
 
-/** converts an int n into an ascii hex string 
+/** converts an unsigned int n into an ascii hex string 
  * NOTE: not a stdlib function
  * 
  * @param n: number to convert
  * 
  * @return converted number as a string
  */
-char *int_to_hexstring(int n) {
+char *int_to_hexstring(unsigned int n) {
     int i = 0;
     static char str[32];
 
-    int num = n;
+    unsigned int num = n;
     do {
         if (num % 16 >= 10)
             str[i++] = ((num - 10) % 16) + 'a';

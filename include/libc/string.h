@@ -22,7 +22,7 @@ extern char *strpbrk(const char *str1, const char *str2);
 extern char *strcat(char *dest, const char *src);
 extern char *strncat(char *dest, const char *src, size_t num);
 extern char *int_to_string(int n);
-extern char *int_to_hexstring(int n);
+extern char *int_to_hexstring(unsigned int n);
 extern void reverse(char *src);
 extern size_t strlen(const char *str);
 extern int strcmp(const char *str1, const char *str2);
