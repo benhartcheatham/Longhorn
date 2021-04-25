@@ -22,6 +22,7 @@
         "utility": "cpp",
         "port_io.h": "c",
         "line.h": "c",
-        "terminal.h": "c"
+        "terminal.h": "c",
+        "map": "c"
     }
 }

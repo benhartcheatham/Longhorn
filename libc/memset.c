@@ -23,7 +23,7 @@ void *memset(void *dest, int c, size_t n) {
     size_t i = 0;
 
     while (i < n) {
-        *d = c;
+        d[i] = (unsigned char) c;
         i++;
     }
 

@@ -17,7 +17,7 @@ BOOT = $(BOOT_SOURCES:.asm=.o)
 CC = i686-elf-gcc
 CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 CPPFLAGS = $(foreach dir, $(LIBINCLUDE), -I "$(dir)")
-QEMU = qemu-system-x86_64	# this was originally qemu-system-i386, but this may be better since it is more current
+QEMU = qemu-system-i386	# this was originally qemu-system-i386, but this may be better since it is more current
 QEMU_FLAGS = 
 DEFINES = 
 
@@ -37,9 +37,8 @@ run: all
 	$(QEMU) -cdrom Longhorn.iso $(QEMU_FLAGS)
 
 # runs ab usi with no restart on crash
-run-debug: QEMU-FLAGS += -no-reboot -d int,cpu_reset
+run-debug: QEMU_FLAGS += -d int,cpu_reset -D ./qemu_log
 run-debug: run
-	$(QEMU) -cdrom Longhorn.iso 
 
 ### BUILD RULES ###
 
@@ -53,6 +52,7 @@ clean:
 	rm -rf *.bin *.o *.iso
 	rm -rf ./*/*.bin ./*/*.o
 	rm os-binary
+	rm qemu_log
 
 ### FILE SPECIFIC RULES ###
 boot/boot.o: boot/boot.asm

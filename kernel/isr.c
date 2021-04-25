@@ -7,6 +7,8 @@
 #include "../drivers/serial.h"
 #include "isr.h"
 #include "port_io.h"
+#include "../kernel/paging.h"
+#include "../kernel/palloc.h"
 
 /* defines */
 
@@ -141,9 +143,13 @@ void install_irqs() {
  * @param r: interrupt register frame
  */
 void isr_handler(struct register_frame *r) {
+    if (r->err_code == 0x0e) {
+        
+    }
     kprintf("Recieved Interrupt: %d %s\n", r->int_no, exception_messages[r->int_no]);
-    asm volatile("cli");
-    asm volatile("hlt");
+    asm volatile("mov %0, %%eax \n\t\
+                  cli \n\t\
+                  hlt": : "r" (r->err_code));
 }
 
 /** hardware interrupt general handler 

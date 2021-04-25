@@ -42,6 +42,7 @@ void init_processes() {
         asm volatile("hlt");
     }
 
+
     init_std(&p->std_in);
     init_std(&p->std_out);
     init_std(&p->std_err);
@@ -68,7 +69,8 @@ void init_processes() {
 
     init_threads(p);
     p->active_thread = p->threads[0];
-
+    p->pgdir = get_current_pgdir();
+    
     list_insert(&all_procs, &p->node);
 }
 

@@ -76,7 +76,56 @@ void init_threads(struct process *init) {
     list_init(&blocked_threads);
     list_init(&dying_threads);
 
-    thread_create(0, "idle", init, 0, idle, NULL);
+    uint8_t *s = (uint8_t *) palloc_mult(STACK_SIZE / PG_SIZE);
+
+    if (s == NULL)
+        return;
+    
+    // setup the thread struct at the bottom of the page (lowest addr)
+    struct thread_info *ti = (struct thread_info *) s;
+
+    ti->t.tid = allocate_tid();
+    ti->t.state = THREAD_READY;
+    sprintf(ti->t.name, "%s", "diel");
+    ti->t.priority = 0;
+    ti->t.pid = init->pid;
+    ti->t.child_num = 0;
+    
+    // add a pointer to the parent process after thread struct
+    ti->p = init;
+    init->threads[0] = &ti->t;
+
+    s += STACK_SIZE;
+
+    // setup arguments thread_execute
+    s -= sizeof(struct thread_func_frame);
+    struct thread_func_frame *f = (struct thread_func_frame *) s;
+    f->eip = NULL;
+    f->function = idle;
+    f->aux = (void *) NULL;
+
+    // setup to call thread_execute
+    s -= sizeof(struct tail_frame);
+    struct tail_frame *tf = (struct tail_frame *) s;
+    tf->eip = (void (*) (void)) thread_execute;
+
+    // setup for the first switch of a thread
+    s -= sizeof(struct stack_frame);
+    struct stack_frame *sf = (struct stack_frame *) s;
+    sf->eip = first_switch_entry;
+    sf->ebp = 0;
+
+    ti->t.esp = (uint32_t *) s;
+
+    ti->t.state = THREAD_READY;
+
+    list_init(&ti->t.waiters);
+    ti->t.wait_code = 0;
+
+    ti->t.magic = THREAD_MAGIC;
+
+    list_insert(&ready_threads, &ti->t.node);
+
     idle_t = init->threads[0];
     strcpy(THREAD_CUR()->name, "i0");
     THREAD_CUR()->state = THREAD_BLOCKED;

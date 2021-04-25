@@ -44,7 +44,7 @@ bmp_file_header_t header;
  * 0.4.1: Moved print_logo to only run on start in kernel .c
  */
 char *version_no = "0.4.1";
-
+struct process *init;
 static void print_logo();
 
 /** Main function of the kernel, starts the kernel and its subsystems. This function
@@ -56,11 +56,13 @@ static void print_logo();
 void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_idt();
     init_alloc(mbi);
+    init_paging();
     init_processes();
 
     #ifndef TESTS
         display_init((void *) mbi);
-        shell_init();
+        shell_init();   // this calls proc_create(), which in turn calls thread_create(), which enables interrupts
+                        // therefore, we don't have to do it before calling thread_yield()
     #else
         init_testing(true);
         RUN_ALL_TESTS(NULL);
@@ -70,11 +72,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
         print_logo();
         kprintf("\nWelcome to Longhorn!\nVersion no.: %s\nType <help> for a list of commands.\n> ", version_no);
     #endif
-
-    init_paging(&PROC_CUR()->pgdir);
-    kprintf("initialized paging...\n");
-    enable_interrupts();
-
+    
     //shouldn't run more than once
     while (1) {
         thread_yield();

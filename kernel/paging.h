@@ -5,6 +5,7 @@
 
 /* includes */
 #include <stdint.h>
+#include <stdbool.h>
 
 /* defines */
 #define KERNEL_TABLE  0
@@ -36,7 +37,7 @@ typedef struct pte {
     uint32_t addr     : 20;
 } pte_t;
 
-// a pde is the same thing as a page_table struct
+// a pde is the same thing as a page_table struct *
 typedef struct pde {
     uint32_t present  : 1;
     uint32_t rw       : 1;
@@ -45,7 +46,7 @@ typedef struct pde {
     uint32_t cache    : 1;
     uint32_t accessed : 1;
     uint32_t ignored  : 6;  // must be zeroed out because bit 7 needs to be zero
-    uint32_t addr     : 20;
+    uint32_t table_addr     : 20;
 } pde_t;
 
 typedef struct page_table {
@@ -53,17 +54,18 @@ typedef struct page_table {
 } page_table_t __attribute__ ((aligned(4096)));
 
 typedef struct page_dir {
-    struct pde *tables[1024];
+    struct pde tables[1024];
 } page_dir_t __attribute__ ((aligned(4096)));
 
 
 /* functions */
-int init_paging(page_dir_t **pd);
+int init_paging();
 int paging_init(page_dir_t *proc, page_dir_t *proc_parent);
 int paging_map(page_dir_t *pg_dir, vaddr_t vaddr, paddr_t paddr);
 int paging_kmap(page_dir_t *pg_dir, paddr_t paddr);
 int paging_kvmap(page_dir_t *pg_dir, kvaddr_t kvaddr, paddr_t paddr);
 paddr_t *get_current_pgdir();
 
-
+page_table_t *paging_traverse_pgdir(page_dir_t *pg_dir, vaddr_t vaddr, bool create);
+pte_t *paging_traverse_pgtable(page_table_t *pg_table, vaddr_t vaddr, bool create);
 #endif

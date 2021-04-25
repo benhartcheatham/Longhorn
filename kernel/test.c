@@ -15,6 +15,7 @@
 #include "proc.h"
 #include "thread.h"
 #include "port_io.h"
+#include "paging.h"
 
 /* defines */
 #define NUM_MODULES 10
@@ -23,7 +24,7 @@
 static bool test_prints = false;
 static uint32_t num_modules_made = 0;
 struct test_module modules[NUM_MODULES];
-
+extern struct process *init;
 /* prototypes */
 void proc_test_func(void *aux);
 
@@ -80,7 +81,29 @@ void init_testing(bool enable_test_prints) {
     add_test(&procs, make_test(true, ret == 0, "Kill"));
     add_module(&procs);
 
+    struct test_module paging = make_module("Paging");
+    init_paging(&init->pgdir);
+    page_dir_t *fake_dir = init->pgdir;
+    vaddr_t vaddr = 0x102000;
+    pde_t *fake_pde = &fake_dir->tables[(vaddr >> 22) & 0x3FF];
+    add_test(&paging, make_test(true, fake_pde->present & !fake_pde->user & fake_pde->rw, "pde set correctly"));
+    // paging_kvmap(fake_dir, vaddr, vaddr);
+    kprintf("sizeof page_dir_t: %d\n", sizeof(page_dir_t));
 
+    page_table_t *fake_table = paging_traverse_pgdir(fake_dir, vaddr, false);
+    pte_t *fake_pte = paging_traverse_pgtable(fake_table, vaddr, false);
+    kprintf("fake_dir: %x\n", fake_dir);
+    add_test(&paging, make_test(true, fake_dir != NULL, "correct dir location"));
+    add_test(&paging, make_test(true, fake_table != NULL, "Page table allocated"));
+    add_test(&paging, make_test(true, fake_dir->tables[0].present, "pde present"));
+    add_test(&paging, make_test(true, fake_pte != NULL, "pte allocated"));
+    add_test(&paging, make_test(true, fake_pte == &fake_table->entries[258], "pte in correct location"));
+    add_test(&paging, make_test(true, fake_pte->present, "pte present"));
+    fake_pde = &fake_dir->tables[1];
+    kprintf("fake_dir->tables[1]: %x\n", *fake_pde);
+    add_test(&paging, make_test(false, fake_pde->present, "over allocation"));
+    add_test(&paging, make_test(true, get_current_pgdir() == fake_dir, "get page dir"));
+    add_module(&paging);
 }
 
 /** function used for testing processes
