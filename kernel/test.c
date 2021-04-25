@@ -184,6 +184,8 @@ void RUN_ALL_TESTS(void *aux __attribute__ ((unused))) {
     }
 
     kprintf("exiting...\n");
+    asm volatile("cli \n\t\
+                  hlt");
     outw(0x604, 0x2000);    // issues shutdown command to QEMU
 }
 

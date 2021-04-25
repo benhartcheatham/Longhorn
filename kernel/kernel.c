@@ -56,13 +56,13 @@ static void print_logo();
 void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_idt();
     init_alloc(mbi);
-    init_paging();
-    init_processes();
+    init = (struct process *) palloc();
+    init_paging(&init->pgdir);
+    init_processes(init);
 
     #ifndef TESTS
         display_init((void *) mbi);
-        shell_init();   // this calls proc_create(), which in turn calls thread_create(), which enables interrupts
-                        // therefore, we don't have to do it before calling thread_yield()
+        shell_init();
     #else
         init_testing(true);
         RUN_ALL_TESTS(NULL);

@@ -32,21 +32,21 @@ static void init_pte(pte_t *pte, paddr_t addr, bool rw, bool user, bool cache);
 /* functions */
 
 /* initializes paging system */
-int init_paging() {
+int init_paging(page_dir_t **pd) {
 
     disable_interrupts();
-    page_dir_t *pd = (page_dir_t *) palloc();
-    memset(pd, 0, sizeof(page_dir_t));
+    *pd = (page_dir_t *) palloc();
+    memset(*pd, 0, sizeof(page_dir_t));
 
     // identity map first MB
     for (paddr_t pg = 0; pg < PG_ROUND_UP(kernel_end) + 20*PG_SIZE; pg += PG_SIZE)
-       paging_kvmap(pd, pg, pg);
+       paging_kvmap(*pd, pg, pg);
     
     // map kernel to high memory
     for (paddr_t pg = PG_ROUND_DOWN(kernel_start); pg < 200*PG_SIZE; pg += PG_SIZE)
-        paging_kmap(pd, pg);
+        paging_kmap(*pd, pg);
 
-    init_pde(&pd->tables[1023], pd, true, false, false);
+    init_pde(&(*pd)->tables[1023], *pd, true, false, false);
 
     //enable_paging(*pd);
     return 0;

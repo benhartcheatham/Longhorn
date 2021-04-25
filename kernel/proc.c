@@ -30,18 +30,18 @@ static int proc_get_free_thread(struct process *proc);
 /* initialization functions */
 
 /** initializes the process subsystem */
-void init_processes() {
+void init_processes(struct process *init) {
     list_init(&all_procs);
 
     //create init process
-    struct process *p = (struct process *) palloc();
-    if (p == NULL) {
+    if (init == NULL) {
         char *stop = NULL;
         *stop = 0;
         asm volatile("cli");
         asm volatile("hlt");
     }
 
+    struct process *p = init;
 
     init_std(&p->std_in);
     init_std(&p->std_out);
@@ -69,8 +69,7 @@ void init_processes() {
 
     init_threads(p);
     p->active_thread = p->threads[0];
-    p->pgdir = get_current_pgdir();
-    
+
     list_insert(&all_procs, &p->node);
 }
 
