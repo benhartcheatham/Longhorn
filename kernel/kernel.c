@@ -59,6 +59,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_processes();
 
     #ifndef TESTS
+        // this doesn't work because the framebuffer isn't mapped
         display_init((void *) mbi);
         shell_init();
     #else

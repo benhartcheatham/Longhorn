@@ -28,7 +28,7 @@ char *int_to_string(int n) {
     int num = n;
     do {
         str[i++] = num % 10 + '0';
-    } while ((num /= 10) > 0);
+    } while ((num /= 10) != 0);
     
     str[i] = '\0';
 
@@ -53,7 +53,7 @@ char *int_to_hexstring(unsigned int n) {
             str[i++] = ((num - 10) % 16) + 'a';
         else
             str[i++] = num % 16 + '0';
-    } while ((num /= 16) > 0);
+    } while ((num /= 16) != 0);
 
     str[i++] = 'x';
     str[i++] = '0';
