@@ -64,8 +64,8 @@ int paging_init(page_dir_t *proc, page_dir_t *proc_parent);
 int paging_map(page_dir_t *pg_dir, vaddr_t vaddr, paddr_t paddr);
 int paging_kmap(page_dir_t *pg_dir, paddr_t paddr);
 int paging_kvmap(page_dir_t *pg_dir, kvaddr_t kvaddr, paddr_t paddr);
-paddr_t *get_current_pgdir();
+page_dir_t *get_current_pgdir();
 
 page_table_t *paging_traverse_pgdir(page_dir_t *pg_dir, vaddr_t vaddr, bool create);
-pte_t *paging_traverse_pgtable(page_table_t *pg_table, vaddr_t vaddr, bool create);
+pte_t *paging_traverse_pgtable(page_table_t *pg_table, vaddr_t vaddr, bool create, paddr_t paddr);
 #endif

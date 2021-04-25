@@ -79,6 +79,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     }
 }
 
+#ifndef TESTS
 /** prints the logo of the correpsonding size to the screen
    logo sizes are defined in terminal.h */
 static void print_logo() {
@@ -88,3 +89,4 @@ static void print_logo() {
     draw_bmp_data(&header, 10, vesa_get_cursor_y() * FONT_HEIGHT + 10);
     get_default_dis_driver()->dis_setcur(0, (header.info_header.height / FONT_HEIGHT) + 1);
 }
+#endif

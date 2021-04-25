@@ -37,12 +37,13 @@ void proc_test_func(void *aux);
  */
 void init_testing(bool enable_test_prints) {
     test_prints = enable_test_prints;
-
+    kprintf("initializing tests\n");
     slab_alloc_t *slab_allocator = get_default_slab_allocator();
     void *slab_alloc_mem = NULL;
     void *slab_ret = NULL;
     void *slab_ret2 = NULL;
 
+    kprintf("making kalloc tests\n");
     struct test_module kalloc = make_module("Kalloc");
     // #ifdef TESTS
     // these numbers are outdated, and it's kinda a stupid test
@@ -51,19 +52,25 @@ void init_testing(bool enable_test_prints) {
     add_test(&kalloc, make_test(true, (slab_alloc_mem = palloc()) != NULL, "Allocate mem for slab allocator"));
     add_module(&kalloc);
 
+    kprintf("making slab alloc tests\n");
     struct test_module slab_alloc = make_module("Slab Alloc");
+    kprintf("hello %x\n", slab_allocator->alloc);
     slab_ret = slab_allocator->alloc(slab_allocator, 1);
+    kprintf("thought so\n");
     add_test(&slab_alloc, make_test(true, slab_ret != NULL, "Slab allocator allocation 1"));
     slab_ret2 = slab_allocator->alloc(slab_allocator, 30);
+    kprintf("unless?\n");
     add_test(&slab_alloc, make_test(true, slab_ret2 != NULL, "Slab allocator allocation 2"));
     add_test(&slab_alloc, make_test(true, slab_allocator->free(slab_allocator, slab_ret, 1) == SLAB_SUCC, "Slab allocator free 1"));
     add_test(&slab_alloc, make_test(true, slab_allocator->free(slab_allocator, slab_ret2, 30) == SLAB_SUCC, "Slab allocator free 2"));
+    kprintf("jk\n");
     add_module(&slab_alloc);
 
     // #ifdef TESTS
     // slab_print_list(get_default_slab_allocator());
     // #endif
 
+    kprintf("making process tests\n");
     struct test_module procs = make_module("Processes");
     strcpy(procs.name, "Processes");    // this shouldn't have to happen, but i'm redoing this all soon anyway
     struct process *p1 = proc_create("test", proc_test_func, NULL);
@@ -81,29 +88,29 @@ void init_testing(bool enable_test_prints) {
     add_test(&procs, make_test(true, ret == 0, "Kill"));
     add_module(&procs);
 
-    struct test_module paging = make_module("Paging");
-    init_paging(&init->pgdir);
-    page_dir_t *fake_dir = init->pgdir;
-    vaddr_t vaddr = 0x102000;
-    pde_t *fake_pde = &fake_dir->tables[(vaddr >> 22) & 0x3FF];
-    add_test(&paging, make_test(true, fake_pde->present & !fake_pde->user & fake_pde->rw, "pde set correctly"));
-    // paging_kvmap(fake_dir, vaddr, vaddr);
-    kprintf("sizeof page_dir_t: %d\n", sizeof(page_dir_t));
+//     struct test_module paging = make_module("Paging");
+//     //init_paging(&init->pgdir);
+//     page_dir_t *fake_dir = init->pgdir;
+//     vaddr_t vaddr = 0x102000;
+//     pde_t *fake_pde = &fake_dir->tables[(vaddr >> 22) & 0x3FF];
+//     add_test(&paging, make_test(true, fake_pde->present & !fake_pde->user & fake_pde->rw, "pde set correctly"));
+//     // paging_kvmap(fake_dir, vaddr, vaddr);
+//     kprintf("sizeof page_dir_t: %d\n", sizeof(page_dir_t));
 
-    page_table_t *fake_table = paging_traverse_pgdir(fake_dir, vaddr, false);
-    pte_t *fake_pte = paging_traverse_pgtable(fake_table, vaddr, false);
-    kprintf("fake_dir: %x\n", fake_dir);
-    add_test(&paging, make_test(true, fake_dir != NULL, "correct dir location"));
-    add_test(&paging, make_test(true, fake_table != NULL, "Page table allocated"));
-    add_test(&paging, make_test(true, fake_dir->tables[0].present, "pde present"));
-    add_test(&paging, make_test(true, fake_pte != NULL, "pte allocated"));
-    add_test(&paging, make_test(true, fake_pte == &fake_table->entries[258], "pte in correct location"));
-    add_test(&paging, make_test(true, fake_pte->present, "pte present"));
-    fake_pde = &fake_dir->tables[1];
-    kprintf("fake_dir->tables[1]: %x\n", *fake_pde);
-    add_test(&paging, make_test(false, fake_pde->present, "over allocation"));
-    add_test(&paging, make_test(true, get_current_pgdir() == fake_dir, "get page dir"));
-    add_module(&paging);
+//     page_table_t *fake_table = paging_traverse_pgdir(fake_dir, vaddr, false, 0);
+//     pte_t *fake_pte = paging_traverse_pgtable(fake_table, vaddr, false, 0);
+//     kprintf("fake_dir: %x\n", fake_dir);
+//     add_test(&paging, make_test(true, fake_dir != NULL, "correct dir location"));
+//     add_test(&paging, make_test(true, fake_table != NULL, "Page table allocated"));
+//     add_test(&paging, make_test(true, fake_dir->tables[0].present, "pde present"));
+//     add_test(&paging, make_test(true, fake_pte != NULL, "pte allocated"));
+//     add_test(&paging, make_test(true, fake_pte == &fake_table->entries[258], "pte in correct location"));
+//     add_test(&paging, make_test(true, fake_pte->present, "pte present"));
+//     fake_pde = &fake_dir->tables[1];
+//     kprintf("fake_dir->tables[1]: %x\n", *fake_pde);
+//     add_test(&paging, make_test(false, fake_pde->present, "over allocation"));
+//     add_test(&paging, make_test(true, get_current_pgdir() == fake_dir, "get page dir"));
+//     add_module(&paging);
 }
 
 /** function used for testing processes

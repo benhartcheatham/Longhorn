@@ -143,10 +143,27 @@ void install_irqs() {
  * @param r: interrupt register frame
  */
 void isr_handler(struct register_frame *r) {
-    if (r->err_code == 0x0e) {
-        
-    }
     kprintf("Recieved Interrupt: %d %s\n", r->int_no, exception_messages[r->int_no]);
+    if (r->int_no == 0x0e) {
+        uint32_t cr2;
+        asm volatile("mov %%cr2, %0": "=g" (cr2));
+        kprintf("Reason of fault:");
+
+        if (r->err_code & 1) {
+            kprintf("non present page\n");
+        } else
+            kprintf("protection violation\n");
+        
+        kprintf("Page access info:\n");
+        kprintf("\tread/write (0=read,1=write): %d\n", (r->err_code >> 1) & 1);
+        kprintf("\taccess level (0=supervisor,1=user): %d\n", (r->err_code >> 2) & 1);
+        kprintf("\treserved: %d\n", (r->err_code >> 3) & 1);
+        kprintf("\tinstruction fetch: %d\n", (r->err_code >> 4) & 1);
+        kprintf("\tprotection key violation: %d\n", (r->err_code >> 5) & 1);
+        kprintf("\tshadow stack access: %d\n", (r->err_code >> 6) & 1);
+        kprintf("\tsgx violation: %d\n", (r->err_code >> 15) & 1);
+        kprintf("Faulting addr: %x\n", cr2);
+    }
     asm volatile("mov %0, %%eax \n\t\
                   cli \n\t\
                   hlt": : "r" (r->err_code));

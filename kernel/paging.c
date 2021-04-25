@@ -39,16 +39,16 @@ int init_paging(page_dir_t **pd) {
     memset(*pd, 0, sizeof(page_dir_t));
 
     // identity map first MB
-    for (paddr_t pg = 0; pg < PG_ROUND_UP(kernel_end) + 20*PG_SIZE; pg += PG_SIZE)
+    for (paddr_t pg = PG_SIZE; pg < 3*MB; pg += PG_SIZE)
        paging_kvmap(*pd, pg, pg);
     
     // map kernel to high memory
     for (paddr_t pg = PG_ROUND_DOWN(kernel_start); pg < 200*PG_SIZE; pg += PG_SIZE)
         paging_kmap(*pd, pg);
 
-    init_pde(&(*pd)->tables[1023], *pd, true, false, false);
+    init_pde(&(*pd)->tables[1023], (paddr_t) *pd, true, false, false);
 
-    //enable_paging(*pd);
+    enable_paging(*pd);
     return 0;
 }
 
@@ -85,7 +85,7 @@ int paging_kmap(page_dir_t *pg_dir, paddr_t paddr) {
     if (page_table == NULL)
         return -1;
     
-    pte_t *pte = paging_traverse_pgtable(page_table, paddr + KADDR_OFFSET, true);
+    pte_t *pte = paging_traverse_pgtable(page_table, paddr + KADDR_OFFSET, true, paddr);
     if (pte == NULL)
         return -1;
     return 0;
@@ -107,14 +107,15 @@ int paging_kvmap(page_dir_t *pg_dir, kvaddr_t kvaddr, paddr_t paddr) {
     if (page_table == NULL)
         return -1;
     
-    pte_t *pte = paging_traverse_pgtable(page_table, kvaddr, true);
+    pte_t *pte = paging_traverse_pgtable(page_table, kvaddr, true, paddr);
     if (pte == NULL)
         return -1;
+
     return 0;
 }
 
-paddr_t *get_current_pgdir() {
-    paddr_t *paddr;
+page_dir_t *get_current_pgdir() {
+    page_dir_t *paddr;
     asm volatile ("mov %%cr3, %0" : "=g" (paddr));
     return paddr;
 }
@@ -126,12 +127,10 @@ page_table_t *paging_traverse_pgdir(page_dir_t *pg_dir, vaddr_t vaddr, bool crea
 
     if(!pde->present) {
         if (create) {
-            void *table = palloc(); // physical address of page table
-            if (table == NULL || (paddr_t) table & (PG_SIZE - 1))
-                return NULL;
+            void *paddr = palloc();
             
-            memset(table, 0, sizeof(page_table_t));
-            init_pde(pde, (paddr_t) table, true, false, true);
+            memset((void *)paddr, 0, sizeof(page_table_t));
+            init_pde(pde, (paddr_t) paddr, true, false, true);
         } else {
             return NULL;
         }
@@ -140,18 +139,14 @@ page_table_t *paging_traverse_pgdir(page_dir_t *pg_dir, vaddr_t vaddr, bool crea
     return (page_table_t *) PG_SHIFTL(pde->table_addr);
 }
 
-pte_t *paging_traverse_pgtable(page_table_t *pg_table, vaddr_t vaddr, bool create) {
+pte_t *paging_traverse_pgtable(page_table_t *pg_table, vaddr_t vaddr, bool create, paddr_t paddr) {
     uint32_t pte_index = (vaddr >> 12) & ENTRY_MASK;    // index in pg_table entries array
     pte_t *pte = &pg_table->entries[pte_index]; // pointer to entry in pg_table entries array
 
     if (!pte->present) {
         if (create) {
-            void *entry = palloc(); // physical address of page frame
-            if (entry == NULL || (paddr_t) entry & (PG_SIZE - 1))
-                return NULL;
-            
             memset(pte, 0, sizeof(pte_t));
-            init_pte(pte, (paddr_t) entry, true, false, true);
+            init_pte(pte, paddr, true, false, true);
         } else {
             return NULL;
         }
