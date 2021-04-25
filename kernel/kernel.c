@@ -44,7 +44,6 @@ bmp_file_header_t header;
  * 0.4.1: Moved print_logo to only run on start in kernel .c
  */
 char *version_no = "0.4.1";
-struct process *init;
 static void print_logo();
 
 /** Main function of the kernel, starts the kernel and its subsystems. This function
@@ -56,9 +55,8 @@ static void print_logo();
 void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_idt();
     init_alloc(mbi);
-    init = (struct process *) palloc();
-    init_paging(&init->pgdir);
-    init_processes(init);
+    init_paging();
+    init_processes();
 
     #ifndef TESTS
         display_init((void *) mbi);

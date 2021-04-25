@@ -4,13 +4,14 @@
 #define PALLOC_H
 
 /* includes */
+#include <stdint.h>
 #include <stddef.h>
 #include "../boot/multiboot.h"
 
 /* defines */
 #define PG_SIZE 4096
 #define KB 1024
-#define MB 1024*1024
+#define MB ((uint32_t) 1024*1024)
 #define ROUND_UP(x, size) (((x + size - 1) / size) * size)
 
 /* structs */
