@@ -23,6 +23,7 @@
 
 /* Memory Management */
 #include "kmalloc.h"
+#include "paging.h"
 
 /* Interrupts */
 #include "isr.h"
@@ -33,6 +34,7 @@
 #endif
 
 /* defines */
+#define FRAMEBUFFER_VIRT_ADDR KVADDR_OFFSET
 
 /* globals */
 extern char _binary_assets_longhorn_logo_bmp_start;
@@ -45,6 +47,7 @@ bmp_file_header_t header;
  */
 char *version_no = "0.4.1";
 static void print_logo();
+static void map_framebuffer(multiboot_info_t *mbi, vaddr_t vaddr);
 
 /** Main function of the kernel, starts the kernel and its subsystems. This function
  * returns to a tight loop and then is never scheduled again once completed.
@@ -59,7 +62,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     init_processes();
 
     #ifndef TESTS
-        // this doesn't work because the framebuffer isn't mapped
+        map_framebuffer(mbi, FRAMEBUFFER_VIRT_ADDR);
         display_init((void *) mbi);
         shell_init();
     #else
@@ -85,7 +88,15 @@ static void print_logo() {
     read_bmp_header(header_addr, &header);
     bmp_change_color(&header, 0xFFFFFF, 0x0);
     get_default_dis_driver()->dis_clear();
-    draw_bmp_data(&header, 10, vesa_get_cursor_y() * FONT_HEIGHT + 10);
+    draw_bmp_data(&header, 10, get_default_dis_driver()->dis_gety() * FONT_HEIGHT + 10);
     get_default_dis_driver()->dis_setcur(0, (header.info_header.height / FONT_HEIGHT) + 1);
+}
+
+static void map_framebuffer(multiboot_info_t *mbi, vaddr_t vaddr) {
+    uint32_t bytespp = mbi->framebuffer_bpp / 8;
+    for (uint32_t i = 0; i < PG_ROUND_UP(mbi->framebuffer_height * mbi->framebuffer_width * bytespp); i += 4096)
+        paging_kvmap(get_current_pgdir(), vaddr + i, (paddr_t) mbi->framebuffer_addr + i);
+    
+    mbi->framebuffer_addr = vaddr;
 }
 #endif

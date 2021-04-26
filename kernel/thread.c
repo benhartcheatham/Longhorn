@@ -86,7 +86,7 @@ void init_threads(struct process *init) {
 
     ti->t.tid = allocate_tid();
     ti->t.state = THREAD_READY;
-    sprintf(ti->t.name, "%s", "diel");
+    sprintf(ti->t.name, "%s", "idle");
     ti->t.priority = 0;
     ti->t.pid = init->pid;
     ti->t.child_num = 0;
