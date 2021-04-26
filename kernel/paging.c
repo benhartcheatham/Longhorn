@@ -50,7 +50,7 @@ int init_paging() {
        paging_kvmap(pd, pg, pg);
     
     // map kernel to high memory
-    for (paddr_t pg = PG_ROUND_DOWN(kernel_start); pg < KVADDR_OFFSET; pg += PG_SIZE)
+    for (paddr_t pg = PG_ROUND_DOWN(kernel_start); pg < KVADDR_OFFSET - KADDR_OFFSET + PG_ROUND_DOWN(_kernel_start); pg += PG_SIZE)
         paging_kmap(pd, pg);
 
     // map last page table to point to page directory

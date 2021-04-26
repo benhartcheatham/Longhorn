@@ -73,6 +73,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     #ifndef TESTS
         print_logo();
         kprintf("\nWelcome to Longhorn!\nVersion no.: %s\nType <help> for a list of commands.\n> ", version_no);
+        
     #endif
 
     //shouldn't run more than once
@@ -91,12 +92,12 @@ static void print_logo() {
     draw_bmp_data(&header, 10, get_default_dis_driver()->dis_gety() * FONT_HEIGHT + 10);
     get_default_dis_driver()->dis_setcur(0, (header.info_header.height / FONT_HEIGHT) + 1);
 }
-
+#endif
 static void map_framebuffer(multiboot_info_t *mbi, vaddr_t vaddr) {
     uint32_t bytespp = mbi->framebuffer_bpp / 8;
-    for (uint32_t i = 0; i < PG_ROUND_UP(mbi->framebuffer_height * mbi->framebuffer_width * bytespp); i += 4096)
+    for (uint32_t i = 0; i < PG_ROUND_UP(mbi->framebuffer_height * mbi->framebuffer_width * bytespp); i += 4096) {
         paging_kvmap(get_current_pgdir(), vaddr + i, (paddr_t) mbi->framebuffer_addr + i);
+    }
     
     mbi->framebuffer_addr = vaddr;
 }
-#endif

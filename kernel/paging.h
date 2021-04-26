@@ -41,7 +41,7 @@
 /* defines */
 #define KERNEL_TABLE  0
 #define KADDR_OFFSET 0xC0000000
-#define KVADDR_OFFSET 0xF0000000
+#define KVADDR_OFFSET 0xD0000000
 #define PG_ROUND_UP(x) ((((uint32_t) x) + PG_SIZE + 1) & (~(PG_SIZE - 1)))
 #define PG_ROUND_DOWN(x) (((uint32_t) x) & (~(PG_SIZE - 1)))
 
