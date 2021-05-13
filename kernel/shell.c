@@ -28,8 +28,8 @@
 
 /* shell info */
 size_t last_index = 0;
-char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "exit", "ps", "clear", "getbuf"};
-char *commands[NUM_COMMANDS] = {"help", "shutdown", "exit", "ps", "clear", "getbuf", "grub", "moon"};
+char *help_commands[NUM_HELP_COMMANDS] = {"help", "shutdown", "exit", "ps", "clear", "echo"};
+char *commands[NUM_COMMANDS] = {"help", "shutdown", "exit", "ps", "clear", "echo", "grub", "moon"};
 struct process *shell;
 
 /* key buffer info */
@@ -45,11 +45,11 @@ static uint32_t ps_get_alignment(display_t *dis, uint32_t *alignment);
 static void help(void *aux);
 static void shutdown(void *aux);
 static void ps(void *aux);
-static void getbuf(void *aux);
+static void echo(void *aux);
 static void grub(void *aux);
 static void moon(void *aux);
 static void clear(void *aux);
-proc_function *command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, clear, getbuf, grub, moon}; // this has to be here sadly, can't be moved before the protoyypes
+proc_function *command_functions[NUM_COMMANDS] = {help, shutdown, shutdown, ps, clear, echo, grub, moon}; // this has to be here sadly, can't be moved before the protoyypes
 
 /* functions */
 
@@ -184,13 +184,12 @@ static void shutdown(void *aux __attribute__ ((unused))) {
  * @param line: pointer to command line args
  * @param argc: number of command line args
  */
-static void getbuf(void *aux) {
+static void echo(void *aux) {
     void **aux_arr = (void **) aux;
     char **args = ((char **) aux_arr[0]);
     uint32_t argc = (uint32_t) (aux_arr[1]);
 
-    kprintf("buffer: ");
-    for (uint32_t i = 0; i < argc; i++)
+    for (uint32_t i = 1; i < argc; i++)
         kprintf("%s ", args[i]);
     kprintf("\n");
 }
