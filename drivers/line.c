@@ -333,10 +333,15 @@ static char eval_kc(term_t *t, unsigned char keycode) {
             return 0;
         case KC_LSHIFT:
         case KC_RSHIFT:
+        case KC_LSHIFT_REL:
+        case KC_RSHIFT_REL:
+            ts->capitalize = !ts->capitalize;
+            return 0;
         case KC_CAPSLOCK:
             ts->capitalize = !ts->capitalize;
             return 0;
         case KC_LCTRL:
+        case KC_LCTRL_REL:
             ts->ctrl_pressed = !ts->ctrl_pressed;
             return 0;
         case KC_ESCAPE:

@@ -5,7 +5,7 @@
 /* includes */
 
 /* defines */
-#define SCAN_CODE_SET1
+#define SCAN_CODE_SET1 1
 
 #ifdef SCAN_CODE_SET1
 #define SC_TAB 0x0F
@@ -19,6 +19,10 @@
 #define SC_ESCAPE 0x01
 #define SC_NUMLOCK 0x45
 #define SC_RELEASED 0x81
+#define SC_LALT_REL 0xB8
+#define SC_LSHIFT_REL 0xAA
+#define SC_LCTRL_REL 0x9D
+#define SC_RSHIFT_REL 0xB6
 #endif
 
 #ifdef SCAN_CODE_SET2
