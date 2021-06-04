@@ -25,5 +25,6 @@ int serial_send(uint8_t byte);
 
 void serial_putc(char c);
 void serial_puts(const char *s);
+void serial_clear(void);
 
 #endif
