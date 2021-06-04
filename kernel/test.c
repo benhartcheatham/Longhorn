@@ -15,6 +15,7 @@
 #include "proc.h"
 #include "thread.h"
 #include "port_io.h"
+#include "../drivers/display.h"
 
 /* defines */
 #define NUM_MODULES 10
@@ -47,14 +48,14 @@ void init_testing(bool enable_test_prints) {
     // these numbers are outdated, and it's kinda a stupid test
     // add_test(&kalloc, make_test(true, num_allocated() == (map_size() / PG_SIZE + 8), "Initialization"));
     // #endif
-    add_test(&kalloc, make_test(true, (slab_alloc_mem = palloc()) != NULL, "Allocate mem for slab allocator"));
+    add_test(&kalloc, make_test(true, (slab_alloc_mem = palloc()) != NULL, "Allocate mem"));
     add_module(&kalloc);
 
     struct test_module slab_alloc = make_module("Slab Alloc");
     slab_ret = slab_allocator->alloc(slab_allocator, 1);
-    add_test(&slab_alloc, make_test(true, slab_ret != NULL, "Slab allocator allocation 1"));
+    add_test(&slab_alloc, make_test(true, slab_ret != NULL, "allocation 1"));
     slab_ret2 = slab_allocator->alloc(slab_allocator, 30);
-    add_test(&slab_alloc, make_test(true, slab_ret2 != NULL, "Slab allocator allocation 2"));
+    add_test(&slab_alloc, make_test(true, slab_ret2 != NULL, "allocation 2"));
     add_test(&slab_alloc, make_test(true, slab_allocator->free(slab_allocator, slab_ret, 1) == SLAB_SUCC, "Slab allocator free 1"));
     add_test(&slab_alloc, make_test(true, slab_allocator->free(slab_allocator, slab_ret2, 30) == SLAB_SUCC, "Slab allocator free 2"));
     add_module(&slab_alloc);
@@ -161,7 +162,7 @@ void RUN_ALL_TESTS(void *aux __attribute__ ((unused))) {
     }
 
     kprintf("exiting...\n");
-    outw(0x604, 0x2000);    // issues shutdown command to QEMU
+    //outw(0x604, 0x2000);    // issues shutdown command to QEMU
 }
 
 /** runs the tests in the given test_module
@@ -174,7 +175,7 @@ void test_module(struct test_module *module) {
 
     int i;
     for (i = 0; i < TESTS_PER_MODULE && i < module->num_tests; i++)
-        if (test(module->tests[i].expected, module->tests[i].expression, module->tests[i].name))
+        if (test(&module->tests[i]))
             num_passed++;
 
     if (module->num_tests >= TESTS_PER_MODULE)
@@ -191,15 +192,56 @@ void test_module(struct test_module *module) {
  * 
  * @return result of the test
  */
-bool test(bool expected, bool expression, char *name) {
-    bool result = expression == expected;
-
+bool test(struct test_info *test) {
     if (test_prints) {
-        if (result)
-            kprintf("test %s passed: expected %B, got %B\n", name, expected, expression);
-        else
-            kprintf("test %s failed: expected %B, got %B\n", name, expected, expression);
+        print_test(test, false);
     }
+    
+    return test->expression == test->expected;
+}
 
-    return result;
+void print_test(struct test_info *test, bool verbose) {
+    bool result = test->expression == test->expected;
+    
+    kprintf("test %s", test->name);
+
+    // align the status of test output using spaces
+    char padding[50];
+    memset(padding, 0, 50);
+    int i = 0;
+    for (i = 0; i < 50 - (int) strlen(test->name); i++)
+        padding[i] = ' ';
+    padding[i] = '\0';
+
+    kprintf("%s", padding);
+// if TESTS is defined use ANSI codes to color test results in terminal
+#ifdef TESTS
+    if (result) {
+        kprintf("[\033[01;32mSUCCESS\033[00;37m]\n");
+    } else {
+        kprintf("[\033[01;31mFAIL\033[00;37m]\n");
+
+        if (verbose)
+            kprintf("\tExpected %b, got %b\n", test->expected, test->expression);
+    }
+#else
+    struct display *dis = get_default_dis_driver();
+    if (result) {
+        kprintf("[");
+        dis->dis_setcol(0x23ca23, 0x000000);
+        kprintf("SUCCESS");
+        dis->dis_setcol(0xffffff, 0x000000);
+        kprintf("]\n");
+    } else {
+        kprintf("[");
+        dis->dis_setcol(0xec4949, 0x000000);
+        kprintf("FAIL");
+        dis->dis_setcol(0xffffff, 0x000000);
+        kprintf("]\n");
+
+        if (verbose)
+            kprintf("\tExpected %b, got %b\n", test->expected, test->expression);
+    }
+#endif
+
 }
