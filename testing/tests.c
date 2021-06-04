@@ -1,5 +1,4 @@
-/* File for testing parts of the kernel. To make a test system, create a test module then fill the module in with tests.
- * To test the module, add the module to the test suite. All registered test modules are tested in the order they are added in. */
+/* File for the testing subsystem of the kernel. Look to tests.h for how to use the subsytem */
 
 /* includes */
 #include <stdbool.h>
@@ -23,7 +22,7 @@ static void run_test_group(test_group *g);
 
 /* functions */
 
-/** initializes all tests for the testing module of the kernel
+/** initializes all tests for the testing subsystem of the kernel
  * all tests should be in this function
  * 
  */
@@ -32,6 +31,11 @@ void init_testing() {
     add_group(init_proc_group);
 }
 
+/** adds a group to be tested
+ * 
+ * @param testg: function to initalize a test group,
+ *               the test group is expected to already contain tests
+ */
 void add_group(init_group_function testg) {
     if (num_groups >= MAX_NUM_TEST_GROUPS)
         return;
@@ -40,10 +44,11 @@ void add_group(init_group_function testg) {
     num_groups++;
 }
 
-/** adds a test to the given module
+/** adds a test to the given test group
  * 
- * @param mod: module to add test to
+ * @param g: test group to add test to
  * @param test: test to add
+ * @param test_name: name of the test
  */
 void add_test(test_group *g, test_function test, char *test_name) {
     if (g->num_tests >= MAX_NUM_TESTS)
@@ -55,7 +60,10 @@ void add_test(test_group *g, test_function test, char *test_name) {
 }
 
 
-/** runs all tests in every module, called in kmain() if testing is enabled */
+/** runs all tests in every test group, called in kmain() if testing is enabled
+ * 
+ * @param aux: unused
+ */
 void run_groups(void *aux __attribute__ ((unused))) {
     kprintf("NUMBER TEST GROUPS: %d\n", num_groups);
     for (int i = 0; i < num_groups; i++)
@@ -67,14 +75,14 @@ void run_groups(void *aux __attribute__ ((unused))) {
 
 /** runs the tests in the given test_module
  * 
- * @param module: module to run
+ * @param g: test group to run
  */
 static void run_test_group(test_group *g) {
     kprintf("\nTESTING GROUP: %s\n", g->name);
 
     if (g->setup != NULL)
         g->setup();
-    
+
     int i;
     for (i = 0; i < MAX_NUM_TESTS && i < g->num_tests; i++) {
         bool result = g->tests[i]();
@@ -94,6 +102,11 @@ teardown:
     return;
 }
 
+/** prints the result of a test
+ * 
+ * @param test_name: name of test
+ * @param passed: whether the test passed
+ */
 void print_test(char *test_name, bool passed) {
     
     kprintf("%s", test_name);

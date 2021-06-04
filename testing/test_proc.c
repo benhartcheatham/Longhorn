@@ -1,3 +1,6 @@
+/* Tests the process/thread subsystem */
+
+/* includes */
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
@@ -6,8 +9,10 @@
 #include "tests.h"
 #include "../kernel/proc.h"
 
+/* defines */
 #define NUM_PROC_TESTS 2
 
+/* globals */
 static bool test_create(void);
 static bool test_kill(void);
 
@@ -15,10 +20,14 @@ static void proc_test_func(void *aux);
 
 static test_group proc_test_group;
 
+/* functions */
+
+/** makes the process test group
+ * 
+ * @return the initialized test group, with tests added
+ */
 test_group *init_proc_group(void) {
-    strcpy(proc_test_group.name, "Processes");
-    proc_test_group.setup = NULL;
-    proc_test_group.teardown = NULL;
+    proc_test_group = TEST_GROUP_INIT("Processes", NULL, NULL);
 
     test_function test_funcs[NUM_PROC_TESTS] = {test_create, test_kill};
     char *test_names[NUM_PROC_TESTS] = {"create1", "kill"};
@@ -28,6 +37,10 @@ test_group *init_proc_group(void) {
     return &proc_test_group;
 }
 
+/** tests proc_create
+ * 
+ * @return false if test fails, true if test passes
+ */
 static bool test_create(void) {
     struct process *p1 = proc_create("test", proc_test_func, NULL);
     CHECK_EQ(p1->pid, 1, "create process");
@@ -39,6 +52,10 @@ static bool test_create(void) {
     return true;
 }
 
+/** tests proc_kill
+ * 
+ * @return false if test fails, true if test passes
+ */
 static bool test_kill(void) {
     struct process *p1 = proc_create("test", proc_test_func, NULL);
 

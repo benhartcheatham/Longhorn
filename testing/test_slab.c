@@ -1,3 +1,6 @@
+/* Tests the slab allocator */
+
+/* includes */
 #include <stdbool.h>
 #include <slab.h>
 #include <string.h>
@@ -5,8 +8,10 @@
 #include "tests.h"
 #include "../kernel/kalloc.h"
 
+/* defines */
 #define NUM_SLAB_TESTS 2
 
+/* globals */
 static void slab_setup(void);
 static void slab_teardown(void);
 
@@ -17,11 +22,14 @@ static test_group slab_test_group;
 
 void *slab_alloc_mem = NULL;
 
-test_group *init_slab_group(void) {
-    strcpy(slab_test_group.name, "Slab Allocator");
+/* functions */
 
-    slab_test_group.setup = slab_setup;
-    slab_test_group.teardown = slab_teardown;
+/** initializes the slab allocator test group
+ * 
+ * @return initialized slab allocator test group, with tests added
+ */
+test_group *init_slab_group(void) {
+    slab_test_group = TEST_GROUP_INIT("Slab Allocator", slab_setup, slab_teardown);
 
     test_function test_funcs[NUM_SLAB_TESTS] = {test_slab1, test_slab2};
     char *test_names[NUM_SLAB_TESTS] = {"slab1", "slab2"};
@@ -31,6 +39,10 @@ test_group *init_slab_group(void) {
     return &slab_test_group;
 }
 
+/** tests a small allocation
+ * 
+ * @return false if test fails, true if test passes
+ */
 static bool test_slab1(void) {
     slab_alloc_t *slab_allocator = get_default_slab_allocator();
     void *slab_ret = NULL;
@@ -45,6 +57,10 @@ static bool test_slab1(void) {
     return true;
 }
 
+/** tests a normal allocation
+ * 
+ * @return false if test fails, true if test passes
+ */
 static bool test_slab2(void) {
     slab_alloc_t *slab_allocator = get_default_slab_allocator();
     void *slab_ret = NULL;
@@ -57,10 +73,12 @@ static bool test_slab2(void) {
     return true;
 }
 
+/** allocates memory for the slab allocator tests */
 static void slab_setup(void) {
     slab_alloc_mem = palloc();
 }
 
+/** frees memory used by the slab allocator tests */
 static void slab_teardown(void) {
     kfree(slab_alloc_mem);
 }
