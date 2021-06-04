@@ -29,7 +29,7 @@
 
 /* Testing */
 #ifdef TESTS
-    #include "test.h"
+    #include "../testing/tests.h"
 #endif
 
 /* defines */
@@ -45,7 +45,9 @@ bmp_file_header_t header;
  */
 char *version_no = "0.4.1";
 
+#ifndef TESTS
 static void print_logo();
+#endif
 
 /** Main function of the kernel, starts the kernel and its subsystems. This function
  * returns to a tight loop and then is never scheduled again once completed.
@@ -62,8 +64,8 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
         display_init((void *) mbi);
         shell_init();
     #else
-        init_testing(true);
-        RUN_ALL_TESTS(NULL);
+        init_testing();
+        run_groups(NULL);
     #endif
 
     #ifndef TESTS
@@ -79,6 +81,7 @@ void kmain(multiboot_info_t *mbi, unsigned int magic __attribute__ ((unused))) {
     }
 }
 
+#ifndef TESTS
 /** prints the logo of the correpsonding size to the screen
    logo sizes are defined in terminal.h */
 static void print_logo() {
@@ -88,3 +91,4 @@ static void print_logo() {
     draw_bmp_data(&header, 10, vesa_get_cursor_y() * FONT_HEIGHT + 10);
     get_default_dis_driver()->dis_setcur(0, (header.info_header.height / FONT_HEIGHT) + 1);
 }
+#endif

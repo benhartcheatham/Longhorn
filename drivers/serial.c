@@ -38,6 +38,8 @@ void init_serial() {
     display_t *dis = get_default_dis_driver();
     dis->dis_putc = serial_putc;
     dis->dis_puts = serial_puts;
+    dis->dis_clear = serial_clear;
+    dis->dis_clear();
     #endif
 }
 
@@ -90,4 +92,7 @@ void serial_puts(const char *s) {
     }
 }
 
-
+void serial_clear(void) {
+    char clear_screen[] = {27, 91, 50, 74, 27, 91, 72, 0};
+    serial_puts(clear_screen);
+}

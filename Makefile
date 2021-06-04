@@ -1,25 +1,25 @@
 ### MAKE GROUPS ###
-SUBDIRS = drivers kernel libc libk
+SUBDIRS = drivers kernel libc libk testing
 
 C_SOURCES = $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.c))
 HEADERS = $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.h))
 LIBINCLUDE = include/libc include/libk
 ASM_SOURCES = $(wildcard kernel/*.asm)
-BOOT_SOURCES = boot/boot.asm
+BOOT_SOURCES := boot/boot.asm
 
 ASSETS = $(wildcard assets/*.bmp)
 
-OBJ = $(C_SOURCES:.c=.o) $(ASSETS:.bmp=.o)
-ASM = $(ASM_SOURCES:.asm=.o)
-BOOT = $(BOOT_SOURCES:.asm=.o)
+OBJ := $(C_SOURCES:.c=.o) $(ASSETS:.bmp=.o)
+ASM := $(ASM_SOURCES:.asm=.o)
+BOOT := $(BOOT_SOURCES:.asm=.o)
 
 ### COMPILER GROUPS/RULES ###
-CC = i686-elf-gcc
-CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+CC := i686-elf-gcc
+CFLAGS := -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 CPPFLAGS = $(foreach dir, $(LIBINCLUDE), -I "$(dir)")
-QEMU = qemu-system-x86_64	# this was originally qemu-system-i386, but this may be better since it is more current
-QEMU_FLAGS = 
-DEFINES = 
+QEMU := qemu-system-x86_64	# this was originally qemu-system-i386, but this may be better since it is more current
+QEMU_FLAGS := 
+DEFINES := 
 
 ### INSTALLATION GROUPS ###
 # BINUTILS_VER = 2.24
